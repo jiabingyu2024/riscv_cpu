@@ -150,8 +150,38 @@ PC 选择的优先级必须固定，避免“偶发跳错”：
 - `bpu_upd_target[31:0]`：真实目标地址（用于 BTB/目标缓存）
 - `bpu_upd_mispredict`：是否误判（用于触发 flush/redirect，或统计）
 
-> 最低配实现：只做 **PHT(2-bit)** 而不做 BTB，则 `bpu_predict_target` 可以直接为 \(pc+4\)，分支 taken 时仍需 EX redirect；性能差一些但结构更简单、关键路径更短。  
-> 推荐实现：PHT + 小 BTB（例如 64/128 项，直接映射），target 从 BTB 读出；命中且 predict_taken=1 时才采用 BTB target。
+#### PHT-only vs PHT+BTB：关键路径与预测成功率权衡（展开）
+
+这里把“2-bit 动态分支预测”拆成两件事：**方向预测**与**目标预测**。
+
+- **PHT-only（只做 2-bit 饱和计数器表）**
+  - **能做什么**：预测“taken/not-taken（方向）”。目标地址不预测（或固定为 \(pc+4\)）。
+  - **性能/命中率**：
+    - 对“循环分支”这类规律明显的方向，2-bit 通常能较快稳定到正确方向（不会因一次抖动立刻翻转）。
+    - 但对 **taken 分支**：即使方向预测正确，也**无法在 IF 得到目标**，仍要等 EX 算出 `actual_target` 后再 `redirect`，因此 taken 分支通常至少付出 1 次（甚至多拍）气泡/冲刷代价。
+  - **关键路径**：
+    - IF 关键路径只包含：PHT 索引 + 2-bit 比较（例如 state[1] 作为 taken），极短、易上主频。
+  - **适用**：先跑通功能、优先主频/简单度；或外存延迟大、前端收益有限时。
+
+- **PHT+BTB（方向 + 目标缓存）**
+  - **能做什么**：BTB 命中时在 IF 直接给出 `predict_target`；若同时 `predict_taken=1`，PC 可以直接跳到目标，减少 taken 分支代价。
+  - **性能/命中率**：
+    - “预测成功率”需要分开看：
+      - **方向命中率**：由 PHT 决定（2-bit）。
+      - **目标命中率**：由 BTB 决定（tag 命中 + target 正确）。
+    - 当代码里 taken 分支比例高、且分支目标稳定（循环/if-else），BTB 能显著提升 IPC。
+    - 代价是 BTB 容量/冲突导致的 target 误命中会引入额外 flush（目标错也算 mispredict）。
+  - **关键路径**（重点）：
+    - IF 关键路径会变为：`pc_reg.q -> (PHT查表 + BTB索引/tag比较 + target_mux) -> pc_reg.d`，比 PHT-only 长。
+    - 为控时序，建议 BTB 采取：
+      - 小容量（例如 64/128 项），**直接映射**；
+      - tag 比较只用少量高位（避免大比较器），或用“命中位+tag”组合；
+      - `predict_target` 的 mux 尽量简单（命中且taken才用 BTB，否则 \(pc+4\)）。
+  - **适用**：追求更高 IPC，且愿意为 IF 关键路径付出一点复杂度（通过小 BTB + 结构约束仍可上频）。
+
+> 结论：  
+> - **想先确保主频与易实现**：先上 **PHT-only**。  
+> - **想显著减少 taken 分支损失**：上 **PHT+小BTB**，但必须严格控制 BTB 的实现方式以免拖慢 IF 时序。
 
 ### 误预测处理（flush 范围）
 
@@ -160,6 +190,30 @@ PC 选择的优先级必须固定，避免“偶发跳错”：
 - `redirect_valid` 拉高 1 拍
 - `redirect_pc` = 真实 next_pc（真实目标 or \(pc+4\)）
 - **flush**：至少 flush `IF/ID` 与 `ID/EX`（保证错误路径上的指令全部清掉）；EX 自身那条分支指令继续向后（或在 commit 单元处理“已提交/未提交”的一致性）。
+
+### load-branch（load→branch）冒险与“mem->pc_reg 关键路径”风险（必须明确）
+
+你关心的点非常关键：**如果分支比较在 EX 需要的操作数来自上一条 load 的返回数据**，最糟糕的写法会让组合路径变成：
+
+`mem_rsp_rdata -> LSU对齐/扩展 -> forward_mux -> branch_cmp -> redirect -> pc_select -> pc_reg.d`
+
+这会直接把“外存响应路径”塞进 IF 的 next_pc 关键路径，主频很容易崩。
+
+本设计必须遵守以下硬约束，来保证**不会出现 mem 到 pc_reg 的长组合路径**：
+
+- **约束A：redirect 只能由 EX 级产生，且 EX 的输入必须来自寄存器打拍后的值**  
+  `branch_cmp` 的比较输入只能来自：  
+  - `reg_id_ex` 打拍后的 `rs1_val/rs2_val`（再经 forward mux 选择 EX/MEM 或 MEM/WB 的“已寄存结果”）；  
+  - **禁止**把 `mem_rsp_rdata` 当拍直接旁路到 `branch_cmp`。
+
+- **约束B：load-branch 必须 stall（不能靠当拍前递解决）**  
+  若 ID 阶段检测到：当前指令是 branch，且其 `rs1/rs2` 依赖上一条 EX 阶段的 load 结果，则：  
+  - `stall_pc=1`、`stall_if_id=1`，并对 `id_ex` 注入 bubble（`flush_id_ex=1`）；  
+  - 直到 load 的数据进入 **MEM/WB（或在 EX/MEM 提前有稳定寄存数据）** 后，branch 才允许进入 EX。  
+  这会带来 1~N 拍性能损失，但换来清晰时序：**PC 更新不依赖外存当拍返回**。
+
+- **约束C：统一外存等待只产生“停顿”，不产生跨级组合反压**  
+  `mem_busy`/`lsu_busy` 应通过 hazard 生成 stall 信号去控制流水寄存器保持，不要把 `mem_req_ready/mem_rsp_valid` 的复杂组合路径直接连到 PC mux。
 
 ---
 
@@ -192,6 +246,20 @@ PC 选择的优先级必须固定，避免“偶发跳错”：
 
 建议包含（示例，不是强制代码）：  
 `XLEN`、`REGW`、`ALUOP_W`、`BR_TYPE_W`、`MEMOP_W`、`WBSEL_W`、`PHT_BITS`、`BTB_ENTRIES` 等。
+
+#### 使用约定（避免接口位宽漂移）
+
+为了保证“所有模块的端口位宽/编码一致”，以下文件在实现时应统一：
+
+- **必须 include 的模块**：  
+  `rtl/core/core_top.v`、所有阶段模块（`if/*`、`id/*`、`ex/*`、`mem/*`、`wb/*`）、所有流水寄存器（`pipeline_regs/*`）、控制单元（`control/*`）、BPU（`if/bpu_top.v`）。
+- **必须从 defines 取位宽的端口**（不要在各文件里写死 magic number）：  
+  - `XLEN`：所有数据通路（寄存器值/ALU/LSU/写回）  
+  - `REGW`：`rs1/rs2/rd` 端口  
+  - `ALUOP_W/BR_TYPE_W/MEMOP_W/WBSEL_W`：控制总线编码宽度  
+  - `PHT_BITS/BTB_ENTRIES`：BPU 索引位宽与容量（影响关键路径与冲突率）
+- **编码化控制信号的原则**：  
+  decoder 输出尽量是“小位宽枚举”，在 `reg_id_ex` 打拍后跨级流动；不要在跨级信号中携带大范围 one-hot/大位宽组合表达式，减少时序压力与连线错误。
 
 ### `rtl/core/core_top.v`
 
@@ -597,9 +665,9 @@ endmodule
 
 ### `rtl/core/mem/dram.v`
 
-- **职责**：可作为简化的外部存储模型或接口适配层（名字叫 dram，但实现可按需要决定）。
-  - 若用于仿真：实现一个简单同步 RAM + ready/valid。
-  - 若用于综合：可作为对接真实总线/片上RAM的 wrapper。
+- **职责（当前阶段的默认定义）**：**仿真/功能验证用的片内内存模型**（可以用寄存器阵列或简单同步 RAM 实现），用于把五级流水+外存握手先跑通。  
+  - 先不讨论“外接 DRAM/FPGA 片外内存”，等仿真通过后再单独引入适配层或更换实现。
+  - 建议支持：可配置容量、可插入 wait（通过 `mem_req_ready` / `mem_rsp_valid` 控制），以便覆盖 stall/握手逻辑。
 
 端口模板建议与 `core_top` 对外一致（作为从设备/存储体）：
 ```verilog
