@@ -7,6 +7,8 @@
     功能要求:
 
 */
+`include "../../include/cpu_defines.sv"
+
 module regfile(
     input wire              i_clk,
     input wire              i_rst_n,

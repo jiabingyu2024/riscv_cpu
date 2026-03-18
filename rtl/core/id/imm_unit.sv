@@ -7,6 +7,8 @@
     功能要求:
 
 */
+`include "../../include/cpu_defines.sv"
+
 module imm_unit(
     input wire [`DATA_BUS]          i_instr,
     output wire [`DATA_BUS]         o_imm

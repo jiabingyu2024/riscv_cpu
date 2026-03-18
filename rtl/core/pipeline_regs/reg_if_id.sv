@@ -7,12 +7,14 @@
     功能要求:
 
 */
+`include "../../include/cpu_defines.sv"
+
 module reg_if_id(
     input logic              i_clk,
     input logic              i_rst_n,
     input logic              i_flush,
     input logic              i_stall,   
-    input logic [`PC_BUS]    i_pc_if_id,
+    input logic [`PC_BUS]    i_pc_f_d,
     input logic [`INST_BUS]  i_inst_f_d,
     output logic [`PC_BUS]   o_pc_f_d,
     output logic [`INST_BUS] o_inst_f_d

@@ -8,6 +8,8 @@
         此模块用于仿真指令ROM，输出指令的32位编码。后续被ip 替换
 
 */
+`include "../../include/cpu_defines.sv"
+
 module rom_instr(
     input  logic [`PC_BUS]              i_pc,
     output logic [`INST_BUS]            o_instr

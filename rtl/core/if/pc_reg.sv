@@ -10,6 +10,7 @@ pc_reg.v
         实现一个 pc 寄存器，用于保存当前指令地址.
 
 */
+`include "../../include/cpu_defines.sv"
 
 module pc_reg(
     input  logic                     i_clk,

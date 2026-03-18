@@ -7,7 +7,7 @@
 `define INST_BUS      `INST_WID-1:0
 `define PC_WID        32
 `define PC_BUS        `PC_WID-1:0
-
+`define RF_BUS        4:0
 
 // used in if
 
