@@ -8,7 +8,7 @@ core_top.v
     3. 顶层尽量不出现逻辑功能，仅做连线
 
 */
-`include "../../include/cpu_defines.sv"
+`include "../include/cpu_defines.sv"
 
 module core_top(
     input  logic        clk,

@@ -27,13 +27,19 @@ module reg_id_ex(
     input logic                     i_reg_write,
     input logic                     i_mem_write,
     input logic                     i_wb_src,
-    input logic                     i_alu2_src,
+    input logic                     i_alu2_src,  // 0: rs2, 1: imm
+    input logic                     i_alu1_src,  // 0: rs1, 1: pc
 
     input logic [3:0]               i_alu_ctrl,
     input logic [2:0]               i_func3,
 
     input logic                     i_is_branch,
-    
+    input logic                     i_is_jump,
+    input logic                     i_is_lui,
+    input logic                     i_bcmp1_src, // 0: pc, 1: rs1   计算目标pc的bcmp的两个来源，bcmp2始终为imm
+    input logic [`PC_BUS]           i_pc_d_e,
+    input logic [`PC_BUS]           i_pc_predict,
+
 
     output logic [`DATA_BUS]        o_rs1_data,
     output logic [`DATA_BUS]        o_rs2_data,
@@ -48,9 +54,16 @@ module reg_id_ex(
     output logic                    o_mem_write,
     output logic                    o_wb_src,
     output logic                    o_alu2_src,
+    output logic                    o_alu1_src,
 
     output logic [3:0]              o_alu_ctrl,
-    output logic [2:0]              o_func3
+    output logic [2:0]              o_func3,
+
+    output logic                    o_is_branch,
+    output logic                    o_is_jump,
+    output logic                    o_bcmp1_src,
+    output logic [`PC_BUS]          o_pc_d_e,
+    output logic [`PC_BUS]          o_pc_predict
 );
 
 endmodule

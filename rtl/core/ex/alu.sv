@@ -7,3 +7,14 @@
     功能要求:
 
 */
+`include "../../include/cpu_defines.sv"
+
+module alu(
+    input  logic [`DATA_BUS]                i_alu1,
+    input  logic [`DATA_BUS]                i_alu2,
+    input  logic [3:0]                      i_alu_ctrl,
+    
+    output logic [`DATA_BUS]                o_alu_res
+);
+
+endmodule
