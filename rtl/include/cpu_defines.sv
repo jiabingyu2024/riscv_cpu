@@ -1,3 +1,13 @@
+//==============================================================================
+// 文件: cpu_defines.sv（非 module，全局宏/参数）
+// 功能概述：
+//   定义本 CPU 工程共用的数据/指令/PC 位宽、寄存器地址、RISC-V 指令字段常量、
+//   ALU 控制编码、前递多路选择编码、ROM/RAM 深度与地址位宽、访存 mask 等。
+// 接口/协作审查（供采纳）：
+//   - `ROM_ADDR_BUS` 当前展开为 `ROM_ADDR_WID-1:0`；若曾误写为未定义的 `PC_ADDR_WID`，
+//     综合/仿真会报错，请与 `ROM_DEPTH`/`ROM_ADDR_WID` 保持一致。
+//   - 文件名注释中混用 cpu_defines.v / .sv 不影响功能，建议统一为 .sv。
+//==============================================================================
 // this file is to define the constants used in the riscv cpu
 
 // 全局常用宏定义
@@ -14,7 +24,7 @@
 
 `define ROM_DEPTH     4096          //used in rom_instr.v
 `define ROM_ADDR_WID   14
-`define ROM_ADDR_BUS   `PC_ADDR_WID-1:0
+`define ROM_ADDR_BUS   `ROM_ADDR_WID-1:0
 
 // used in id 
 `define RF_ADDR_WID       5         //used in regfile.v

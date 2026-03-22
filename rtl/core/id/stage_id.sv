@@ -1,13 +1,14 @@
-/*
-control_unit.v
-
-    规范性要求:
-        1. 输入输出端口信号均加前缀 "i_" 或 "o_"，以区分输入输出信号。
-        2. 信号名全部小写，单词之间用下划线连接。
-        3. 注意运用cpu_defines.v中的宏定义，增强可读性
-    功能要求:
-
-*/
+//==============================================================================
+// 模块: stage_id
+// 功能概述：
+//   译码（ID）级顶层。整合控制译码、立即数、寄存器读等子模块：根据 IF/ID 寄存器输出的 PC、指令，
+//   以及写回侧写使能/地址/数据，产生 EX 所需控制、立即数、rs1/rs2 数据与地址、rd 等。
+// 接口/协作审查（供采纳）：
+//   - 文件头曾误写为 control_unit.v，应以本模块名为准。
+//   - i_pc_predict：与取指/BPU 一致的预测信息，供分支/相关逻辑使用；需与 reg_if_id 输出对齐。
+//   - o_wb_src/o_inst_spec/o_alu_ctrl 等语义需在团队内固定编码表；o_is_rs2_imm 与 forward 的 i_is_rs2_imm 应对应。
+//   - rs1/rs2/rd 地址用 [4:0] 与 `RF_BUS` 等价，建议统一改用宏以减少混用。
+//==============================================================================
 `include "../../include/cpu_defines.sv"
 
 module stage_id(
@@ -38,10 +39,10 @@ module stage_id(
 
     output logic  [`DATA_BUS]               o_imm,
     output logic  [`DATA_BUS]               o_rs1_data,
-    output logic  [4:0]                     o_rs1_addr,
+    output logic  [`RF_BUS]                 o_rs1_addr,
     output logic  [`DATA_BUS]               o_rs2_data,
-    output logic  [4:0]                     o_rs2_addr,
-    output logic  [4:0]                     o_rd_addr
+    output logic  [`RF_BUS]                 o_rs2_addr,
+    output logic  [`RF_BUS]                 o_rd_addr
 );
 
 endmodule

@@ -1,12 +1,12 @@
-/*
-
-    规范性要求:
-        1. 输入输出端口信号均加前缀 "i_" 或 "o_"，以区分输入输出信号。
-        2. 信号名全部小写，单词之间用下划线连接。
-        3. 注意运用cpu_defines.v中的宏定义，增强可读性
-    功能要求:
-
-*/
+//==============================================================================
+// 模块: reg_id_ex
+// 功能概述：
+//   ID/EX 流水线寄存器。将译码后的寄存器数据/地址、立即数、控制域（访存、写回、ALU、mask、分支、PC 等）
+//   打入 EX 级，是前递与 hazard 观测的关键边界。
+// 接口/协作审查（供采纳）：
+//   - i_rs1_addr/i_rs2_addr 为 [4:0]，与 `RF_BUS` 一致；建议统一用宏书写。
+//   - i_mem_mask 在 ID 由译码生成（lb/lh/lw 等），与 dram 访存类型一致。
+//==============================================================================
 `include "../../include/cpu_defines.sv"
 
 module reg_id_ex(
@@ -16,10 +16,10 @@ module reg_id_ex(
     input logic                     i_stall,
 
     input logic [`DATA_BUS]         i_rs1_data,
-    input logic [4:0]               i_rs1_addr,
+    input logic [`RF_BUS]           i_rs1_addr,
     input logic [`DATA_BUS]         i_rs2_data,
-    input logic [4:0]               i_rs2_addr,
-    input logic [4:0]               i_rd_addr,
+    input logic [`RF_BUS]           i_rs2_addr,
+    input logic [`RF_BUS]           i_rd_addr,
 
     input logic [`DATA_BUS]         i_imm,
 

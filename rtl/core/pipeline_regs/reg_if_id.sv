@@ -1,3 +1,11 @@
+//==============================================================================
+// 模块: reg_if_id
+// 功能概述：
+//   IF/ID 流水线寄存器。锁存 PC、指令、以及取指时使用的预测 PC（i_pc_predict），在 stall 时保持、flush 时清或注气泡。
+// 接口/协作审查（供采纳）：
+//   - 端口列表最后一项 `o_pc_predict` 后带有尾随逗号：部分 Verilog 工具不支持端口尾逗号，若报错可删去逗号。
+//   - i_pc_predict 与 BPU/IF 侧在取指拍对齐，供后续分支比较与 hazard 使用。
+//==============================================================================
 /*
 
     规范性要求:
@@ -22,6 +30,6 @@ module reg_if_id(
 
     output logic [`PC_BUS]   o_pc_f_d,
     output logic [`INST_BUS] o_inst_f_d,
-    output logic [`PC_BUS]   o_pc_predict,
+    output logic [`PC_BUS]   o_pc_predict
 );
 endmodule
