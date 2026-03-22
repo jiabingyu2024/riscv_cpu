@@ -1,0 +1,27 @@
+/*
+
+    规范性要求:
+        1. 输入输出端口信号均加前缀 "i_" 或 "o_"，以区分输入输出信号。
+        2. 信号名全部小写，单词之间用下划线连接。
+        3. 注意运用cpu_defines.v中的宏定义，增强可读性
+    功能要求:
+
+*/
+`include "../../include/cpu_defines.sv"
+
+module bpu_top (
+    input  logic                                    i_clk,
+    input  logic                                    i_rst_n,
+
+    input  logic                                    i_pc_cur,
+
+    input  logic                                    i_update_en,
+    input  logic                                    i_update_taken,
+    input  logic  [`PC_BUS]                         i_update_target,
+    input  logic  [`PC_BUS]                         i_update_pc,
+    
+    output logic                                    o_predict_taken,
+    output logic  [`PC_BUS]                         o_predict_target
+);
+
+endmodule

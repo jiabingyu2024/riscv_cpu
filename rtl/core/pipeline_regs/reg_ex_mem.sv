@@ -23,7 +23,7 @@ module reg_ex_mem (
     input logic                               i_mem_write,
     input logic                               i_wb_src,
     input logic                               i_reg_write,
-    input logic                               i_func3,
+    input logic  [1:0]                        i_mem_mask,
 
     output logic [`RF_BUS]                    o_rd_addr,
     output logic [`DATA_BUS]                  o_alu_res,
@@ -33,7 +33,7 @@ module reg_ex_mem (
     output logic                              o_mem_write,
     output logic                              o_wb_src,
     output logic                              o_reg_write,
-    output logic                              o_func3
+    output logic  [1:0]                       o_mem_mask
 
 );
 

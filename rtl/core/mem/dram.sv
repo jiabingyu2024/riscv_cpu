@@ -7,3 +7,16 @@
     功能要求:
 
 */
+`include "../../include/cpu_defines.sv"
+
+module dram (
+    input logic                               i_clk,
+    input logic                               i_rst_n,
+    input logic                               i_mem_write,
+    input logic [`RAM_ADDR_BUS]               i_mem_addr,
+    input logic [`DATA_BUS]                   i_mem_wdata,
+    input logic [1:0]                         i_mem_mask, // 见defines
+    output logic [`DATA_BUS]                  o_mem_rdata
+);
+
+endmodule

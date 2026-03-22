@@ -12,20 +12,25 @@
 module branch_cmp(
     input  logic  [`DATA_BUS]               i_b1_data,
     input  logic  [`DATA_BUS]               i_b2_data,
+    input  logic  [2:0]                     i_func3,
 
     input  logic  [`PC_BUS]                 i_pc_d_e,
     input  logic  [`PC_BUS]                 i_pc_predict,
-    input  logic  [`DATA_BUS]               i_imm,
-    input  logic  [`DATA_BUS]               i_rs1_data,
+
+    input  logic  [`PC_BUS]                 i_t1_data,
+    input  logic  [`PC_BUS]                 i_t2_data,
 
     input  logic                            i_is_branch,
-    input  logic                            i_is_jump,
-    input  logic                            i_bcmp1_src, // 0: pc, 1: rs1   计算目标pc的bcmp的两个来源，bcmp2始终为imm
+    // input  logic                            i_is_jtype,
+    input  logic  [3:0]                     i_inst_spec,
 
-    output logic                            o_hit,
-    output logic                            o_hit_valid,
-    output logic  [`PC_BUS]                 o_pc_target                    
+    output logic                            o_update_taken,  // for BTB BHB
+    output logic                            o_updata_en,
+    output logic  [`PC_BUS]                 o_update_pc,
+    output logic  [`PC_BUS]                 o_update_target,
 
+    output logic                            o_error,          // for hazard_unit
+    output logic  [`PC_BUS]                 o_rigit_pc
 );
 
 endmodule

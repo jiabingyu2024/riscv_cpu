@@ -86,11 +86,45 @@
 `define ALU_NEQ         4'B1011
 
 
+`define EX_AUIPC        4'B0001
+`define EX_LUI          4'B0010
+`define EX_JAL          4'B0100
+`define EX_JALR         4'B1000
+
+// used in fwd
+
+`define B1_RS1          2'b00
+`define B1_E_M          2'b01
+`define B1_M_W          2'b10
+
+`define B2_RS2          2'b00
+`define B2_E_M          2'b01
+`define B2_M_W          2'b10   
+
+`define T1_PC           2'b00
+`define T1_RS1          2'b01
+`define T1_E_M          2'b10
+`define T1_M_W          2'b11  //T2 始终是 imm
+
+`define A1_RS1          2'b00
+`define A1_E_M          2'b01
+`define A1_M_W          2'b10
+`define A1_PC           2'b11
+
+`define A2_RS2          2'b00
+`define A2_E_M          2'b01
+`define A2_M_W          2'b10
+`define A2_imm          2'b11
+
 // used in mem
 
 `define RAM_DEPTH      4096
 `define RAM_ADDR_WID   14
 `define RAM_ADDR_BUS   `RAM_ADDR_WID-1:0
+
+`define MASK_BYTE       2'B00
+`define MASK_HALF       2'B01
+`define MASK_WORD       2'B10
 
 
 

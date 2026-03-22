@@ -20,22 +20,26 @@ module stage_ex(
     input  logic  [`PC_BUS]                 i_pc_d_e,
     input  logic  [`PC_BUS]                 i_pc_predict,
 
-    input  logic                            i_alu1_src,
-    input  logic                            i_alu2_src,
+    input  logic  [1:0]                     i_b1_sel,
+    input  logic  [1:0]                     i_b2_sel,
+    input  logic  [1:0]                     i_t1_sel,
+    input  logic  [1:0]                     i_a1_sel,
+    input  logic  [1:0]                     i_a2_sel,
 
     input  logic  [3:0]                     i_alu_ctrl,
     input  logic  [2:0]                     i_func3,
 
     input  logic                            i_is_branch,
-    input  logic                            i_is_jump,
-    input  logic                            i_is_lui,
-    input  logic                            i_bcmp1_src, // 0: pc, 1: rs1   计算目标pc的bcmp的两个来源，bcmp2始终为imm
+    // input  logic                            i_is_jtype,
+    // input  logic                            i_is_lui,
+    input  logic  [3:0]                     i_inst_spec,
 
     output logic  [`DATA_BUS]               o_alu_res,
 
-    output logic                            o_hit,
-    output logic                            o_hit_valid,
-    output logic  [`PC_BUS]                 o_pc_target                    
+    output logic                            o_update_taken,
+    output logic                            o_updata_en,
+    output logic  [`PC_BUS]                 o_update_pc,
+    output logic  [`PC_BUS]                 o_update_target                
     
 );
 

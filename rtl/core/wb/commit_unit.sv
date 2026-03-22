@@ -7,3 +7,15 @@
     功能要求:
 
 */
+`include "../../include/cpu_defines.sv"
+
+module commit_unit (    //例化commit_unit
+    input  logic [`DATA_BUS]             i_alu_res,
+    input  logic [`DATA_BUS]             i_mem_data,
+    input  logic                         i_wb_src,
+
+    output logic [`DATA_BUS]             o_wb_data
+
+);
+
+endmodule
