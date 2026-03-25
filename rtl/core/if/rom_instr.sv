@@ -14,5 +14,15 @@ module rom_instr(
     input  logic [`PC_BUS]              i_pc,
     output logic [`INST_BUS]            o_instr
 );
+    logic [`INST_BUS]   cpu_instr_rom [0: `ROM_DEPTH-1]; 
+    
+    initial begin
+        $readmemh("test_instr.dat", cpu_instr_rom); //临时措施，赛方会给出IP
+    end
+
+    logic [`ROM_ADDR_WID-1 : 0] addr;
+
+    assign addr = i_pc[`ROM_ADDR_WID+1 : 2] ;
+    assign o_instr = cpu_instr_rom[addr];
 
 endmodule
