@@ -3,6 +3,7 @@
 #include <iomanip>
 #include <iostream>
 #include <memory>
+#include <string_view>
 #include <string>
 
 #include "tb_config.h"
@@ -18,17 +19,20 @@ double sc_time_stamp() {
     return static_cast<double>(g_main_time);
 }
 
-std::string get_string_plusarg(const std::string& key) {
-    std::string value = Verilated::commandArgsPlusMatch(("+" + key).c_str());
-    if (value.empty()) {
-        return "";
-    }
+std::string get_string_plusarg(int argc, char** argv, const std::string& key) {
+    const std::string prefix = "+" + key + "=";
+    const std::string flag = "+" + key;
 
-    auto pos = value.find('=');
-    if (pos == std::string::npos) {
-        return "";
+    for (int i = 1; i < argc; ++i) {
+        const std::string_view arg(argv[i]);
+        if (arg == flag) {
+            return "1";
+        }
+        if (arg.rfind(prefix, 0) == 0) {
+            return std::string(arg.substr(prefix.size()));
+        }
     }
-    return value.substr(pos + 1);
+    return "";
 }
 
 uint64_t parse_u64(const std::string& text, uint64_t default_value) {
@@ -62,11 +66,11 @@ int main(int argc, char** argv) {
 
     std::unique_ptr<Vcore_top> top = std::make_unique<Vcore_top>();
 
-    const std::string wave_path = get_string_plusarg("WAVE");
-    const uint64_t max_cycles = parse_u64(get_string_plusarg("MAX_CYCLES"), kDefaultMaxCycles);
-    const uint64_t pass_pc = parse_u64(get_string_plusarg("PASS_PC"), UINT64_MAX);
-    const uint64_t fail_pc = parse_u64(get_string_plusarg("FAIL_PC"), UINT64_MAX);
-    const std::string trace_arg = get_string_plusarg("TRACE");
+    const std::string wave_path = get_string_plusarg(argc, argv, "WAVE");
+    const uint64_t max_cycles = parse_u64(get_string_plusarg(argc, argv, "MAX_CYCLES"), kDefaultMaxCycles);
+    const uint64_t pass_pc = parse_u64(get_string_plusarg(argc, argv, "PASS_PC"), UINT64_MAX);
+    const uint64_t fail_pc = parse_u64(get_string_plusarg(argc, argv, "FAIL_PC"), UINT64_MAX);
+    const std::string trace_arg = get_string_plusarg(argc, argv, "TRACE");
     const bool enable_trace = !wave_path.empty() && !trace_arg.empty() && trace_arg != "0";
 
     std::unique_ptr<VerilatedFstC> trace;
