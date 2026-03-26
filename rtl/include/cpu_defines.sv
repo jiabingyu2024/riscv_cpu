@@ -22,7 +22,7 @@
 // used in if
 
 
-`define ROM_DEPTH     4096          //used in rom_instr.v
+`define ROM_DEPTH     16384         // byte depth, matches ROM_ADDR_WID=14
 `define ROM_ADDR_WID   14
 `define ROM_ADDR_BUS   `ROM_ADDR_WID-1:0
 
@@ -131,7 +131,7 @@
 
 // used in mem
 
-`define RAM_DEPTH      4096
+`define RAM_DEPTH      16384
 `define RAM_ADDR_WID   14
 `define RAM_ADDR_BUS   `RAM_ADDR_WID-1:0
 
