@@ -20,4 +20,20 @@ module regfile(
     output wire [`DATA_BUS] o_rs2_data
 );
 
+    logic [`DATA_BUS] rf_mem [0:`RF_DEPTH-1];
+    integer idx;
+
+    always_ff @(posedge i_clk or negedge i_rst_n) begin
+        if (!i_rst_n) begin
+            for (idx = 0; idx < `RF_DEPTH; idx = idx + 1) begin
+                rf_mem[idx] <= '0;
+            end
+        end else if (i_we && (i_w_addr != '0)) begin
+            rf_mem[i_w_addr] <= i_w_data;
+        end
+    end
+
+    assign o_rs1_data = (i_rs1_addr == '0) ? '0 : rf_mem[i_rs1_addr];
+    assign o_rs2_data = (i_rs2_addr == '0) ? '0 : rf_mem[i_rs2_addr];
+
 endmodule

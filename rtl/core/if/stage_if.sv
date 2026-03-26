@@ -14,8 +14,19 @@ module stage_if(
     input  logic                    i_rst_n,
     input  logic  [`PC_BUS]         i_pc_next,
 
-    output logic  [`PC_BUS]         o_pc_cur,
-    output logic  [`INST_BUS]       o_inst
+    input  logic  [`INST_BUS]       i_irom_data, 
+    
+
+    output logic  [`INST_BUS]       o_instr,
+    output logic  [`PC_BUS]         o_pc_cur
 );
 
+    pc_reg u_pc_reg (
+        .i_clk     (i_clk),
+        .i_rst_n   (i_rst_n),
+        .i_pc_next (i_pc_next),
+        .o_pc_cur  (o_pc_cur)
+    );
+
+    assign o_instr = i_irom_data;
 endmodule

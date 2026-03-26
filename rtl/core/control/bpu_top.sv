@@ -33,4 +33,51 @@ module bpu_top (
     output logic  [`PC_BUS]                         o_predict_target
 );
 
+    localparam int BPU_ENTRIES = 16;
+    localparam int BPU_IDX_W   = 4;
+    localparam int BPU_TAG_W   = `PC_WID - BPU_IDX_W - 2;
+
+    logic [BPU_TAG_W-1:0] tag_mem     [0:BPU_ENTRIES-1];
+    logic [`PC_BUS]       target_mem  [0:BPU_ENTRIES-1];
+    logic [1:0]           counter_mem [0:BPU_ENTRIES-1];
+    logic                 valid_mem   [0:BPU_ENTRIES-1];
+
+    logic [BPU_IDX_W-1:0] rd_idx;
+    logic [BPU_TAG_W-1:0] rd_tag;
+    logic [BPU_IDX_W-1:0] wr_idx;
+    logic [BPU_TAG_W-1:0] wr_tag;
+    integer idx;
+
+    assign rd_idx = i_pc_cur[BPU_IDX_W+1:2];
+    assign rd_tag = i_pc_cur[`PC_WID-1:BPU_IDX_W+2];
+    assign wr_idx = i_update_pc[BPU_IDX_W+1:2];
+    assign wr_tag = i_update_pc[`PC_WID-1:BPU_IDX_W+2];
+
+    always_ff @(posedge i_clk or negedge i_rst_n) begin
+        if (!i_rst_n) begin
+            for (idx = 0; idx < BPU_ENTRIES; idx = idx + 1) begin
+                tag_mem[idx]     <= '0;
+                target_mem[idx]  <= '0;
+                counter_mem[idx] <= 2'b01;
+                valid_mem[idx]   <= 1'b0;
+            end
+        end else if (i_update_en) begin
+            valid_mem[wr_idx]  <= 1'b1;
+            tag_mem[wr_idx]    <= wr_tag;
+            target_mem[wr_idx] <= i_update_target;
+
+            if (i_update_taken) begin
+                if (counter_mem[wr_idx] != 2'b11) begin
+                    counter_mem[wr_idx] <= counter_mem[wr_idx] + 2'b01;
+                end
+            end else if (counter_mem[wr_idx] != 2'b00) begin
+                counter_mem[wr_idx] <= counter_mem[wr_idx] - 2'b01;
+            end
+        end
+    end
+
+    always_comb begin
+        o_predict_taken  = valid_mem[rd_idx] && (tag_mem[rd_idx] == rd_tag) && counter_mem[rd_idx][1];
+        o_predict_target = target_mem[rd_idx];
+    end
 endmodule

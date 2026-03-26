@@ -16,4 +16,7 @@ module stage_wb(
     output logic [`DATA_BUS]             o_wb_data
 );
 
+    always_comb begin
+        o_wb_data = (i_wb_src == `WB_SRC_MEM) ? i_mem_data : i_alu_res;
+    end
 endmodule

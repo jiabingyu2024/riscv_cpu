@@ -36,6 +36,7 @@ module reg_id_ex(
     input logic [3:0]               i_alu_ctrl,
     input logic [2:0]               i_func3,
     input logic [1:0]               i_mem_mask,
+    input logic                     i_load_unsigned,
 
     input logic                     i_is_branch,
     // input logic                     i_is_jtype,
@@ -64,6 +65,7 @@ module reg_id_ex(
     output logic [3:0]              o_alu_ctrl,
     output logic [2:0]              o_func3,
     output logic [1:0]              o_mem_mask,
+    output logic                    o_load_unsigned,
 
     output logic                    o_is_branch,
     // output logic                    o_is_jtype,
@@ -72,4 +74,67 @@ module reg_id_ex(
     output logic [`PC_BUS]          o_pc_predict
 );
 
+    always_ff @(posedge i_clk or negedge i_rst_n) begin
+        if (!i_rst_n) begin
+            o_rs1_data       <= '0;
+            o_rs2_data       <= '0;
+            o_rd_addr        <= '0;
+            o_rs1_addr       <= '0;
+            o_rs2_addr       <= '0;
+            o_imm            <= '0;
+            o_mem_read       <= 1'b0;
+            o_reg_write      <= 1'b0;
+            o_mem_write      <= 1'b0;
+            o_wb_src         <= `WB_SRC_ALU;
+            o_is_rs2_imm     <= 1'b0;
+            o_inst_spec      <= '0;
+            o_alu_ctrl       <= `ALU_ADD;
+            o_func3          <= 3'b000;
+            o_mem_mask       <= `MASK_WORD;
+            o_load_unsigned  <= 1'b0;
+            o_is_branch      <= 1'b0;
+            o_pc_d_e         <= '0;
+            o_pc_predict     <= '0;
+        end else if (i_flush) begin
+            o_rs1_data       <= '0;
+            o_rs2_data       <= '0;
+            o_rd_addr        <= '0;
+            o_rs1_addr       <= '0;
+            o_rs2_addr       <= '0;
+            o_imm            <= '0;
+            o_mem_read       <= 1'b0;
+            o_reg_write      <= 1'b0;
+            o_mem_write      <= 1'b0;
+            o_wb_src         <= `WB_SRC_ALU;
+            o_is_rs2_imm     <= 1'b0;
+            o_inst_spec      <= '0;
+            o_alu_ctrl       <= `ALU_ADD;
+            o_func3          <= 3'b000;
+            o_mem_mask       <= `MASK_WORD;
+            o_load_unsigned  <= 1'b0;
+            o_is_branch      <= 1'b0;
+            o_pc_d_e         <= '0;
+            o_pc_predict     <= '0;
+        end else if (!i_stall) begin
+            o_rs1_data       <= i_rs1_data;
+            o_rs2_data       <= i_rs2_data;
+            o_rd_addr        <= i_rd_addr;
+            o_rs1_addr       <= i_rs1_addr;
+            o_rs2_addr       <= i_rs2_addr;
+            o_imm            <= i_imm;
+            o_mem_read       <= i_mem_read;
+            o_reg_write      <= i_reg_write;
+            o_mem_write      <= i_mem_write;
+            o_wb_src         <= i_wb_src;
+            o_is_rs2_imm     <= i_is_rs2_imm;
+            o_inst_spec      <= i_inst_spec;
+            o_alu_ctrl       <= i_alu_ctrl;
+            o_func3          <= i_func3;
+            o_mem_mask       <= i_mem_mask;
+            o_load_unsigned  <= i_load_unsigned;
+            o_is_branch      <= i_is_branch;
+            o_pc_d_e         <= i_pc_d_e;
+            o_pc_predict     <= i_pc_predict;
+        end
+    end
 endmodule

@@ -15,5 +15,11 @@ module pc_reg(
     output logic   [`PC_BUS]         o_pc_cur         // 输出当前指令地址
 );
 
-    
+    always_ff @(posedge i_clk or negedge i_rst_n) begin
+        if (!i_rst_n) begin
+            o_pc_cur <= '0;
+        end else begin
+            o_pc_cur <= i_pc_next;
+        end
+    end
 endmodule

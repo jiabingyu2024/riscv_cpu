@@ -30,4 +30,25 @@ module reg_mem_wb(
 
 );
 
+    always_ff @(posedge i_clk or negedge i_rst_n) begin
+        if (!i_rst_n) begin
+            o_alu_res   <= '0;
+            o_rd_addr   <= '0;
+            o_mem_data  <= '0;
+            o_wb_src    <= `WB_SRC_ALU;
+            o_reg_write <= 1'b0;
+        end else if (i_flush) begin
+            o_alu_res   <= '0;
+            o_rd_addr   <= '0;
+            o_mem_data  <= '0;
+            o_wb_src    <= `WB_SRC_ALU;
+            o_reg_write <= 1'b0;
+        end else if (!i_stall) begin
+            o_alu_res   <= i_alu_res;
+            o_rd_addr   <= i_rd_addr;
+            o_mem_data  <= i_mem_data;
+            o_wb_src    <= i_wb_src;
+            o_reg_write <= i_reg_write;
+        end
+    end
 endmodule

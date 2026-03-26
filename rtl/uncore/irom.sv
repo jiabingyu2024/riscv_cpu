@@ -8,11 +8,30 @@
 //   - 只读端口，无字节写使能；与数据 RAM 分离，符合哈佛/类哈佛前端习惯。
 //==============================================================================
 
-`include "../../include/cpu_defines.sv"
+`include "../include/cpu_defines.sv"
 
-module rom_instr(
+module irom #(
+    parameter string INIT_FILE = ""
+)(
     input  logic [`PC_BUS]              i_pc,
     output logic [`INST_BUS]            o_instr
 );
 
+    logic [`INST_BUS] rom_mem [0:(`ROM_DEPTH/4)-1];
+    logic [`ROM_ADDR_BUS] word_addr;
+    integer idx;
+
+    assign word_addr = i_pc[`ROM_ADDR_WID-1:2];
+
+    initial begin
+        for (idx = 0; idx < (`ROM_DEPTH/4); idx = idx + 1) begin
+            rom_mem[idx] = '0;
+        end
+
+        if (INIT_FILE != "") begin
+            $readmemh(INIT_FILE, rom_mem);
+        end
+    end
+
+    assign o_instr = rom_mem[word_addr];
 endmodule

@@ -26,4 +26,7 @@ module commit_unit (    //例化commit_unit
 
 );
 
+    always_comb begin
+        o_wb_data = (i_wb_src == `WB_SRC_MEM) ? i_mem_data : i_alu_res;
+    end
 endmodule

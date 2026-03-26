@@ -41,8 +41,87 @@ module stage_ex(
     output logic                            o_update_taken,
     output logic                            o_update_en,
     output logic  [`PC_BUS]                 o_update_pc,
-    output logic  [`PC_BUS]                 o_update_target                
+    output logic  [`PC_BUS]                 o_update_target,
+    output logic                            o_error,
+    output logic  [`PC_BUS]                 o_right_pc
     
 );
 
+    logic [`DATA_BUS] b1_data;
+    logic [`DATA_BUS] b2_data;
+    logic [`DATA_BUS] a1_data;
+    logic [`DATA_BUS] a2_data;
+    logic [`PC_BUS]   t1_data;
+    logic [`DATA_BUS] alu_res_raw;
+
+    always_comb begin
+        unique case (i_b1_sel)
+            `B1_E_M:   b1_data = i_fwd_e_m;
+            `B1_M_W:   b1_data = i_fwd_m_w;
+            default:   b1_data = i_rs1_data;
+        endcase
+
+        unique case (i_b2_sel)
+            `B2_E_M:   b2_data = i_fwd_e_m;
+            `B2_M_W:   b2_data = i_fwd_m_w;
+            default:   b2_data = i_rs2_data;
+        endcase
+
+        unique case (i_t1_sel)
+            `T1_RS1:   t1_data = i_rs1_data;
+            `T1_E_M:   t1_data = i_fwd_e_m;
+            `T1_M_W:   t1_data = i_fwd_m_w;
+            default:   t1_data = i_pc_d_e;
+        endcase
+
+        unique case (i_a1_sel)
+            `A1_E_M:   a1_data = i_fwd_e_m;
+            `A1_M_W:   a1_data = i_fwd_m_w;
+            `A1_PC:    a1_data = i_pc;
+            default:   a1_data = i_rs1_data;
+        endcase
+
+        unique case (i_a2_sel)
+            `A2_E_M:   a2_data = i_fwd_e_m;
+            `A2_M_W:   a2_data = i_fwd_m_w;
+            `A2_imm:   a2_data = i_imm;
+            default:   a2_data = i_rs2_data;
+        endcase
+    end
+
+    alu u_alu (
+        .i_alu1     (a1_data),
+        .i_alu2     (a2_data),
+        .i_alu_ctrl (i_alu_ctrl),
+        .o_alu_res  (alu_res_raw)
+    );
+
+    branch_cmp u_branch_cmp (
+        .i_b1_data       (b1_data),
+        .i_b2_data       (b2_data),
+        .i_func3         (i_func3),
+        .i_pc_d_e        (i_pc_d_e),
+        .i_pc_predict    (i_pc_predict),
+        .i_t1_data       (t1_data),
+        .i_t2_data       (i_imm),
+        .i_is_branch     (i_is_branch),
+        .i_inst_spec     (i_inst_spec),
+        .o_update_taken  (o_update_taken),
+        .o_update_en     (o_update_en),
+        .o_update_pc     (o_update_pc),
+        .o_update_target (o_update_target),
+        .o_error         (o_error),
+        .o_right_pc      (o_right_pc)
+    );
+
+    always_comb begin
+        o_a2_data = b2_data;
+
+        unique case (i_inst_spec)
+            `EX_LUI:   o_alu_res = i_imm;
+            `EX_JAL,
+            `EX_JALR:  o_alu_res = i_pc + 32'd4;
+            default:     o_alu_res = alu_res_raw;
+        endcase
+    end
 endmodule

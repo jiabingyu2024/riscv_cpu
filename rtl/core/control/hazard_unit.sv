@@ -11,6 +11,7 @@
 `include "../../include/cpu_defines.sv"
 
 module hazard_unit(
+    input  logic  [`PC_BUS]                 i_pc_cur,
     input  logic  [`RF_BUS]                 i_rs1_addr_d,
     input  logic  [`RF_BUS]                 i_rs2_addr_d,
     input  logic  [`RF_BUS]                 i_rd_addr_e,
@@ -33,9 +34,36 @@ module hazard_unit(
     output logic                            o_flush_e_m,
     output logic                            o_flush_m_w,
 
-    output logic  [`PC_BUS]                 o_pc_next
+    output logic  [`PC_BUS]                 o_pc_next,
+    output logic  [`PC_BUS]                 o_pc_predict
 
 
 );
 
+    logic load_use_hazard;
+
+    assign load_use_hazard = i_mem_read_e && i_reg_write_e && (i_rd_addr_e != '0) &&
+                             ((i_rd_addr_e == i_rs1_addr_d) || (i_rd_addr_e == i_rs2_addr_d));
+
+    always_comb begin
+        o_stall_f_d = load_use_hazard;
+        o_stall_d_e = 1'b0;
+        o_stall_e_m = 1'b0;
+        o_stall_m_w = 1'b0;
+
+        o_flush_f_d = i_error;
+        o_flush_d_e = i_error || load_use_hazard;
+        o_flush_e_m = 1'b0;
+        o_flush_m_w = 1'b0;
+
+        o_pc_predict = i_predict_taken ? i_predict_target : (i_pc_cur + 32'd4);
+
+        if (i_error) begin
+            o_pc_next = i_right_pc;
+        end else if (load_use_hazard) begin
+            o_pc_next = i_pc_cur;
+        end else begin
+            o_pc_next = o_pc_predict;
+        end
+    end
 endmodule

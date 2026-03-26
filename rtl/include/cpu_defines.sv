@@ -101,6 +101,9 @@
 `define EX_JAL          4'B0100
 `define EX_JALR         4'B1000
 
+`define WB_SRC_ALU      1'b0
+`define WB_SRC_MEM      1'b1
+
 // used in fwd
 
 `define B1_RS1          2'b00

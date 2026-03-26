@@ -34,4 +34,35 @@ module branch_cmp(
     output logic  [`PC_BUS]                 o_right_pc
 );
 
+    logic        branch_taken;
+    logic [`PC_BUS] branch_target;
+
+    always_comb begin
+        branch_taken  = 1'b0;
+        branch_target = i_t1_data + i_t2_data;
+
+        if (i_is_branch) begin
+            unique case (i_func3)
+                `FUNC3_BEQ:  branch_taken = (i_b1_data == i_b2_data);
+                `FUNC3_BNE:  branch_taken = (i_b1_data != i_b2_data);
+                `FUNC3_BLT:  branch_taken = ($signed(i_b1_data) <  $signed(i_b2_data));
+                `FUNC3_BGE:  branch_taken = ($signed(i_b1_data) >= $signed(i_b2_data));
+                `FUNC3_BLTU: branch_taken = (i_b1_data <  i_b2_data);
+                `FUNC3_BGEU: branch_taken = (i_b1_data >= i_b2_data);
+                default:     branch_taken = 1'b0;
+            endcase
+        end else if (i_inst_spec == `EX_JAL) begin
+            branch_taken = 1'b1;
+        end else if (i_inst_spec == `EX_JALR) begin
+            branch_taken  = 1'b1;
+            branch_target = (i_t1_data + i_t2_data) & ~32'd1;
+        end
+
+        o_update_en     = i_is_branch || (i_inst_spec == `EX_JAL) || (i_inst_spec == `EX_JALR);
+        o_update_taken  = branch_taken;
+        o_update_pc     = i_pc_d_e;
+        o_update_target = branch_taken ? branch_target : (i_pc_d_e + 32'd4);
+        o_right_pc      = branch_taken ? branch_target : (i_pc_d_e + 32'd4);
+        o_error         = o_update_en && (o_right_pc != i_pc_predict);
+    end
 endmodule
