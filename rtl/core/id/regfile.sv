@@ -22,7 +22,7 @@ module regfile(
     logic [`DATA_BUS] rf[0:`RF_DEPTH-1] ;
     integer i ;
 
-    always @(posedge i_clk) begin
+    always @(negedge i_clk) begin
         /*
         if (!i_rst_n) begin
             for(i = 0; i < 32; i = i + 1) begin
