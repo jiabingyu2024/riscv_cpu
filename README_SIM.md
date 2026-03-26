@@ -16,8 +16,8 @@
 
 当前仿真链路如下：
 
-1. `isa/generated/*.bin` 作为测试程序输入
-2. `scripts/gen_hex.py` 调用 `../isa/BinToMem_CLI.py`，把 `.bin` 转成 `sim/hex/*.hex`
+1. `tests/isa/rv32ui/*.bin` 作为测试程序输入
+2. `scripts/gen_hex.py` 直接把本地 `.bin` 转成 `sim/hex/*.hex`
 3. `make build` 用 `Verilator` 编译 `rtl` 和 `tb/verilator_main.cpp`
 4. `scripts/run_case.py` 或 `scripts/run_rv32ui.py` 启动仿真可执行文件
 5. 仿真时通过 `+IROM=...` 把 hex 路径传给 `irom`
@@ -67,7 +67,7 @@
 ### 脚本
 
 - `scripts/gen_hex.py`
-  - 把 `../isa/generated/<case>.bin` 转成 `sim/hex/<case>.hex`
+  - 把 `tests/isa/rv32ui/<case>.bin` 转成 `sim/hex/<case>.hex`
 
 - `scripts/run_case.py`
   - 运行单个用例
@@ -123,20 +123,24 @@ flowchart LR
 cd /mnt/d/Resourses/03_competitions/26_03_jcs/riscv_cpu
 ```
 
-### 1. 先编译 `isa` 产物
+### 1. 先确认本地测试输入
 
-如果 `../isa/generated/*.bin` 还没准备好，先进入 `isa` 目录生成：
-
-```bash
-cd /mnt/d/Resourses/03_competitions/26_03_jcs/isa
-make
-```
-
-然后回到：
+运行前请确认测试输入文件已经放在：
 
 ```bash
-cd /mnt/d/Resourses/03_competitions/26_03_jcs/riscv_cpu
+tests/isa/rv32ui/
 ```
+
+当前自动化流程默认直接从这里读取：
+
+- `*.bin`
+- `*.txt`
+- `*.dump`
+
+说明：
+
+- `tests/isa` 才是本项目仿真真正使用的输入目录
+- 外部同级 `isa` 文件夹现在只作为格式和工具逻辑参考，不参与实际运行
 
 ### 2. 构建 Verilator 可执行文件
 
@@ -313,8 +317,8 @@ make wave CASE=rv32ui-p-add
 - 如果某些 `rv32ui` 用例跑不通，优先看：
   - `sim/logs/<case>.log`
   - `sim/waves/<case>.fst`
-  - `../isa/generated/<case>.dump`
-  - `../isa/generated/<case>.txt`
+  - `tests/isa/rv32ui/<case>.dump`
+  - `tests/isa/rv32ui/<case>.txt`
 
 ---
 
@@ -324,8 +328,8 @@ make wave CASE=rv32ui-p-add
 
 1. `sim/logs/rv32ui-p-add.log`
 2. `sim/waves/rv32ui-p-add.fst`
-3. `../isa/generated/rv32ui-p-add.dump`
-4. `../isa/generated/rv32ui-p-add.txt`
+3. `tests/isa/rv32ui/rv32ui-p-add.dump`
+4. `tests/isa/rv32ui/rv32ui-p-add.txt`
 
 这样可以同时对照：
 

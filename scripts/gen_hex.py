@@ -1,22 +1,28 @@
 from __future__ import annotations
 
 import argparse
-import subprocess
-import sys
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ISA_ROOT = ROOT.parent / "isa"
-ISA_GENERATED = ISA_ROOT / "generated"
+ISA_DIR = ROOT / "tests" / "isa" / "rv32ui"
 HEX_DIR = ROOT / "sim" / "hex"
-BIN_TO_MEM = ISA_ROOT / "BinToMem_CLI.py"
 
 
 def resolve_case_paths(case: str) -> tuple[Path, Path]:
-    src = ISA_GENERATED / f"{case}.bin"
+    src = ISA_DIR / f"{case}.bin"
     dst = HEX_DIR / f"{case}.hex"
     return src, dst
+
+
+def bin_to_hex_lines(data: bytes) -> list[str]:
+    lines: list[str] = []
+    for offset in range(0, len(data), 4):
+        chunk = data[offset:offset + 4]
+        if len(chunk) < 4:
+            chunk = chunk + bytes(4 - len(chunk))
+        lines.append(bytes(reversed(chunk)).hex())
+    return lines
 
 
 def gen_hex(case: str, force: bool = False) -> Path:
@@ -28,11 +34,8 @@ def gen_hex(case: str, force: bool = False) -> Path:
     if dst.exists() and not force:
         return dst
 
-    subprocess.run(
-        [sys.executable, str(BIN_TO_MEM), str(src), str(dst)],
-        cwd=ROOT,
-        check=True,
-    )
+    hex_lines = bin_to_hex_lines(src.read_bytes())
+    dst.write_text("\n".join(hex_lines) + ("\n" if hex_lines else ""), encoding="utf-8")
     return dst
 
 

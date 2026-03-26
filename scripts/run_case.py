@@ -16,7 +16,6 @@ LOG_DIR = ROOT / "sim" / "logs"
 WAVE_DIR = ROOT / "sim" / "waves"
 HEX_DIR = ROOT / "sim" / "hex"
 TEST_TXT_DIR = ROOT / "tests" / "isa" / "rv32ui"
-ISA_GENERATED = ROOT.parent / "isa" / "generated"
 
 SMOKE_CASE = "smoke"
 SMOKE_HEX = ROOT / "sim" / "smoke.hex"
@@ -35,14 +34,10 @@ def parse_symbol_file(path: Path) -> dict[str, int]:
 
 
 def resolve_symbol_file(case: str) -> Path:
-    candidates = [
-        ISA_GENERATED / f"{case}.txt",
-        TEST_TXT_DIR / f"{case}.txt",
-    ]
-    for candidate in candidates:
-        if candidate.exists():
-            return candidate
-    raise FileNotFoundError(f"symbol file not found for case {case}")
+    candidate = TEST_TXT_DIR / f"{case}.txt"
+    if candidate.exists():
+        return candidate
+    raise FileNotFoundError(f"symbol file not found: {candidate}")
 
 
 def resolve_case_meta(case: str) -> tuple[Path, int | None, int | None]:
