@@ -18,17 +18,17 @@ module stage_mem (                  //仅例化dram即可
     input logic [1:0]                         i_mem_mask, // 见defines
     input logic                               i_load_unsigned,
 
-    input  logic  [`DATA_BUS]                        i_dram_rdata,
-    output logic                                     o_dram_wen,
-    output logic  [`RAM_ADDR_BUS]                    o_dram_addr,
-    output logic  [`DATA_BUS]                        o_dram_wdata,
-    output logic  [1:0]                              o_dram_mask,
+    input  logic  [`DATA_BUS]                  i_dram_rdata,
+    output logic                               o_dram_wen,
+    output logic  [`RAM_ADDR_BUS]              o_dram_addr,
+    output logic  [`DATA_BUS]                  o_dram_wdata,
+    output logic  [1:0]                        o_dram_mask,
 
     output logic [`DATA_BUS]                  o_mem_rdata
 );
 
-    logic [1:0] byte_off;
-    logic [7:0] load_byte;
+    logic [1:0]  byte_off;
+    logic [7:0]  load_byte;
     logic [15:0] load_half;
 
     assign o_dram_wen   = i_mem_write;

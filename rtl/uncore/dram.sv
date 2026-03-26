@@ -49,14 +49,14 @@ module dram #(
                     mem_bytes[i_mem_addr] <= i_mem_wdata[7:0];
                 end
                 `MASK_HALF: begin
-                    mem_bytes[base_addr]       <= i_mem_wdata[7:0];
-                    mem_bytes[base_addr + 14'd1] <= i_mem_wdata[15:8];
+                    mem_bytes[i_mem_addr]         <= i_mem_wdata[7:0];
+                    mem_bytes[i_mem_addr + 14'd1] <= i_mem_wdata[15:8];
                 end
                 default: begin
-                    mem_bytes[base_addr]       <= i_mem_wdata[7:0];
-                    mem_bytes[base_addr + 14'd1] <= i_mem_wdata[15:8];
-                    mem_bytes[base_addr + 14'd2] <= i_mem_wdata[23:16];
-                    mem_bytes[base_addr + 14'd3] <= i_mem_wdata[31:24];
+                    mem_bytes[i_mem_addr]         <= i_mem_wdata[7:0];
+                    mem_bytes[i_mem_addr + 14'd1] <= i_mem_wdata[15:8];
+                    mem_bytes[i_mem_addr + 14'd2] <= i_mem_wdata[23:16];
+                    mem_bytes[i_mem_addr + 14'd3] <= i_mem_wdata[31:24];
                 end
             endcase
         end
