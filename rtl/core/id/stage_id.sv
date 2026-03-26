@@ -12,6 +12,9 @@
 `include "../../include/cpu_defines.sv"
 
 module stage_id(
+    input  logic                            i_clk,
+    input  logic                            i_rst_n,
+
     input  logic  [`PC_BUS]                 i_pc_f_d,
     input  logic  [`INST_BUS]               i_inst_f_d,
     input  logic  [`PC_BUS]                 i_pc_predict,
@@ -44,5 +47,39 @@ module stage_id(
     output logic  [`RF_BUS]                 o_rs2_addr,
     output logic  [`RF_BUS]                 o_rd_addr
 );
+    //现在主要是连线
+    assign o_rs1_addr = i_inst_f_d[19:15];
+    assign o_rs2_addr = i_inst_f_d[24:20];
+    assign o_rd_addr  = i_inst_f_d[11:7];
+
+    control_unit u_control_unit (
+        .i_instr        (i_inst_f_d),
+        .o_mem_read     (o_mem_read),
+        .o_mem_write    (o_mem_write),
+        .o_reg_write    (o_reg_write),
+        .o_wb_src       (o_wb_src),
+        .o_is_rs2_imm   (o_is_rs2_imm),
+        .o_inst_spec    (o_inst_spec),
+        .o_alu_ctrl     (o_alu_ctrl),
+        .o_func3        (o_func3),
+        .o_is_branch    (o_is_branch)
+    );
+
+    imm_unit u_imm_unit(
+        .i_instr        (i_inst_f_d),
+        .o_imm          (o_imm)
+    );
+
+    regfile u_regfile(
+        .i_clk          (i_clk),
+        .i_rst_n        (i_rst_n),
+        .i_we           (i_we),
+        .i_rs1_addr     (o_rs1_addr),
+        .i_rs2_addr     (o_rs2_addr),
+        .i_w_addr       (i_w_addr),
+        .i_w_data       (i_w_data),
+        .o_rs1_data     (o_rs1_data),
+        .o_rs2_data     (o_rs2_data)
+    );
 
 endmodule

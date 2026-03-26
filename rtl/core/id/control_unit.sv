@@ -30,4 +30,138 @@ module control_unit(
     
 );
 
+    logic [6:0] opcode ;
+    logic [2:0] func3 ;
+    logic [6:0] func7 ; 
+
+    assign opcode = i_instr[6:0] ;
+    assign func3  = i_instr[14:12] ;
+    assign func7  = i_instr[31:25] ;
+
+    assign o_mem_read  = (opcode == `OP_L_TYPE) ? 1'b1 : 1'b0 ;
+    assign o_mem_write = (opcode == `OP_S_TYPE) ? 1'b1 : 1'b0 ;
+
+    always_comb begin
+        o_reg_write = 1'b0 ;
+        case(opcode) 
+            `OP_R_TYPE, //R-Type
+            `OP_I_TYPE, `OP_JALR, `OP_L_TYPE, `OP_FENCE, `OP_SYSTEM, //I-Type (including load jalr)
+            `OP_LUI, `OP_AUIPC, //lui, auipc
+            `OP_JAL: //jal
+                o_reg_write = 1'b1 ;
+            default: 
+                o_reg_write = 1'b0 ;
+        endcase
+    end
+
+    assign o_wb_src    = (opcode == `OP_L_TYPE) ? 1'b1 : 1'b0 ; //load
+
+    assign o_func3 = func3 ;
+    assign o_is_branch = (opcode == `OP_B_TYPE) ? 1'b1 : 1'b0 ;
+
+    always_comb begin
+        o_is_rs2_imm = 1'b0 ;
+        case(opcode) 
+            `OP_B_TYPE, //Branch
+            `OP_R_TYPE: //R-Type
+                o_is_rs2_imm = 1'b0 ;
+            default: 
+                o_is_rs2_imm = 1'b1 ; //Store指令的rs2数据直接送给RAM
+        endcase
+    end
+
+
+    always_comb begin
+        o_alu_ctrl = 4'b1111 ; // UNKNOWN
+        case(opcode)
+            // R-Type
+            `OP_R_TYPE: begin
+                case(func3)
+                    `FUNC3_ADD_SUB: o_alu_ctrl = (func7[5]) ? `ALU_SUB : `ALU_ADD; // SUB / ADD
+                    `FUNC3_SLL:     o_alu_ctrl = `ALU_SL; // SLL
+                    `FUNC3_SLT:     o_alu_ctrl = `ALU_LT; // SLT
+                    `FUNC3_SLTU:    o_alu_ctrl = `ALU_LTU; // SLTU
+                    `FUNC3_XOR:     o_alu_ctrl = `ALU_XOR; // XOR
+                    `FUNC3_SRL_SRA: o_alu_ctrl = (func7[5]) ? `ALU_SRA : `ALU_SRL; // SRA / SRL
+                    `FUNC3_OR:      o_alu_ctrl = `ALU_OR; // OR
+                    `FUNC3_AND:     o_alu_ctrl = `ALU_AND; // AND
+                endcase
+            end
+
+            // I-Type
+            `OP_I_TYPE: begin
+                case(func3)
+                    `FUNC3_ADD_SUB: o_alu_ctrl = `ALU_ADD; // ADD (ADDI)
+                    `FUNC3_SLL:     o_alu_ctrl = `ALU_SL; // SLL
+                    `FUNC3_SLT:     o_alu_ctrl = `ALU_LT; // SLT
+                    `FUNC3_SLTU:    o_alu_ctrl = `ALU_LTU; // SLTU
+                    `FUNC3_XOR:     o_alu_ctrl = `ALU_XOR; // XOR
+                    `FUNC3_SRL_SRA: o_alu_ctrl = (func7[5]) ? `ALU_SRA : `ALU_SRL; // SRA / SRL
+                    `FUNC3_OR:      o_alu_ctrl = `ALU_OR; // OR
+                    `FUNC3_AND:     o_alu_ctrl = `ALU_AND; // AND
+                endcase
+            end
+
+            // Load, Store, AUIPC, JALR -> ADD
+            `OP_L_TYPE,
+            `OP_S_TYPE,
+            `OP_AUIPC,
+            `OP_JALR:
+                o_alu_ctrl = `ALU_ADD; // ADD
+
+            `OP_B_TYPE: 
+                o_alu_ctrl = `ALU_SUB; // SUB
+
+            `OP_LUI, // LUI
+            `OP_JAL: // JAL
+                o_alu_ctrl = `ALU_ADD; 
+
+            default:
+                o_alu_ctrl = 4'b1111;
+        endcase
+    end 
+    /* 
+        ** o_alu_ctrl table
+        -----------------------------
+            and     -> 0000
+            or      -> 0001
+            xor     -> 0010
+            add     -> 0011
+            sub     -> 0100
+            sl      -> 0101
+            srl     -> 0110
+            sra     -> 0111
+            lt      -> 1000
+            ltu     -> 1001
+            eq      -> 1010
+            neq     -> 1011
+            gte     -> 1100
+            gteu    -> 1101
+            UNKNOWN -> 1111
+        -----------------------------
+    */
+
+
+    always_comb begin
+        o_inst_spec = 4'b1111; // UNKNOWN
+        case(opcode)
+            `OP_AUIPC: o_inst_spec = `EX_AUIPC;
+            `OP_LUI:   o_inst_spec = `EX_LUI;
+            `OP_JAL:   o_inst_spec = `EX_JAL;
+            `OP_JALR:  o_inst_spec = `EX_JALR;
+            default:   o_inst_spec = 4'b1111;
+        endcase
+    end
+
+    /* 
+        ** o_inst_spec table
+        -----------------------------
+            auipc   -> 0001
+            lui     -> 0010
+            jal     -> 0100
+            jalr    -> 1000
+            UNKNOWN -> 1111
+        -----------------------------
+    */
+
 endmodule

@@ -18,4 +18,16 @@ module stage_if(
     output logic  [`INST_BUS]       o_inst
 );
 
+    pc_reg u_pc_reg(
+        .i_clk      (i_clk),
+        .i_rst_n    (i_rst_n),
+        .i_pc_next  (i_pc_next),
+        .o_pc_cur   (o_pc_cur)
+    );
+
+    rom_instr u_rom_instr(
+        .i_pc       (o_pc_cur),
+        .o_instr    (o_inst)
+    );
+
 endmodule

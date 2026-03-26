@@ -40,6 +40,8 @@
 `define OP_JALR      7'B1100111
 `define OP_LUI       7'B0110111
 `define OP_AUIPC     7'B0010111
+`define OP_FENCE     7'B0001111
+`define OP_SYSTEM    7'B1110011
 
 `define FUNC3_ADD_SUB  3'B000       // func3 for R-type
 `define FUNC3_SLT      3'B010
