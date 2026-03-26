@@ -8,7 +8,7 @@
 //   - o_updata_en 建议视为 o_update_en（拼写）；与 bpu_top 的 i_update_en 应对接。
 //   - i_pc_d_e 与 i_pc：前者多为 ID/EX 寄存器中的 PC，后者为当前 EX 指令 PC，用于 AUIPC/JAL 等，团队需统一连法。
 //==============================================================================
-`include "../../include/cpu_defines.sv"
+`include "include/cpu_defines.sv"
 
 module stage_ex(
     input  logic  [`DATA_BUS]               i_rs1_data,

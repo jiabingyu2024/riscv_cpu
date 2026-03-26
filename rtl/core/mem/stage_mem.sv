@@ -7,7 +7,7 @@
 //   - 当前仅有 i_mem_write；若使用同步读 SRAM，可视需要增加 i_mem_read 或字节使能（团队约定）。
 //   - i_mem_addr 为 `RAM_ADDR_BUS`；需与 ALU 结果/对齐方式（字对齐地址 vs 字索引）一致。
 //==============================================================================
-`include "../../include/cpu_defines.sv"
+`include "include/cpu_defines.sv"
 
 module stage_mem (                  //仅例化dram即可
     input logic                               i_clk,

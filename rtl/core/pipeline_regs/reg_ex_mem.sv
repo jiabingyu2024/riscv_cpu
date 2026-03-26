@@ -5,7 +5,7 @@
 // 接口/协作审查（供采纳）：
 //   - i_rs2_data 用于 store：需与 forward 对 store 数据的旁路约定一致（通常旁路到 EX 再打入此寄存器）。ok
 //==============================================================================
-`include "../../include/cpu_defines.sv"
+`include "include/cpu_defines.sv"
 
 module reg_ex_mem (
     input logic                               i_clk,

@@ -7,7 +7,7 @@
 //   - i_rs1_addr/i_rs2_addr 为 [4:0]，与 `RF_BUS` 一致；建议统一用宏书写。
 //   - i_mem_mask 在 ID 由译码生成（lb/lh/lw 等），与 dram 访存类型一致。
 //==============================================================================
-`include "../../include/cpu_defines.sv"
+`include "include/cpu_defines.sv"
 
 module reg_id_ex(
     input logic                     i_clk,

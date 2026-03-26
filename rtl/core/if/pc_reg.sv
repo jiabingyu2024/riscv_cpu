@@ -6,7 +6,7 @@
 // 接口/协作审查（供采纳）：
 //   - 端口语义清晰；若需与 stall/flush 配合，通常在顶层用多路或使能控制 i_pc_next，本模块保持最简寄存器即可。
 //==============================================================================
-`include "../../include/cpu_defines.sv"
+`include "include/cpu_defines.sv"
 
 module pc_reg(
     input  logic                     i_clk,

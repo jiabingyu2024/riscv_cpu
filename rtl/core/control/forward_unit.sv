@@ -8,7 +8,7 @@
 //   - load-use 通常不能仅从 M 级前递到 EX 使用 load 数据，需 hazard 停顿；forward 与 hazard 分工需一致。
 //   - i_rd_addr_e_m / i_rd_addr_m_w 命名表示来自 E/M 与 M/W 流水级的 rd（与 regfile 写地址同源）。
 //==============================================================================
-`include "../../include/cpu_defines.sv"
+`include "include/cpu_defines.sv"
 
 module forward_unit (
 

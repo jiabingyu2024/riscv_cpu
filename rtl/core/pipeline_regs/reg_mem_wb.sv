@@ -5,7 +5,7 @@
 // 接口/协作审查（供采纳）：
 //   - i_mem_data 为 load 读出的数据（经 dram 一拍或组合读则与顶层时序一致）。
 //==============================================================================
-`include "../../include/cpu_defines.sv"
+`include "include/cpu_defines.sv"
 
 module reg_mem_wb(
     input  logic                         i_clk,

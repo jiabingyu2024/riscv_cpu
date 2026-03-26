@@ -7,7 +7,7 @@
 //   - 与 stage_id 中控制信号应对齐；注释掉的 o_alu1_src/o_alu2_src 若后续启用，需同步流水线寄存器位宽。
 //   - o_inst_spec 为 4 位自定义编码，建议文档化与 RISC-V opcode/funct 的对应关系，便于 EX/前递/分支共用。
 //==============================================================================
-`include "../../include/cpu_defines.sv"
+`include "include/cpu_defines.sv"
 
 module control_unit(
     input  logic  [`INST_BUS]               i_instr,

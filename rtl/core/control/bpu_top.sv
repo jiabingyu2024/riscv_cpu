@@ -16,7 +16,7 @@
     功能要求:
 
 */
-`include "../../include/cpu_defines.sv"
+`include "include/cpu_defines.sv"
 
 module bpu_top (
     input  logic                                    i_clk,

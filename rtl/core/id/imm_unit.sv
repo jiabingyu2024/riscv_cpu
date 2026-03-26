@@ -6,7 +6,7 @@
 //   - 端口名为 i_instr 更贴切；当前为 `DATA_BUS` 与指令位宽相同，语义上建议类型为 `INST_BUS` 以增强可读性（可选优化）。
 //   - 若仅使用低 32 位，实现时仍应对齐 RISC-V 各型立即数位域。
 //==============================================================================
-`include "../../include/cpu_defines.sv"
+`include "include/cpu_defines.sv"
 
 module imm_unit(
     input wire [`INST_BUS]          i_instr,

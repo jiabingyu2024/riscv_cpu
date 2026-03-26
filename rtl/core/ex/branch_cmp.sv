@@ -8,7 +8,7 @@
 //   - o_updata_en 与 BPU i_update_en 对齐；i_t1_data/i_t2_data 为分支目标相关操作数（如 PC+imm、rs1+imm）。
 //   - i_is_branch 为 0 时应输出无分支副作用（或由上层屏蔽），避免误 flush。
 //==============================================================================
-`include "../../include/cpu_defines.sv"
+`include "include/cpu_defines.sv"
 
 module branch_cmp(
     input  logic  [`DATA_BUS]               i_b1_data,

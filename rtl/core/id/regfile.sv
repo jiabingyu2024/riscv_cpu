@@ -6,7 +6,7 @@
 //   - 读为异步或同步读需团队统一；典型五级流水线为“ID 读、WB 写”，注意 x0 恒 0。
 //   - 端口使用 `RF_BUS`/`DATA_BUS`，与 stage_id 的地址宽度一致即可。
 //==============================================================================
-`include "../../include/cpu_defines.sv"
+`include "include/cpu_defines.sv"
 
 module regfile(
     input wire              i_clk,

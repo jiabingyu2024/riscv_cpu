@@ -15,7 +15,7 @@
     功能要求:
 
 */
-`include "../../include/cpu_defines.sv"
+`include "include/cpu_defines.sv"
 
 module reg_if_id(
     input logic              i_clk,

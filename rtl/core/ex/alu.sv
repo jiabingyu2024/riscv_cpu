@@ -7,7 +7,7 @@
 //   - i_alu_ctrl 宽度 [3:0] 与 `ALU_CTRL_WID` 一致；未使用编码建议 default 安全值以免锁存器/不定态。
 //   - 有符号/无符号比较与 RISC-V slt/sltu 对应关系需在实现中与 branch_cmp 分工明确。
 //==============================================================================
-`include "../../include/cpu_defines.sv"
+`include "include/cpu_defines.sv"
 
 module alu(
     input  logic [`DATA_BUS]                i_alu1,

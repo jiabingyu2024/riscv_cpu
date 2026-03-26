@@ -9,7 +9,7 @@
 //   - o_wb_src/o_inst_spec/o_alu_ctrl 等语义需在团队内固定编码表；o_is_rs2_imm 与 forward 的 i_is_rs2_imm 应对应。
 //   - rs1/rs2/rd 地址用 [4:0] 与 `RF_BUS` 等价，建议统一改用宏以减少混用。
 //==============================================================================
-`include "../../include/cpu_defines.sv"
+`include "include/cpu_defines.sv"
 
 module stage_id(
     input  logic                            i_clk,

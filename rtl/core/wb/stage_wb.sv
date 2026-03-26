@@ -6,7 +6,7 @@
 //   - 与 commit_unit 端口完全一致；团队可二选一作为唯一 WB 多路器，或分层：stage_wb 靠近流水线、commit 做提交语义扩展。
 //   - i_wb_src 编码需与 ID 控制单元 o_wb_src 一致（0/1 含义文档化）。
 //==============================================================================
-`include "../../include/cpu_defines.sv"
+`include "include/cpu_defines.sv"
 
 module stage_wb(
     input  logic [`DATA_BUS]             i_alu_res,

@@ -7,7 +7,7 @@
 //   - i_pc_next 来源：复位初值、顺序 PC+4、分支纠正、BPU 预测目标等由顶层/hazard 汇总后接入。
 //   - 若 ROM 按字寻址，顶层需统一 PC 与 rom 地址映射（对齐/右移），本模块保持“地址入、指令出”即可。
 //==============================================================================
-`include "../../include/cpu_defines.sv"
+`include "include/cpu_defines.sv"
 
 module stage_if(
     input  logic                    i_clk,

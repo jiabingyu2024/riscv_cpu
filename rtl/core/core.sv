@@ -7,7 +7,7 @@
 //   - 当前仅 clk/rst_n；外设、总线、中断等按赛题在顶层或外层 wrapper 扩展。
 //   - 命名：子模块例化前缀 u_；流水线相关时钟/复位/控制建议 F/D/E/M/W 分级命名便于 debug。
 //==============================================================================
-`include "../include/cpu_defines.sv"
+`include "include/cpu_defines.sv"
 
 module core(
     input  logic                                     clk,
