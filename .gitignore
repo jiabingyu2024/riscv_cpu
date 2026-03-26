@@ -1,0 +1,21 @@
+# Simulation outputs
+sim/build/
+sim/hex/
+sim/logs/
+sim/waves/
+
+# Verilator / waveform byproducts
+obj_dir/
+*.fst
+*.vcd
+*.vpd
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Editor / OS temp files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo

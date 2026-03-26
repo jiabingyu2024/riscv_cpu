@@ -5,8 +5,13 @@ module core_top #(
     parameter string IROM_INIT_FILE = "",
     parameter string DRAM_INIT_FILE = ""
 )(
-    input  logic clk,
-    input  logic rst_n
+    input  logic          clk,
+    input  logic          rst_n,
+    output logic [`PC_BUS]       o_dbg_pc,
+    output logic                 o_dbg_dram_wen,
+    output logic [`RAM_ADDR_BUS] o_dbg_dram_addr,
+    output logic [`DATA_BUS]     o_dbg_dram_wdata,
+    output logic [1:0]           o_dbg_dram_mask
 );
     logic [`DATA_BUS]     irom_data;
     logic [`PC_BUS]       irom_addr;
@@ -46,4 +51,10 @@ module core_top #(
         .i_mem_mask  (dram_mask),
         .o_mem_rdata (dram_rdata)
     );
+
+    assign o_dbg_pc         = irom_addr;
+    assign o_dbg_dram_wen   = dram_wen;
+    assign o_dbg_dram_addr  = dram_addr;
+    assign o_dbg_dram_wdata = dram_wdata;
+    assign o_dbg_dram_mask  = dram_mask;
 endmodule

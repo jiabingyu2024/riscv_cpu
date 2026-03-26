@@ -6,7 +6,7 @@
 //   - 与 stage_mem 端口一致；`RAM_DEPTH`=4096 字时地址宽度与宏一致。
 //   - 建议明确读写时序（同步读一拍 / 组合读）以便流水线时序闭合。
 //==============================================================================
-`include "../include/cpu_defines.sv"
+`include "include/cpu_defines.sv"
 
 module dram #(
     parameter string INIT_FILE = ""
@@ -22,6 +22,7 @@ module dram #(
 
     logic [7:0] mem_bytes [0:`RAM_DEPTH-1];
     logic [`RAM_ADDR_BUS] base_addr;
+    string load_file;
     integer idx;
 
     assign base_addr = {i_mem_addr[`RAM_ADDR_WID-1:2], 2'b00};
@@ -31,17 +32,18 @@ module dram #(
             mem_bytes[idx] = '0;
         end
 
-        if (INIT_FILE != "") begin
-            $readmemh(INIT_FILE, mem_bytes);
+        load_file = INIT_FILE;
+        if (!$value$plusargs("DRAM=%s", load_file)) begin
+            load_file = INIT_FILE;
+        end
+
+        if (load_file != "") begin
+            $readmemh(load_file, mem_bytes);
         end
     end
 
-    always_ff @(posedge i_clk or negedge i_rst_n) begin
-        if (!i_rst_n) begin
-            for (idx = 0; idx < `RAM_DEPTH; idx = idx + 1) begin
-                mem_bytes[idx] <= '0;
-            end
-        end else if (i_mem_write) begin
+    always @(posedge i_clk) begin
+        if (i_mem_write) begin
             unique case (i_mem_mask)
                 `MASK_BYTE: begin
                     mem_bytes[i_mem_addr] <= i_mem_wdata[7:0];

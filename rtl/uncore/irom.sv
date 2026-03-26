@@ -8,7 +8,7 @@
 //   - 只读端口，无字节写使能；与数据 RAM 分离，符合哈佛/类哈佛前端习惯。
 //==============================================================================
 
-`include "../include/cpu_defines.sv"
+`include "include/cpu_defines.sv"
 
 module irom #(
     parameter string INIT_FILE = ""
@@ -19,6 +19,7 @@ module irom #(
 
     logic [`INST_BUS] rom_mem [0:(`ROM_DEPTH/4)-1];
     logic [`ROM_ADDR_BUS] word_addr;
+    string load_file;
     integer idx;
 
     assign word_addr = i_pc[`ROM_ADDR_WID-1:2];
@@ -28,8 +29,13 @@ module irom #(
             rom_mem[idx] = '0;
         end
 
-        if (INIT_FILE != "") begin
-            $readmemh(INIT_FILE, rom_mem);
+        load_file = INIT_FILE;
+        if (!$value$plusargs("IROM=%s", load_file)) begin
+            load_file = INIT_FILE;
+        end
+
+        if (load_file != "") begin
+            $readmemh(load_file, rom_mem);
         end
     end
 

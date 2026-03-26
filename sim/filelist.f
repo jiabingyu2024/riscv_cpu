@@ -1,4 +1,3 @@
-rtl/include/cpu_defines.sv
 rtl/core/if/pc_reg.sv
 rtl/core/if/stage_if.sv
 rtl/core/id/control_unit.sv
@@ -22,4 +21,3 @@ rtl/uncore/irom.sv
 rtl/uncore/dram.sv
 rtl/core/core.sv
 rtl/core_top.sv
-tb/tb_core_top.sv
