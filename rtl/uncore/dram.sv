@@ -20,16 +20,37 @@ module dram #(
     output logic [`DATA_BUS]                  o_mem_rdata
 );
 
-    logic [7:0] mem_bytes [0:`RAM_DEPTH-1];
-    logic [`RAM_ADDR_BUS] base_addr;
+    localparam int WORD_DEPTH = (`RAM_DEPTH / 4);
+    localparam int WORD_ADDR_WID = $clog2(WORD_DEPTH);
+
+    logic [`DATA_BUS] mem_words [0:WORD_DEPTH-1];
+    logic [WORD_ADDR_WID-1:0] word_addr;
+    logic [1:0] byte_off;
+    logic [`DATA_BUS] cur_word;
+    logic [`DATA_BUS] write_data_shifted;
+    logic [`DATA_BUS] write_mask;
+    logic [`DATA_BUS] merged_word;
     string load_file;
     integer idx;
 
-    assign base_addr = {i_mem_addr[`RAM_ADDR_WID-1:2], 2'b00};
+    assign word_addr = i_mem_addr[`RAM_ADDR_WID-1:2];
+    assign byte_off = i_mem_addr[1:0];
+    assign cur_word = mem_words[word_addr];
+    assign write_data_shifted = i_mem_wdata << (byte_off * 8);
+
+    always_comb begin
+        unique case (i_mem_mask)
+            `MASK_BYTE: write_mask = 32'h0000_00ff << (byte_off * 8);
+            `MASK_HALF: write_mask = 32'h0000_ffff << (byte_off * 8);
+            default:    write_mask = 32'hffff_ffff;
+        endcase
+    end
+
+    assign merged_word = (cur_word & ~write_mask) | (write_data_shifted & write_mask);
 
     initial begin
-        for (idx = 0; idx < `RAM_DEPTH; idx = idx + 1) begin
-            mem_bytes[idx] = '0;
+        for (idx = 0; idx < WORD_DEPTH; idx = idx + 1) begin
+            mem_words[idx] = '0;
         end
 
         load_file = INIT_FILE;
@@ -38,36 +59,17 @@ module dram #(
         end
 
         if (load_file != "") begin
-            $readmemh(load_file, mem_bytes);
+            $readmemh(load_file, mem_words);
         end
     end
 
     always @(posedge i_clk) begin
         if (i_mem_write) begin
-            unique case (i_mem_mask)
-                `MASK_BYTE: begin
-                    mem_bytes[i_mem_addr] <= i_mem_wdata[7:0];
-                end
-                `MASK_HALF: begin
-                    mem_bytes[i_mem_addr]         <= i_mem_wdata[7:0];
-                    mem_bytes[i_mem_addr + 14'd1] <= i_mem_wdata[15:8];
-                end
-                default: begin
-                    mem_bytes[i_mem_addr]         <= i_mem_wdata[7:0];
-                    mem_bytes[i_mem_addr + 14'd1] <= i_mem_wdata[15:8];
-                    mem_bytes[i_mem_addr + 14'd2] <= i_mem_wdata[23:16];
-                    mem_bytes[i_mem_addr + 14'd3] <= i_mem_wdata[31:24];
-                end
-            endcase
+            mem_words[word_addr] <= merged_word;
         end
     end
 
     always_comb begin
-        o_mem_rdata = {
-            mem_bytes[base_addr + 14'd3],
-            mem_bytes[base_addr + 14'd2],
-            mem_bytes[base_addr + 14'd1],
-            mem_bytes[base_addr]
-        };
+        o_mem_rdata = mem_words[word_addr];
     end
 endmodule

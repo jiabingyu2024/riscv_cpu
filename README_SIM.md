@@ -16,11 +16,11 @@
 
 当前仿真链路如下：
 
-1. `tests/isa/rv32ui/*.bin` 作为测试程序输入
-2. `scripts/gen_hex.py` 直接把本地 `.bin` 转成 `sim/hex/*.hex`
+1. `tests/isa/<suite>/*` 作为测试程序输入（默认 `suite=rv32ui`）
+2. `scripts/gen_hex.py` 优先读取 `<case>.bin`，找不到时自动回退 `<case>.dat`，并转成 `sim/hex/*.hex`
 3. `make build` 用 `Verilator` 编译 `rtl` 和 `tb/verilator_main.cpp`
 4. `scripts/run_case.py` 或 `scripts/run_rv32ui.py` 启动仿真可执行文件
-5. 仿真时通过 `+IROM=...` 把 hex 路径传给 `irom`
+5. 仿真时通过 `+IROM=...` 把 hex 路径传给 `irom`，并通过 `+DRAM=...` 传给 `dram`
 6. 可选输出 `.fst` 波形，使用 `GTKWave` 打开
 
 ---
@@ -67,12 +67,16 @@
 ### 脚本
 
 - `scripts/gen_hex.py`
-  - 把 `tests/isa/rv32ui/<case>.bin` 转成 `sim/hex/<case>.hex`
+  - 把 `tests/isa/<suite>/<case>.bin` 转成 `sim/hex/<case>.hex`
+  - 若 `.bin` 不存在，自动读取同名 `.dat`
 
 - `scripts/run_case.py`
   - 运行单个用例
   - 自动生成 hex
-  - 自动解析符号表中的 `pass` / `loop_pass` / `fail` / `loop_fail`
+  - 支持 `--suite` 选择测试集目录（例如 `rv32uimine`）
+  - 默认将同一份 case hex 同时传给 IROM/DRAM（可用 `--dram-hex` 覆盖）
+  - 自动从 `.txt`（或回退 `.dump`）解析 `pass` / `loop_pass` / `fail` / `loop_fail`
+  - 支持 `--allow-timeout-pass`，用于无 pass/fail 标签的自定义死循环测试
   - 生成对应日志和波形
 
 - `scripts/run_rv32ui.py`
@@ -128,12 +132,13 @@ cd /mnt/d/Resourses/03_competitions/26_03_jcs/riscv_cpu
 运行前请确认测试输入文件已经放在：
 
 ```bash
-tests/isa/rv32ui/
+tests/isa/<suite>/
 ```
 
-当前自动化流程默认直接从这里读取：
+当前自动化流程默认直接从 `tests/isa/rv32ui/` 读取，可通过 `SUITE`/`--suite` 切换：
 
-- `*.bin`
+- `*.bin`（优先）
+- `*.dat`（当 `.bin` 不存在时自动回退）
 - `*.txt`
 - `*.dump`
 
@@ -174,6 +179,31 @@ make smoke TRACE=1
 make run CASE=rv32ui-p-add
 ```
 
+运行自定义 `rv32uimine` 用例：
+
+```bash
+make run SUITE=rv32uimine CASE=rv32uimine-p-pipeline_test_h
+```
+
+如果你的自定义用例没有 `pass/fail` 标签，希望“跑到最大周期就算通过”：
+
+```bash
+make run SUITE=rv32uimine CASE=rv32uimine-p-pipeline_test_h ALLOW_TIMEOUT=1
+```
+
+一次跑完整个 `rv32uimine` 测试集（与 `rv32ui` 同风格）：
+
+```bash
+make rv32uimine
+```
+
+说明：
+
+- `rv32uimine` 默认优先使用每个 case 的 `pass/loop_pass`、`fail/loop_fail` 标签判定
+- 已适配 `*_h.dat` 与去 `_h` 的 `*.dump`/`*.txt` 符号文件命名差异
+- `rv32uimine` 默认使用更大的最大周期（`UIMINE_MAX_CYCLES=200000`）
+- 如需覆盖默认值：`make rv32uimine UIMINE_MAX_CYCLES=500000`
+
 如果想要波形：
 
 ```bash
@@ -191,6 +221,19 @@ make rv32ui
 ```bash
 make rv32ui TRACE=1
 ```
+
+### 6. 批量跑任意 suite
+
+例如批量跑 `rv32uimine`：
+
+```bash
+make suite SUITE=rv32uimine
+```
+
+说明：
+
+- 脚本会优先读取 `tests/manifest/<suite>.txt`
+- 若 manifest 不存在，则自动扫描 `tests/isa/<suite>` 下所有 `.bin/.dat` 作为 case
 
 ### 6. 打开波形
 

@@ -15,7 +15,7 @@ BUILD_EXE = ROOT / "sim" / "build" / "core_top_sim"
 LOG_DIR = ROOT / "sim" / "logs"
 WAVE_DIR = ROOT / "sim" / "waves"
 HEX_DIR = ROOT / "sim" / "hex"
-TEST_TXT_DIR = ROOT / "tests" / "isa" / "rv32ui"
+ISA_ROOT = ROOT / "tests" / "isa"
 
 SMOKE_CASE = "smoke"
 SMOKE_HEX = ROOT / "sim" / "smoke.hex"
@@ -33,21 +33,45 @@ def parse_symbol_file(path: Path) -> dict[str, int]:
     return symbols
 
 
-def resolve_symbol_file(case: str) -> Path:
-    candidate = TEST_TXT_DIR / f"{case}.txt"
-    if candidate.exists():
-        return candidate
-    raise FileNotFoundError(f"symbol file not found: {candidate}")
+def parse_dump_symbol_file(path: Path) -> dict[str, int]:
+    symbols: dict[str, int] = {}
+    pattern = re.compile(r"^\s*([0-9a-fA-F]+)\s+<([^>]+)>:")
+    for line in path.read_text(encoding="utf-8", errors="ignore").splitlines():
+        match = pattern.match(line)
+        if match:
+            symbols[match.group(2)] = int(match.group(1), 16)
+    return symbols
 
 
-def resolve_case_meta(case: str) -> tuple[Path, int | None, int | None]:
+def resolve_symbol_file(case: str, suite: str) -> tuple[Path, str] | None:
+    candidates = [case]
+    if case.endswith("_h"):
+        candidates.append(case[:-2])
+
+    for base in candidates:
+        txt_candidate = ISA_ROOT / suite / f"{base}.txt"
+        if txt_candidate.exists():
+            return txt_candidate, "txt"
+        dump_candidate = ISA_ROOT / suite / f"{base}.dump"
+        if dump_candidate.exists():
+            return dump_candidate, "dump"
+    return None
+
+
+def resolve_case_meta(case: str, suite: str) -> tuple[Path, int | None, int | None]:
     if case == SMOKE_CASE:
         return SMOKE_HEX, SMOKE_PASS_PC, None
 
-    hex_path = gen_hex(case)
-    symbols = parse_symbol_file(resolve_symbol_file(case))
-    pass_pc = symbols.get("loop_pass", symbols.get("pass"))
-    fail_pc = symbols.get("loop_fail", symbols.get("fail"))
+    hex_path = gen_hex(case, suite=suite)
+    symbol_file_info = resolve_symbol_file(case, suite)
+    if symbol_file_info is None:
+        pass_pc = None
+        fail_pc = None
+    else:
+        symbol_file, symbol_kind = symbol_file_info
+        symbols = parse_symbol_file(symbol_file) if symbol_kind == "txt" else parse_dump_symbol_file(symbol_file)
+        pass_pc = symbols.get("loop_pass", symbols.get("pass"))
+        fail_pc = symbols.get("loop_fail", symbols.get("fail"))
     return hex_path, pass_pc, fail_pc
 
 
@@ -57,19 +81,35 @@ def ensure_build() -> None:
     subprocess.run(["make", "build"], cwd=ROOT, check=True)
 
 
-def run_case(case: str, trace: bool, max_cycles: int) -> int:
+def run_case(
+    case: str,
+    trace: bool,
+    max_cycles: int,
+    suite: str,
+    dram_hex: str | None = None,
+    pass_pc_override: str | None = None,
+    fail_pc_override: str | None = None,
+    allow_timeout_pass: bool = False,
+) -> int:
     ensure_build()
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     WAVE_DIR.mkdir(parents=True, exist_ok=True)
     HEX_DIR.mkdir(parents=True, exist_ok=True)
 
-    hex_path, pass_pc, fail_pc = resolve_case_meta(case)
+    hex_path, pass_pc, fail_pc = resolve_case_meta(case, suite=suite)
+    if pass_pc_override is not None:
+        pass_pc = int(pass_pc_override, 0)
+    if fail_pc_override is not None:
+        fail_pc = int(fail_pc_override, 0)
     log_path = LOG_DIR / f"{case}.log"
     wave_path = WAVE_DIR / f"{case}.fst"
+
+    dram_path = Path(dram_hex).expanduser().resolve() if dram_hex else hex_path
 
     cmd = [
         str(BUILD_EXE),
         f"+IROM={hex_path}",
+        f"+DRAM={dram_path}",
         f"+MAX_CYCLES={max_cycles}",
     ]
     if pass_pc is not None:
@@ -91,17 +131,42 @@ def run_case(case: str, trace: bool, max_cycles: int) -> int:
     log_path.write_text(result.stdout + result.stderr, encoding="utf-8")
     sys.stdout.write(result.stdout)
     sys.stderr.write(result.stderr)
+    if allow_timeout_pass and result.returncode == 2:
+        print("INFO: timeout treated as pass (--allow-timeout-pass enabled)")
+        return 0
     return result.returncode
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run one Verilator simulation case")
     parser.add_argument("--case", required=True, help="case name or smoke")
+    parser.add_argument("--suite", default="rv32ui", help="suite folder under tests/isa")
     parser.add_argument("--trace", action="store_true", help="emit fst wave")
     parser.add_argument("--max-cycles", type=int, default=DEFAULT_MAX_CYCLES)
+    parser.add_argument("--pass-pc", default=None, help="override PASS_PC, e.g. 0x288")
+    parser.add_argument("--fail-pc", default=None, help="override FAIL_PC, e.g. 0x26c")
+    parser.add_argument(
+        "--allow-timeout-pass",
+        action="store_true",
+        help="treat simulator timeout as pass for custom endless-loop tests",
+    )
+    parser.add_argument(
+        "--dram-hex",
+        default=None,
+        help="optional DRAM init hex path, default uses case IROM hex",
+    )
     args = parser.parse_args()
 
-    return run_case(args.case, trace=args.trace, max_cycles=args.max_cycles)
+    return run_case(
+        args.case,
+        trace=args.trace,
+        max_cycles=args.max_cycles,
+        suite=args.suite,
+        dram_hex=args.dram_hex,
+        pass_pc_override=args.pass_pc,
+        fail_pc_override=args.fail_pc,
+        allow_timeout_pass=args.allow_timeout_pass,
+    )
 
 
 if __name__ == "__main__":
