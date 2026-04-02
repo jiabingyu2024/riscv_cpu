@@ -1,0 +1,14 @@
+#-----------------------------------------------------------
+# Vivado v2023.2 (64-bit)
+# SW Build 4029153 on Fri Oct 13 20:14:34 MDT 2023
+# IP Build 4028589 on Sat Oct 14 00:45:43 MDT 2023
+# SharedData Build 4025554 on Tue Oct 10 17:18:54 MDT 2023
+# Start of session at: Thu Apr  2 14:25:39 2026
+# Process ID: 10092
+# Current directory: D:/jichuang/fpga/digital_twin/digital_twin.runs/irom_ip_synth_1
+# Command line: vivado.exe -log irom_ip.vds -product Vivado -mode batch -messageDb vivado.pb -notrace -source irom_ip.tcl
+# Log file: D:/jichuang/fpga/digital_twin/digital_twin.runs/irom_ip_synth_1/irom_ip.vds
+# Journal file: D:/jichuang/fpga/digital_twin/digital_twin.runs/irom_ip_synth_1\vivado.jou
+# Running On: PRTS, OS: Windows, CPU Frequency: 3793 MHz, CPU Physical cores: 16, Host memory: 16419 MB
+#-----------------------------------------------------------
+source irom_ip.tcl -notrace

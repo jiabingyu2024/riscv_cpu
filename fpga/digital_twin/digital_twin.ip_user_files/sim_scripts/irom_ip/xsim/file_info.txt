@@ -1,0 +1,2 @@
+irom_ip.v,verilog,xil_defaultlib,../../../../digital_twin.gen/sources_1/ip/irom_ip/sim/irom_ip.v,
+glbl.v,Verilog,xil_defaultlib,glbl.v
