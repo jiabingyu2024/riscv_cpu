@@ -19,3 +19,38 @@ __pycache__/
 Thumbs.db
 *.swp
 *.swo
+
+# =========================
+# Vivado generated artifacts
+# =========================
+# Per-project generated dirs
+fpga/**/.Xil/
+fpga/**/*.cache/
+fpga/**/*.hw/
+fpga/**/*.ip_user_files/
+fpga/**/*.runs/
+fpga/**/*.sim/
+fpga/**/*.gen/
+
+# Vivado runtime byproducts
+fpga/**/*.jou
+fpga/**/*.pb
+fpga/**/*.str
+fpga/**/*.wdf
+
+# (可选) 大体积实现产物：若你需要提交 bitstream，就删掉这3行
+fpga/**/*.bit
+fpga/**/*.bin
+fpga/**/*.ltx
+
+# =========================
+# Protect source-of-truth
+# =========================
+!fpga/**/*.xpr
+!fpga/**/*.srcs/**
+!fpga/**/*.tcl
+!fpga/**/*.xdc
+!fpga/**/*.sv
+!fpga/**/*.svh
+!fpga/**/*.v
+!fpga/**/*.vh

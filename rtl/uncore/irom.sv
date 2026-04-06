@@ -8,7 +8,7 @@
 //   - 只读端口，无字节写使能；与数据 RAM 分离，符合哈佛/类哈佛前端习惯。
 //==============================================================================
 
-`include "include/cpu_defines.sv"
+`include "cpu_defines.svh"
 
 module irom #(
     parameter string INIT_FILE = ""

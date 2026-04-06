@@ -28,7 +28,7 @@ build: dirs
 		-Wno-fatal \
 		--top-module $(TOP) \
 		--Mdir $(BUILD_DIR) \
-		-Irtl \
+		-Irtl -Irtl/include \
 		-f $(FILELIST) \
 		tb/verilator_main.cpp \
 		-CFLAGS "-std=c++17" \

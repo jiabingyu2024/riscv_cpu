@@ -1,5 +1,5 @@
 //用于仿真的top模块，例化core,irom dram
-`include "include/cpu_defines.sv"
+`include "cpu_defines.svh"
 
 module core_top #(
     parameter string IROM_INIT_FILE = "",

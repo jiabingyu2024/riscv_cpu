@@ -6,7 +6,7 @@
 //   - 与 stage_mem 端口一致；`RAM_DEPTH`=4096 字时地址宽度与宏一致。
 //   - 建议明确读写时序（同步读一拍 / 组合读）以便流水线时序闭合。
 //==============================================================================
-`include "include/cpu_defines.sv"
+`include "cpu_defines.svh"
 
 module dram #(
     parameter string INIT_FILE = ""
