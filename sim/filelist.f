@@ -9,7 +9,6 @@ rtl/core/ex/branch_cmp.sv
 rtl/core/ex/stage_ex.sv
 rtl/core/mem/stage_mem.sv
 rtl/core/wb/stage_wb.sv
-rtl/core/wb/commit_unit.sv
 rtl/core/pipeline_regs/reg_if_id.sv
 rtl/core/pipeline_regs/reg_id_ex.sv
 rtl/core/pipeline_regs/reg_ex_mem.sv
