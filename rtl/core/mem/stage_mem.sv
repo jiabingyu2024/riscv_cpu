@@ -27,7 +27,6 @@ module stage_mem (                  //仅例化dram即可
     output logic [`DATA_BUS]                  o_mem_rdata
 );
 
-    logic [1:0]  byte_off;
     logic [7:0]  load_byte;
     logic [15:0] load_half;
 
@@ -36,9 +35,8 @@ module stage_mem (                  //仅例化dram即可
     assign o_dram_wdata = i_mem_wdata;
     assign o_dram_mask  = i_mem_mask;
 
-    assign byte_off  = i_mem_addr[1:0];
-    assign load_byte = i_dram_rdata >> (byte_off * 8);
-    assign load_half = i_dram_rdata >> ({byte_off[1], 4'b0000});
+    assign load_byte = i_dram_rdata[7:0];
+    assign load_half = i_dram_rdata[15:0];
 
     always_comb begin
         unique case (i_mem_mask)

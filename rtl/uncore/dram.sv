@@ -70,6 +70,10 @@ module dram #(
     end
 
     always_comb begin
-        o_mem_rdata = mem_words[word_addr];
+        unique case (i_mem_mask)
+            `MASK_BYTE: o_mem_rdata = {24'b0, cur_word[byte_off*8 +: 8]};
+            `MASK_HALF: o_mem_rdata = {16'b0, cur_word[byte_off[1]*16 +: 16]};
+            default:    o_mem_rdata = cur_word;
+        endcase
     end
 endmodule
