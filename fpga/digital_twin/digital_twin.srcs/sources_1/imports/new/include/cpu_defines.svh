@@ -117,7 +117,7 @@
 // used in mem
 
 `define RAM_DEPTH      16384
-`define RAM_ADDR_WID   14
+`define RAM_ADDR_WID   32
 `define RAM_ADDR_BUS   `RAM_ADDR_WID-1:0
 
 `define MASK_BYTE       2'B00
