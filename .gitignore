@@ -1,38 +1,62 @@
-# Simulation outputs
+# =========================
+# Verilator / simulation outputs
+# =========================
 sim/build/
 sim/hex/
 sim/logs/
 sim/waves/
-
-# Verilator / waveform byproducts
 obj_dir/
 *.fst
 *.vcd
 *.vpd
 
+# =========================
 # Python cache
+# =========================
 __pycache__/
 *.pyc
 
-# Editor / OS temp files
+# =========================
+# Editor / OS temp
+# =========================
 .DS_Store
 Thumbs.db
 *.swp
 *.swo
 
-# 忽略顶层综合/实现（可再生）
-fpga/digital_twin/digital_twin.runs/synth_1/
-fpga/digital_twin/digital_twin.runs/impl_1/
-fpga/digital_twin/digital_twin.runs/.jobs/
-
-# 保留 IP 的 OOC run（防黑盒）
-# fpga/digital_twin/digital_twin.runs/IROM_synth_1/  <- 不忽略
-# fpga/digital_twin/digital_twin.runs/DRAM_synth_1/  <- 不忽略
-
-# 其他可再生
+# =========================
+# Vivado generated artifacts (project-local)
+# Safe to ignore: regenerable by opening .xpr and rerunning IP/synth/impl
+# =========================
+fpga/digital_twin/.Xil/
 fpga/digital_twin/digital_twin.cache/
 fpga/digital_twin/digital_twin.hw/
 fpga/digital_twin/digital_twin.ip_user_files/
+fpga/digital_twin/digital_twin.runs/
 fpga/digital_twin/digital_twin.sim/
-fpga/digital_twin/.Xil/
+fpga/digital_twin/digital_twin.gen/
+
+# Vivado runtime logs (project root)
+fpga/digital_twin/*.jou
+fpga/digital_twin/*.log
+fpga/digital_twin/*.str
+fpga/digital_twin/*.pb
+fpga/digital_twin/*.wdf
+
+# Vivado transient writeability test files
 fpga/**/.hdi.isWriteableTest*.tmp
+
+# =========================
+# Optional large bitstream artifacts
+# (if you want to version bit/bin/ltx, remove these 3 lines)
+# =========================
+fpga/**/*.bit
+fpga/**/*.bin
+fpga/**/*.ltx
+
+# =========================
+# Keep source-of-truth files tracked
+# =========================
+!fpga/digital_twin/digital_twin.xpr
+!fpga/digital_twin/digital_twin.srcs/**
+!fpga/coe/**
