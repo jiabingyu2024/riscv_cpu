@@ -1,0 +1,37 @@
+INFO: [VRFC 10-2263] Analyzing Verilog file "D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.sim/sim_1/impl/func/xsim/tb_myCPU_func_impl.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module DRAM
+INFO: [VRFC 10-311] analyzing module IROM
+INFO: [VRFC 10-311] analyzing module alu
+INFO: [VRFC 10-311] analyzing module bpu_top
+INFO: [VRFC 10-311] analyzing module branch_cmp
+INFO: [VRFC 10-311] analyzing module core
+INFO: [VRFC 10-311] analyzing module counter
+INFO: [VRFC 10-311] analyzing module display_seg
+INFO: [VRFC 10-311] analyzing module dram_driver
+INFO: [VRFC 10-311] analyzing module myCPU
+INFO: [VRFC 10-311] analyzing module pc_reg
+INFO: [VRFC 10-311] analyzing module perip_bridge
+INFO: [VRFC 10-311] analyzing module pll
+INFO: [VRFC 10-311] analyzing module pll_clk_wiz
+INFO: [VRFC 10-311] analyzing module reg_ex_mem
+INFO: [VRFC 10-311] analyzing module reg_id_ex
+INFO: [VRFC 10-311] analyzing module reg_if_id
+INFO: [VRFC 10-311] analyzing module reg_mem_wb
+INFO: [VRFC 10-311] analyzing module regfile
+INFO: [VRFC 10-311] analyzing module stage_ex
+INFO: [VRFC 10-311] analyzing module stage_id
+INFO: [VRFC 10-311] analyzing module stage_if
+INFO: [VRFC 10-311] analyzing module stage_wb
+INFO: [VRFC 10-311] analyzing module student_top
+INFO: [VRFC 10-311] analyzing module top
+INFO: [VRFC 10-311] analyzing module twin_controller
+INFO: [VRFC 10-311] analyzing module uart
+INFO: [VRFC 10-311] analyzing module DRAM_dist_mem_gen_v8_0_14
+INFO: [VRFC 10-311] analyzing module DRAM_dist_mem_gen_v8_0_14_synth
+INFO: [VRFC 10-311] analyzing module DRAM_spram
+INFO: [VRFC 10-311] analyzing module IROM_dist_mem_gen_v8_0_14
+INFO: [VRFC 10-311] analyzing module IROM_dist_mem_gen_v8_0_14_synth
+INFO: [VRFC 10-311] analyzing module IROM_rom
+INFO: [VRFC 10-311] analyzing module glbl
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.srcs/sim_1/new/tb_myCPU.sv" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tb_myCPU

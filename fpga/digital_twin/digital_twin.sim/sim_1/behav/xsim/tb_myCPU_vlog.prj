@@ -1,29 +1,36 @@
 # compile verilog/system verilog design source files
-verilog xil_defaultlib  --include "../../../../digital_twin.gen/sources_1/ip/pll" \
+verilog xil_defaultlib  --include "../../../../digital_twin.gen/sources_1/ip/pll" --include "../../../../digital_twin.srcs/sources_1/imports/new/include" \
 "../../../../digital_twin.gen/sources_1/ip/DRAM/sim/DRAM.v" \
 "../../../../digital_twin.gen/sources_1/ip/IROM/sim/IROM.v" \
 "../../../../digital_twin.gen/sources_1/ip/pll/pll_clk_wiz.v" \
 "../../../../digital_twin.gen/sources_1/ip/pll/pll.v" \
-"../../../../digital_twin.srcs/sources_1/imports/new/MuxKey.v" \
-"../../../../digital_twin.srcs/sources_1/imports/new/MuxKeyInternal.v" \
 
-sv xil_defaultlib  --include "../../../../digital_twin.gen/sources_1/ip/pll" \
-"../../../../digital_twin.srcs/sources_1/imports/new/ACTL.sv" \
-"../../../../digital_twin.srcs/sources_1/imports/new/ALU.sv" \
-"../../../../digital_twin.srcs/sources_1/imports/new/CCTL.sv" \
-"../../../../digital_twin.srcs/sources_1/imports/new/CSR.sv" \
-"../../../../digital_twin.srcs/sources_1/imports/new/Control.sv" \
-"../../../../digital_twin.srcs/sources_1/imports/new/IMMGEN.sv" \
-"../../../../digital_twin.srcs/sources_1/imports/new/Mask.sv" \
-"../../../../digital_twin.srcs/sources_1/imports/new/NPC.sv" \
-"../../../../digital_twin.srcs/sources_1/imports/new/PC.sv" \
-"../../../../digital_twin.srcs/sources_1/imports/new/RF.sv" \
+sv xil_defaultlib  --include "../../../../digital_twin.gen/sources_1/ip/pll" --include "../../../../digital_twin.srcs/sources_1/imports/new/include" \
+"../../../../digital_twin.srcs/sources_1/imports/new/core/ex/alu.sv" \
+"../../../../digital_twin.srcs/sources_1/imports/new/core/control/bpu_top.sv" \
+"../../../../digital_twin.srcs/sources_1/imports/new/core/ex/branch_cmp.sv" \
+"../../../../digital_twin.srcs/sources_1/imports/new/core/id/control_unit.sv" \
+"../../../../digital_twin.srcs/sources_1/imports/new/core/core.sv" \
 "../../../../digital_twin.srcs/sources_1/new/counter.sv" \
 "../../../../digital_twin.srcs/sources_1/new/display_seg.sv" \
 "../../../../digital_twin.srcs/sources_1/new/dram_driver.sv" \
+"../../../../digital_twin.srcs/sources_1/imports/new/core/control/forward_unit.sv" \
+"../../../../digital_twin.srcs/sources_1/imports/new/core/control/hazard_unit.sv" \
+"../../../../digital_twin.srcs/sources_1/imports/new/core/id/imm_unit.sv" \
 "../../../../digital_twin.srcs/sources_1/imports/new/myCPU.sv" \
+"../../../../digital_twin.srcs/sources_1/imports/new/core/if/pc_reg.sv" \
 "../../../../digital_twin.srcs/sources_1/new/perip_bridge.sv" \
+"../../../../digital_twin.srcs/sources_1/imports/new/core/pipeline_regs/reg_ex_mem.sv" \
+"../../../../digital_twin.srcs/sources_1/imports/new/core/pipeline_regs/reg_id_ex.sv" \
+"../../../../digital_twin.srcs/sources_1/imports/new/core/pipeline_regs/reg_if_id.sv" \
+"../../../../digital_twin.srcs/sources_1/imports/new/core/pipeline_regs/reg_mem_wb.sv" \
+"../../../../digital_twin.srcs/sources_1/imports/new/core/id/regfile.sv" \
 "../../../../digital_twin.srcs/sources_1/new/seg7.sv" \
+"../../../../digital_twin.srcs/sources_1/imports/new/core/ex/stage_ex.sv" \
+"../../../../digital_twin.srcs/sources_1/imports/new/core/id/stage_id.sv" \
+"../../../../digital_twin.srcs/sources_1/imports/new/core/if/stage_if.sv" \
+"../../../../digital_twin.srcs/sources_1/imports/new/core/mem/stage_mem.sv" \
+"../../../../digital_twin.srcs/sources_1/imports/new/core/wb/stage_wb.sv" \
 "../../../../digital_twin.srcs/sources_1/new/student_top.sv" \
 "../../../../digital_twin.srcs/sources_1/new/top.sv" \
 "../../../../digital_twin.srcs/sources_1/new/twin_controller.sv" \

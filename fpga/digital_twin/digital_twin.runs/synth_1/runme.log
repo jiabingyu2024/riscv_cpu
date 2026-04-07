@@ -14,7 +14,7 @@ ECHO 处于关闭状态。
     ** Copyright 2022-2023 Advanced Micro Devices, Inc. All Rights Reserved.
 
 source top.tcl -notrace
-create_project: Time (s): cpu = 00:00:08 ; elapsed = 00:00:10 . Memory (MB): peak = 474.656 ; gain = 185.328
+create_project: Time (s): cpu = 00:00:09 ; elapsed = 00:00:10 . Memory (MB): peak = 474.266 ; gain = 183.223
 Command: read_checkpoint -auto_incremental -incremental D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.srcs/utils_1/imports/synth_1/top.dcp
 INFO: [Vivado 12-5825] Read reference checkpoint from D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.srcs/utils_1/imports/synth_1/top.dcp for incremental synthesis
 INFO: [Vivado 12-7989] Please ensure there are no constraint changes
@@ -27,13 +27,13 @@ INFO: [Designutils 20-5440] No compile time benefit to using incremental synthes
 INFO: [Designutils 20-4379] Flow is switching to default flow due to incremental criteria not met. If you would like to alter this behaviour and have the flow terminate instead, please set the following parameter config_implementation {autoIncr.Synth.RejectBehavior Terminate}
 INFO: [Synth 8-7079] Multithreading enabled for synth_design using a maximum of 2 processes.
 INFO: [Synth 8-7078] Launching helper process for spawning children vivado processes
-INFO: [Synth 8-7075] Helper process launched with PID 24100
+INFO: [Synth 8-7075] Helper process launched with PID 14596
 ---------------------------------------------------------------------------------
-Starting RTL Elaboration : Time (s): cpu = 00:00:07 ; elapsed = 00:00:08 . Memory (MB): peak = 1387.141 ; gain = 441.531
+Starting RTL Elaboration : Time (s): cpu = 00:00:09 ; elapsed = 00:00:11 . Memory (MB): peak = 1386.180 ; gain = 439.172
 ---------------------------------------------------------------------------------
 INFO: [Synth 8-6157] synthesizing module 'top' [D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.srcs/sources_1/new/top.sv:23]
-INFO: [Synth 8-6157] synthesizing module 'pll' [D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.runs/synth_1/.Xil/Vivado-30444-LAPTOP-6CG4KN49/realtime/pll_stub.v:6]
-INFO: [Synth 8-6155] done synthesizing module 'pll' (0#1) [D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.runs/synth_1/.Xil/Vivado-30444-LAPTOP-6CG4KN49/realtime/pll_stub.v:6]
+INFO: [Synth 8-6157] synthesizing module 'pll' [D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.runs/synth_1/.Xil/Vivado-19776-LAPTOP-6CG4KN49/realtime/pll_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'pll' (0#1) [D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.runs/synth_1/.Xil/Vivado-19776-LAPTOP-6CG4KN49/realtime/pll_stub.v:6]
 INFO: [Synth 8-6157] synthesizing module 'uart' [D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.srcs/sources_1/new/uart.sv:22]
 	Parameter CLK_FREQ bound to: 50000000 - type: integer 
 	Parameter BAUD_RATE bound to: 9600 - type: integer 
@@ -93,7 +93,7 @@ INFO: [Synth 8-6155] done synthesizing module 'stage_ex' (0#1) [D:/Resourses/03_
 INFO: [Synth 8-6157] synthesizing module 'reg_ex_mem' [D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.srcs/sources_1/imports/new/core/pipeline_regs/reg_ex_mem.sv:10]
 INFO: [Synth 8-6155] done synthesizing module 'reg_ex_mem' (0#1) [D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.srcs/sources_1/imports/new/core/pipeline_regs/reg_ex_mem.sv:10]
 INFO: [Synth 8-6157] synthesizing module 'stage_mem' [D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.srcs/sources_1/imports/new/core/mem/stage_mem.sv:12]
-INFO: [Synth 8-294] found qualifier unique on case statement: implementing as parallel_case [D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.srcs/sources_1/imports/new/core/mem/stage_mem.sv:44]
+INFO: [Synth 8-294] found qualifier unique on case statement: implementing as parallel_case [D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.srcs/sources_1/imports/new/core/mem/stage_mem.sv:42]
 INFO: [Synth 8-6155] done synthesizing module 'stage_mem' (0#1) [D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.srcs/sources_1/imports/new/core/mem/stage_mem.sv:12]
 INFO: [Synth 8-6157] synthesizing module 'reg_mem_wb' [D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.srcs/sources_1/imports/new/core/pipeline_regs/reg_mem_wb.sv:10]
 INFO: [Synth 8-6155] done synthesizing module 'reg_mem_wb' (0#1) [D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.srcs/sources_1/imports/new/core/pipeline_regs/reg_mem_wb.sv:10]
@@ -101,8 +101,8 @@ INFO: [Synth 8-6157] synthesizing module 'stage_wb' [D:/Resourses/03_competition
 INFO: [Synth 8-6155] done synthesizing module 'stage_wb' (0#1) [D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.srcs/sources_1/imports/new/core/wb/stage_wb.sv:11]
 INFO: [Synth 8-6155] done synthesizing module 'core' (0#1) [D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.srcs/sources_1/imports/new/core/core.sv:12]
 INFO: [Synth 8-6155] done synthesizing module 'myCPU' (0#1) [D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.srcs/sources_1/imports/new/myCPU.sv:3]
-INFO: [Synth 8-6157] synthesizing module 'IROM' [D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.runs/synth_1/.Xil/Vivado-30444-LAPTOP-6CG4KN49/realtime/IROM_stub.v:6]
-INFO: [Synth 8-6155] done synthesizing module 'IROM' (0#1) [D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.runs/synth_1/.Xil/Vivado-30444-LAPTOP-6CG4KN49/realtime/IROM_stub.v:6]
+INFO: [Synth 8-6157] synthesizing module 'IROM' [D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.runs/synth_1/.Xil/Vivado-19776-LAPTOP-6CG4KN49/realtime/IROM_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'IROM' (0#1) [D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.runs/synth_1/.Xil/Vivado-19776-LAPTOP-6CG4KN49/realtime/IROM_stub.v:6]
 INFO: [Synth 8-6157] synthesizing module 'perip_bridge' [D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.srcs/sources_1/new/perip_bridge.sv:22]
 INFO: [Synth 8-155] case statement is not full and has no default [D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.srcs/sources_1/new/perip_bridge.sv:56]
 INFO: [Synth 8-6157] synthesizing module 'display_seg' [D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.srcs/sources_1/new/display_seg.sv:23]
@@ -111,8 +111,8 @@ INFO: [Synth 8-226] default block is never used [D:/Resourses/03_competitions/26
 INFO: [Synth 8-6155] done synthesizing module 'seg7' (0#1) [D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.srcs/sources_1/new/seg7.sv:23]
 INFO: [Synth 8-6155] done synthesizing module 'display_seg' (0#1) [D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.srcs/sources_1/new/display_seg.sv:23]
 INFO: [Synth 8-6157] synthesizing module 'dram_driver' [D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.srcs/sources_1/new/dram_driver.sv:23]
-INFO: [Synth 8-6157] synthesizing module 'DRAM' [D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.runs/synth_1/.Xil/Vivado-30444-LAPTOP-6CG4KN49/realtime/DRAM_stub.v:6]
-INFO: [Synth 8-6155] done synthesizing module 'DRAM' (0#1) [D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.runs/synth_1/.Xil/Vivado-30444-LAPTOP-6CG4KN49/realtime/DRAM_stub.v:6]
+INFO: [Synth 8-6157] synthesizing module 'DRAM' [D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.runs/synth_1/.Xil/Vivado-19776-LAPTOP-6CG4KN49/realtime/DRAM_stub.v:6]
+INFO: [Synth 8-6155] done synthesizing module 'DRAM' (0#1) [D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.runs/synth_1/.Xil/Vivado-19776-LAPTOP-6CG4KN49/realtime/DRAM_stub.v:6]
 INFO: [Synth 8-6155] done synthesizing module 'dram_driver' (0#1) [D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.srcs/sources_1/new/dram_driver.sv:23]
 INFO: [Synth 8-6157] synthesizing module 'counter' [D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.srcs/sources_1/new/counter.sv:23]
 INFO: [Synth 8-6155] done synthesizing module 'counter' (0#1) [D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.srcs/sources_1/new/counter.sv:23]
@@ -205,18 +205,18 @@ WARNING: [Synth 8-7129] Port i_pc_cur[0] in module bpu_top is either unconnected
 WARNING: [Synth 8-7129] Port i_update_pc[1] in module bpu_top is either unconnected or has no load
 WARNING: [Synth 8-7129] Port i_update_pc[0] in module bpu_top is either unconnected or has no load
 ---------------------------------------------------------------------------------
-Finished RTL Elaboration : Time (s): cpu = 00:00:10 ; elapsed = 00:00:11 . Memory (MB): peak = 1516.621 ; gain = 571.012
+Finished RTL Elaboration : Time (s): cpu = 00:00:12 ; elapsed = 00:00:14 . Memory (MB): peak = 1515.480 ; gain = 568.473
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Handling Custom Attributes
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Handling Custom Attributes : Time (s): cpu = 00:00:10 ; elapsed = 00:00:12 . Memory (MB): peak = 1516.621 ; gain = 571.012
+Finished Handling Custom Attributes : Time (s): cpu = 00:00:12 ; elapsed = 00:00:15 . Memory (MB): peak = 1515.480 ; gain = 568.473
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished RTL Optimization Phase 1 : Time (s): cpu = 00:00:10 ; elapsed = 00:00:12 . Memory (MB): peak = 1516.621 ; gain = 571.012
+Finished RTL Optimization Phase 1 : Time (s): cpu = 00:00:12 ; elapsed = 00:00:15 . Memory (MB): peak = 1515.480 ; gain = 568.473
 ---------------------------------------------------------------------------------
-Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.099 . Memory (MB): peak = 1516.621 ; gain = 0.000
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.091 . Memory (MB): peak = 1515.480 ; gain = 0.000
 INFO: [Project 1-570] Preparing netlist for logic optimization
 
 Processing XDC Constraints
@@ -235,23 +235,23 @@ Parsing XDC File [D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_
 Finished Parsing XDC File [D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.runs/synth_1/dont_touch.xdc]
 Completed Processing XDC Constraints
 
-Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.002 . Memory (MB): peak = 1553.789 ; gain = 0.000
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.002 . Memory (MB): peak = 1620.633 ; gain = 0.000
 INFO: [Project 1-111] Unisim Transformation Summary:
 No Unisim elements were transformed.
 
 系统找不到指定的路径。
-Constraint Validation Runtime : Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.031 . Memory (MB): peak = 1553.789 ; gain = 0.000
+Constraint Validation Runtime : Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.030 . Memory (MB): peak = 1620.633 ; gain = 0.000
 INFO: [Designutils 20-5440] No compile time benefit to using incremental synthesis; A full resynthesis will be run
 INFO: [Designutils 20-4379] Flow is switching to default flow due to incremental criteria not met. If you would like to alter this behaviour and have the flow terminate instead, please set the following parameter config_implementation {autoIncr.Synth.RejectBehavior Terminate}
 ---------------------------------------------------------------------------------
-Finished Constraint Validation : Time (s): cpu = 00:00:24 ; elapsed = 00:00:27 . Memory (MB): peak = 1553.789 ; gain = 608.180
+Finished Constraint Validation : Time (s): cpu = 00:00:26 ; elapsed = 00:00:30 . Memory (MB): peak = 1620.633 ; gain = 673.625
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Loading Part and Timing Information
 ---------------------------------------------------------------------------------
 Loading part: xc7k325tffg900-2
 ---------------------------------------------------------------------------------
-Finished Loading Part and Timing Information : Time (s): cpu = 00:00:24 ; elapsed = 00:00:27 . Memory (MB): peak = 1553.789 ; gain = 608.180
+Finished Loading Part and Timing Information : Time (s): cpu = 00:00:26 ; elapsed = 00:00:30 . Memory (MB): peak = 1620.633 ; gain = 673.625
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Applying 'set_property' XDC Constraints
@@ -264,7 +264,7 @@ Applied set_property KEEP_HIERARCHY = SOFT for pll_inst. (constraint file  auto 
 Applied set_property KEEP_HIERARCHY = SOFT for student_top_inst/Mem_IROM. (constraint file  auto generated constraint).
 Applied set_property KEEP_HIERARCHY = SOFT for student_top_inst/bridge_inst/dram_driver_inst/Mem_DRAM. (constraint file  auto generated constraint).
 ---------------------------------------------------------------------------------
-Finished applying 'set_property' XDC Constraints : Time (s): cpu = 00:00:24 ; elapsed = 00:00:27 . Memory (MB): peak = 1553.789 ; gain = 608.180
+Finished applying 'set_property' XDC Constraints : Time (s): cpu = 00:00:26 ; elapsed = 00:00:30 . Memory (MB): peak = 1620.633 ; gain = 673.625
 ---------------------------------------------------------------------------------
 INFO: [Synth 8-802] inferred FSM for state register 'rx_state_reg' in module 'uart'
 INFO: [Synth 8-802] inferred FSM for state register 'tx_state_reg' in module 'uart'
@@ -285,7 +285,7 @@ INFO: [Synth 8-3354] encoded FSM with state register 'rx_state_reg' using encodi
 ---------------------------------------------------------------------------------------------------
 INFO: [Synth 8-3354] encoded FSM with state register 'tx_state_reg' using encoding 'sequential' in module 'uart'
 ---------------------------------------------------------------------------------
-Finished RTL Optimization Phase 2 : Time (s): cpu = 00:00:25 ; elapsed = 00:00:29 . Memory (MB): peak = 1553.789 ; gain = 608.180
+Finished RTL Optimization Phase 2 : Time (s): cpu = 00:00:28 ; elapsed = 00:00:32 . Memory (MB): peak = 1620.633 ; gain = 673.625
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start RTL Component Statistics 
@@ -372,25 +372,25 @@ WARNING: [Synth 8-7129] Port i_pc_f_d[20] in module stage_id is either unconnect
 WARNING: [Synth 8-7129] Port i_pc_f_d[19] in module stage_id is either unconnected or has no load
 INFO: [Common 17-14] Message 'Synth 8-7129' appears 100 times and further instances of the messages will be disabled. Use the Tcl command set_msg_config to change the current settings.
 ---------------------------------------------------------------------------------
-Finished Cross Boundary and Area Optimization : Time (s): cpu = 00:01:12 ; elapsed = 00:01:22 . Memory (MB): peak = 1553.789 ; gain = 608.180
+Finished Cross Boundary and Area Optimization : Time (s): cpu = 00:01:16 ; elapsed = 00:01:23 . Memory (MB): peak = 1620.633 ; gain = 673.625
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Applying XDC Timing Constraints
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Applying XDC Timing Constraints : Time (s): cpu = 00:01:20 ; elapsed = 00:01:30 . Memory (MB): peak = 1553.789 ; gain = 608.180
+Finished Applying XDC Timing Constraints : Time (s): cpu = 00:01:23 ; elapsed = 00:01:31 . Memory (MB): peak = 1620.633 ; gain = 673.625
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Timing Optimization
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Timing Optimization : Time (s): cpu = 00:01:22 ; elapsed = 00:01:32 . Memory (MB): peak = 1553.789 ; gain = 608.180
+Finished Timing Optimization : Time (s): cpu = 00:01:25 ; elapsed = 00:01:33 . Memory (MB): peak = 1620.633 ; gain = 673.625
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Technology Mapping
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Technology Mapping : Time (s): cpu = 00:01:25 ; elapsed = 00:01:36 . Memory (MB): peak = 1606.539 ; gain = 660.930
+Finished Technology Mapping : Time (s): cpu = 00:01:28 ; elapsed = 00:01:36 . Memory (MB): peak = 1620.633 ; gain = 673.625
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start IO Insertion
@@ -408,37 +408,37 @@ Start Final Netlist Cleanup
 Finished Final Netlist Cleanup
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished IO Insertion : Time (s): cpu = 00:01:31 ; elapsed = 00:01:43 . Memory (MB): peak = 1621.340 ; gain = 675.730
+Finished IO Insertion : Time (s): cpu = 00:01:35 ; elapsed = 00:01:44 . Memory (MB): peak = 1620.633 ; gain = 673.625
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Renaming Generated Instances
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Renaming Generated Instances : Time (s): cpu = 00:01:31 ; elapsed = 00:01:43 . Memory (MB): peak = 1621.340 ; gain = 675.730
+Finished Renaming Generated Instances : Time (s): cpu = 00:01:35 ; elapsed = 00:01:44 . Memory (MB): peak = 1620.633 ; gain = 673.625
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Rebuilding User Hierarchy
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Rebuilding User Hierarchy : Time (s): cpu = 00:01:32 ; elapsed = 00:01:44 . Memory (MB): peak = 1621.340 ; gain = 675.730
+Finished Rebuilding User Hierarchy : Time (s): cpu = 00:01:36 ; elapsed = 00:01:45 . Memory (MB): peak = 1620.633 ; gain = 673.625
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Renaming Generated Ports
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Renaming Generated Ports : Time (s): cpu = 00:01:32 ; elapsed = 00:01:44 . Memory (MB): peak = 1621.340 ; gain = 675.730
+Finished Renaming Generated Ports : Time (s): cpu = 00:01:36 ; elapsed = 00:01:45 . Memory (MB): peak = 1620.633 ; gain = 673.625
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Handling Custom Attributes
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Handling Custom Attributes : Time (s): cpu = 00:01:32 ; elapsed = 00:01:44 . Memory (MB): peak = 1621.340 ; gain = 675.730
+Finished Handling Custom Attributes : Time (s): cpu = 00:01:36 ; elapsed = 00:01:45 . Memory (MB): peak = 1620.633 ; gain = 673.625
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Renaming Generated Nets
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Renaming Generated Nets : Time (s): cpu = 00:01:32 ; elapsed = 00:01:44 . Memory (MB): peak = 1621.340 ; gain = 675.730
+Finished Renaming Generated Nets : Time (s): cpu = 00:01:36 ; elapsed = 00:01:45 . Memory (MB): peak = 1620.633 ; gain = 673.625
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Writing Synthesis Report
@@ -462,42 +462,42 @@ Report Cell Usage:
 |3     |pll    |     1|
 |4     |CARRY4 |   111|
 |5     |LUT1   |     8|
-|6     |LUT2   |   324|
-|7     |LUT3   |   155|
-|8     |LUT4   |   314|
-|9     |LUT5   |   308|
-|10    |LUT6   |  1667|
+|6     |LUT2   |   315|
+|7     |LUT3   |   157|
+|8     |LUT4   |   324|
+|9     |LUT5   |   317|
+|10    |LUT6   |  1640|
 |11    |MUXF7  |   396|
 |12    |MUXF8  |    99|
 |13    |FDCE   |  2716|
-|14    |FDPE   |    33|
+|14    |FDPE   |    34|
 |15    |FDRE   |   113|
 |16    |IBUF   |     1|
 |17    |OBUF   |    73|
 +------+-------+------+
 ---------------------------------------------------------------------------------
-Finished Writing Synthesis Report : Time (s): cpu = 00:01:32 ; elapsed = 00:01:45 . Memory (MB): peak = 1621.340 ; gain = 675.730
+Finished Writing Synthesis Report : Time (s): cpu = 00:01:36 ; elapsed = 00:01:45 . Memory (MB): peak = 1620.633 ; gain = 673.625
 ---------------------------------------------------------------------------------
 Synthesis finished with 0 errors, 0 critical warnings and 71 warnings.
-Synthesis Optimization Runtime : Time (s): cpu = 00:01:19 ; elapsed = 00:01:40 . Memory (MB): peak = 1621.340 ; gain = 638.562
-Synthesis Optimization Complete : Time (s): cpu = 00:01:33 ; elapsed = 00:01:45 . Memory (MB): peak = 1621.340 ; gain = 675.730
+Synthesis Optimization Runtime : Time (s): cpu = 00:01:19 ; elapsed = 00:01:41 . Memory (MB): peak = 1620.633 ; gain = 568.473
+Synthesis Optimization Complete : Time (s): cpu = 00:01:36 ; elapsed = 00:01:45 . Memory (MB): peak = 1620.633 ; gain = 673.625
 INFO: [Project 1-571] Translating synthesized netlist
-Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.100 . Memory (MB): peak = 1626.172 ; gain = 0.000
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.107 . Memory (MB): peak = 1630.199 ; gain = 0.000
 INFO: [Netlist 29-17] Analyzing 606 Unisim elements for replacement
 INFO: [Netlist 29-28] Unisim Transformation completed in 0 CPU seconds
 INFO: [Project 1-570] Preparing netlist for logic optimization
 INFO: [Opt 31-138] Pushed 0 inverter(s) to 0 load pin(s).
-Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.001 . Memory (MB): peak = 1634.145 ; gain = 0.000
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.002 . Memory (MB): peak = 1642.137 ; gain = 0.000
 INFO: [Project 1-111] Unisim Transformation Summary:
 No Unisim elements were transformed.
 
 系统找不到指定的路径。
-Synth Design complete | Checksum: 194524fa
+Synth Design complete | Checksum: 7526580a
 INFO: [Common 17-83] Releasing license: Synthesis
 112 Infos, 101 Warnings, 0 Critical Warnings and 0 Errors encountered.
 synth_design completed successfully
-synth_design: Time (s): cpu = 00:01:42 ; elapsed = 00:01:58 . Memory (MB): peak = 1634.145 ; gain = 1142.832
-Write ShapeDB Complete: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.017 . Memory (MB): peak = 1634.145 ; gain = 0.000
+synth_design: Time (s): cpu = 00:01:49 ; elapsed = 00:02:02 . Memory (MB): peak = 1642.137 ; gain = 1152.379
+Write ShapeDB Complete: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.021 . Memory (MB): peak = 1642.137 ; gain = 0.000
 INFO: [Common 17-1381] The checkpoint 'D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.runs/synth_1/top.dcp' has been generated.
 INFO: [runtcl-4] Executing : report_utilization -file top_utilization_synth.rpt -pb top_utilization_synth.pb
-INFO: [Common 17-206] Exiting Vivado at Tue Apr  7 10:24:05 2026...
+INFO: [Common 17-206] Exiting Vivado at Tue Apr  7 18:27:33 2026...
