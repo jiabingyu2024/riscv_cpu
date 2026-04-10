@@ -1,28 +1,4 @@
-# =========================
-# Verilator / simulation outputs
-# =========================
-sim/build/
-sim/hex/
-sim/logs/
-sim/waves/
-obj_dir/
-*.fst
-*.vcd
-*.vpd
 
-# =========================
-# Python cache
-# =========================
-__pycache__/
-*.pyc
-
-# =========================
-# Editor / OS temp
-# =========================
-.DS_Store
-Thumbs.db
-*.swp
-*.swo
 
 # =========================
 # Vivado generated artifacts (project-local)

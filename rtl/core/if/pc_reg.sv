@@ -17,7 +17,7 @@ module pc_reg(
 
     always_ff @(posedge i_clk or negedge i_rst_n) begin
         if (!i_rst_n) begin
-            o_pc_cur <= '0;
+            o_pc_cur <= 32'h8000_0000;
         end else begin
             o_pc_cur <= i_pc_next;
         end
