@@ -11,15 +11,15 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="86,061.666 ns"></ZoomStartTime>
-      <ZoomEndTime time="86,512.667 ns"></ZoomEndTime>
-      <Cursor1Time time="86,393.166 ns"></Cursor1Time>
+      <ZoomStartTime time="0.000 ns"></ZoomStartTime>
+      <ZoomEndTime time="113.601 ns"></ZoomEndTime>
+      <Cursor1Time time="100,000.000 ns"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
-      <NameColumnWidth column_width="398"></NameColumnWidth>
-      <ValueColumnWidth column_width="191"></ValueColumnWidth>
+      <NameColumnWidth column_width="101"></NameColumnWidth>
+      <ValueColumnWidth column_width="72"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="20" />
+   <WVObjectSize size="19" />
    <wvobject fp_name="/tb_myCPU/uut/w_clk_50Mhz" type="logic">
       <obj_property name="ElementShortName">w_clk_50Mhz</obj_property>
       <obj_property name="ObjectShortName">w_clk_50Mhz</obj_property>
@@ -66,14 +66,6 @@
       <obj_property name="ElementShortName">perip_mask[1:0]</obj_property>
       <obj_property name="ObjectShortName">perip_mask[1:0]</obj_property>
    </wvobject>
-   <wvobject fp_name="/tb_myCPU/uut/student_top_inst/Core_cpu/rf_inst/reg_bank[18]" type="array">
-      <obj_property name="ElementShortName">[18][31:0]</obj_property>
-      <obj_property name="ObjectShortName">[18][31:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/tb_myCPU/uut/student_top_inst/Core_cpu/rf_inst/reg_bank[19]" type="array">
-      <obj_property name="ElementShortName">[19][31:0]</obj_property>
-      <obj_property name="ObjectShortName">[19][31:0]</obj_property>
-   </wvobject>
    <wvobject fp_name="group111" type="group">
       <obj_property name="label">dram</obj_property>
       <obj_property name="DisplayName">label</obj_property>
@@ -93,10 +85,6 @@
       <wvobject fp_name="/tb_myCPU/uut/student_top_inst/bridge_inst/dram_driver_inst/dram_rdata_raw" type="array">
          <obj_property name="ElementShortName">dram_rdata_raw[31:0]</obj_property>
          <obj_property name="ObjectShortName">dram_rdata_raw[31:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/tb_myCPU/uut/student_top_inst/bridge_inst/dram_driver_inst/dout" type="array">
-         <obj_property name="ElementShortName">dout[31:0]</obj_property>
-         <obj_property name="ObjectShortName">dout[31:0]</obj_property>
       </wvobject>
    </wvobject>
    <wvobject fp_name="/tb_myCPU/uut/student_top_inst/bridge_inst/cnt_rdata" type="array">
@@ -126,5 +114,10 @@
    <wvobject fp_name="/tb_myCPU/uut/student_top_inst/bridge_inst/dram_rdata" type="array">
       <obj_property name="ElementShortName">dram_rdata[31:0]</obj_property>
       <obj_property name="ObjectShortName">dram_rdata[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_myCPU/uut/student_top_inst/Core_cpu/u_core/u_stage_id/u_regfile/rf_mem" type="array">
+      <obj_property name="ElementShortName">rf_mem[0:31][31:0]</obj_property>
+      <obj_property name="ObjectShortName">rf_mem[0:31][31:0]</obj_property>
+      <obj_property name="isExpanded"></obj_property>
    </wvobject>
 </wave_config>

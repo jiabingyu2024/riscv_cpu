@@ -4,7 +4,7 @@
 <!-- Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.                   -->
 <!-- Copyright 2022-2023 Advanced Micro Devices, Inc. All Rights Reserved.   -->
 
-<Project Product="Vivado" Version="7" Minor="65" Path="D:/Resourses/03_competitions/26_03_jcs/riscv_cpu/fpga/digital_twin/digital_twin.xpr">
+<Project Product="Vivado" Version="7" Minor="65" Path="D:/jichuang/fpga/digital_twin/digital_twin.xpr">
   <DefaultLaunch Dir="$PRUNDIR"/>
   <Configuration>
     <Option Name="Id" Val="313b910b27214b979b5f652398d4202a"/>
@@ -59,20 +59,20 @@
     <Option Name="IPStaticSourceDir" Val="$PIPUSERFILESDIR/ipstatic"/>
     <Option Name="EnableBDX" Val="FALSE"/>
     <Option Name="FeatureSet" Val="FeatureSet_Classic"/>
-    <Option Name="WTXSimLaunchSim" Val="137"/>
+    <Option Name="WTXSimLaunchSim" Val="139"/>
     <Option Name="WTModelSimLaunchSim" Val="0"/>
     <Option Name="WTQuestaLaunchSim" Val="0"/>
     <Option Name="WTIesLaunchSim" Val="0"/>
     <Option Name="WTVcsLaunchSim" Val="0"/>
     <Option Name="WTRivieraLaunchSim" Val="0"/>
     <Option Name="WTActivehdlLaunchSim" Val="0"/>
-    <Option Name="WTXSimExportSim" Val="39"/>
-    <Option Name="WTModelSimExportSim" Val="39"/>
-    <Option Name="WTQuestaExportSim" Val="39"/>
+    <Option Name="WTXSimExportSim" Val="44"/>
+    <Option Name="WTModelSimExportSim" Val="44"/>
+    <Option Name="WTQuestaExportSim" Val="44"/>
     <Option Name="WTIesExportSim" Val="0"/>
-    <Option Name="WTVcsExportSim" Val="39"/>
-    <Option Name="WTRivieraExportSim" Val="39"/>
-    <Option Name="WTActivehdlExportSim" Val="39"/>
+    <Option Name="WTVcsExportSim" Val="44"/>
+    <Option Name="WTRivieraExportSim" Val="44"/>
+    <Option Name="WTActivehdlExportSim" Val="44"/>
     <Option Name="GenerateIPUpgradeLog" Val="TRUE"/>
     <Option Name="XSimRadix" Val="hex"/>
     <Option Name="XSimTimeUnit" Val="ns"/>
@@ -526,7 +526,6 @@
         <Option Name="TransportPathDelay" Val="0"/>
         <Option Name="TransportIntDelay" Val="0"/>
         <Option Name="SelectedSimModel" Val="rtl"/>
-        <Option Name="SimMode" Val="post-implementation"/>
         <Option Name="PamDesignTestbench" Val=""/>
         <Option Name="PamDutBypassFile" Val="xil_dut_bypass"/>
         <Option Name="PamSignalDriverFile" Val="xil_bypass_driver"/>
@@ -553,7 +552,7 @@
       </Config>
     </FileSet>
     <FileSet Name="IROM" Type="BlockSrcs" RelSrcDir="$PSRCDIR/IROM" RelGenDir="$PGENDIR/IROM">
-      <File Path="$PSRCDIR/sources_1/ip/IROM/IROM.xci">
+      <File Path="$PSRCDIR/sources_1/ip/IROM_1/IROM.xci">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
@@ -566,7 +565,7 @@
       </Config>
     </FileSet>
     <FileSet Name="DRAM" Type="BlockSrcs" RelSrcDir="$PSRCDIR/DRAM" RelGenDir="$PGENDIR/DRAM">
-      <File Path="$PSRCDIR/sources_1/ip/DRAM/DRAM.xci">
+      <File Path="$PSRCDIR/sources_1/ip/DRAM_1/DRAM.xci">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
@@ -610,7 +609,9 @@
     </Run>
     <Run Id="IROM_synth_1" Type="Ft3:Synth" SrcSet="IROM" Part="xc7k325tffg900-2" ConstrsSet="IROM" Description="Vivado Synthesis Defaults" AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" Dir="$PRUNDIR/IROM_synth_1" IncludeInArchive="true" IsChild="false" AutoIncrementalDir="$PSRCDIR/utils_1/imports/IROM_synth_1" AutoRQSDir="$PSRCDIR/utils_1/imports/IROM_synth_1">
       <Strategy Version="1" Minor="2">
-        <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2023"/>
+        <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2023">
+          <Desc>Vivado Synthesis Defaults</Desc>
+        </StratHandle>
         <Step Id="synth_design"/>
       </Strategy>
       <GeneratedRun Dir="$PRUNDIR" File="gen_run.xml"/>
@@ -620,7 +621,9 @@
     </Run>
     <Run Id="DRAM_synth_1" Type="Ft3:Synth" SrcSet="DRAM" Part="xc7k325tffg900-2" ConstrsSet="DRAM" Description="Vivado Synthesis Defaults" AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" Dir="$PRUNDIR/DRAM_synth_1" IncludeInArchive="true" IsChild="false" AutoIncrementalDir="$PSRCDIR/utils_1/imports/DRAM_synth_1" AutoRQSDir="$PSRCDIR/utils_1/imports/DRAM_synth_1">
       <Strategy Version="1" Minor="2">
-        <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2023"/>
+        <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2023">
+          <Desc>Vivado Synthesis Defaults</Desc>
+        </StratHandle>
         <Step Id="synth_design"/>
       </Strategy>
       <GeneratedRun Dir="$PRUNDIR" File="gen_run.xml"/>
@@ -648,7 +651,9 @@
     </Run>
     <Run Id="IROM_impl_1" Type="Ft2:EntireDesign" Part="xc7k325tffg900-2" ConstrsSet="IROM" Description="Default settings for Implementation." AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" SynthRun="IROM_synth_1" IncludeInArchive="false" IsChild="false" GenFullBitstream="true" AutoIncrementalDir="$PSRCDIR/utils_1/imports/IROM_impl_1" AutoRQSDir="$PSRCDIR/utils_1/imports/IROM_impl_1">
       <Strategy Version="1" Minor="2">
-        <StratHandle Name="Vivado Implementation Defaults" Flow="Vivado Implementation 2023"/>
+        <StratHandle Name="Vivado Implementation Defaults" Flow="Vivado Implementation 2023">
+          <Desc>Default settings for Implementation.</Desc>
+        </StratHandle>
         <Step Id="init_design"/>
         <Step Id="opt_design"/>
         <Step Id="power_opt_design"/>
@@ -665,7 +670,9 @@
     </Run>
     <Run Id="DRAM_impl_1" Type="Ft2:EntireDesign" Part="xc7k325tffg900-2" ConstrsSet="DRAM" Description="Default settings for Implementation." AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" SynthRun="DRAM_synth_1" IncludeInArchive="false" IsChild="false" GenFullBitstream="true" AutoIncrementalDir="$PSRCDIR/utils_1/imports/DRAM_impl_1" AutoRQSDir="$PSRCDIR/utils_1/imports/DRAM_impl_1">
       <Strategy Version="1" Minor="2">
-        <StratHandle Name="Vivado Implementation Defaults" Flow="Vivado Implementation 2023"/>
+        <StratHandle Name="Vivado Implementation Defaults" Flow="Vivado Implementation 2023">
+          <Desc>Default settings for Implementation.</Desc>
+        </StratHandle>
         <Step Id="init_design"/>
         <Step Id="opt_design"/>
         <Step Id="power_opt_design"/>

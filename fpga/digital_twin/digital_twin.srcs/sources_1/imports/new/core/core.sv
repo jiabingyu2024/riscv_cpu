@@ -113,19 +113,24 @@ module core(
     logic             flush_e_m;
     logic             flush_m_w;
 
+    logic [`PC_BUS]   pc_f;
+    
     stage_if u_stage_if (
         .i_clk       (clk),
         .i_rst_n     (rst_n),
         .i_pc_next   (pc_next_hz),
         .i_irom_data (irom_data),
         .o_instr     (inst_f),
-        .o_pc_cur    (irom_addr)
+        .o_pc_cur    (pc_f)
     );
+    
+    // 核心修改：供给 BRAM 下一拍的地址。注意复位时供给初始地址，保证第一拍读出的是第一条指令。
+    assign irom_addr = rst_n ? pc_next_hz : 32'h8000_0000; 
 
     bpu_top u_bpu_top (
         .i_clk           (clk),
         .i_rst_n         (rst_n),
-        .i_pc_cur        (irom_addr),
+        .i_pc_cur        (pc_f),
         .i_update_en     (update_en_e),
         .i_update_taken  (update_taken_e),
         .i_update_target (update_target_e),
@@ -135,7 +140,7 @@ module core(
     );
 
     hazard_unit u_hazard_unit (
-        .i_pc_cur        (irom_addr),
+        .i_pc_cur        (pc_f),
         .i_rs1_addr_d    (rs1_addr_d),
         .i_rs2_addr_d    (rs2_addr_d),
         .i_rd_addr_e     (rd_addr_e),
@@ -162,7 +167,7 @@ module core(
         .i_rst_n      (rst_n),
         .i_flush      (flush_f_d),
         .i_stall      (stall_f_d),
-        .i_pc_f_d     (irom_addr),
+        .i_pc_f_d     (pc_f),
         .i_inst_f_d   (inst_f),
         .i_pc_predict (pc_predict_f),
         .o_pc_f_d     (pc_d),
@@ -312,19 +317,25 @@ module core(
         .o_load_unsigned (load_unsigned_m)
     );
 
+    // 核心修改：提早一个周期将 EX 阶段的地址送给外部 DRAM，适配 BRAM 的延迟
+    assign dram_wen   = mem_write_e;
+    assign dram_addr  = alu_res_e[`RAM_ADDR_BUS];
+    assign dram_wdata = a2_data_e;
+    assign dram_mask  = mem_mask_e;
+
     stage_mem u_stage_mem (
         .i_clk           (clk),
         .i_rst_n         (rst_n),
-        .i_mem_write     (mem_write_m),
-        .i_mem_addr      (alu_res_m[`RAM_ADDR_BUS]),
-        .i_mem_wdata     (a2_data_m),
+        .i_mem_write     (1'b0), // 对外发信号已经用 assign 接出，stage_mem 内不再使用
+        .i_mem_addr      (alu_res_m[`RAM_ADDR_BUS]), // 仅用于返回数据的 offset 判断
+        .i_mem_wdata     (32'b0),
         .i_mem_mask      (mem_mask_m),
         .i_load_unsigned (load_unsigned_m),
-        .i_dram_rdata    (dram_rdata),
-        .o_dram_wen      (dram_wen),
-        .o_dram_addr     (dram_addr),
-        .o_dram_wdata    (dram_wdata),
-        .o_dram_mask     (dram_mask),
+        .i_dram_rdata    (dram_rdata), // 来自 BRAM 等待了一拍后在 MEM 阶段吐出的数据
+        .o_dram_wen      (),
+        .o_dram_addr     (),
+        .o_dram_wdata    (),
+        .o_dram_mask     (),
         .o_mem_rdata     (mem_data_m)
     );
 

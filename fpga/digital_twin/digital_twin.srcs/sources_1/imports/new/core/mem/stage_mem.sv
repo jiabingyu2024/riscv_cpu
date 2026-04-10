@@ -29,14 +29,30 @@ module stage_mem (                  //仅例化dram即可
 
     logic [7:0]  load_byte;
     logic [15:0] load_half;
+    logic [1:0]  addr_offset;
 
     assign o_dram_wen   = i_mem_write;
     assign o_dram_addr  = i_mem_addr;
     assign o_dram_wdata = i_mem_wdata;
     assign o_dram_mask  = i_mem_mask;
 
-    assign load_byte = i_dram_rdata[7:0];
-    assign load_half = i_dram_rdata[15:0];
+    assign addr_offset = i_mem_addr[1:0];
+
+    always_comb begin
+        case (addr_offset)
+            2'b00: load_byte = i_dram_rdata[7:0];
+            2'b01: load_byte = i_dram_rdata[15:8];
+            2'b10: load_byte = i_dram_rdata[23:16];
+            2'b11: load_byte = i_dram_rdata[31:24];
+        endcase
+    end
+
+    always_comb begin
+        case (addr_offset[1])
+            1'b0: load_half = i_dram_rdata[15:0];
+            1'b1: load_half = i_dram_rdata[31:16];
+        endcase
+    end
 
     always_comb begin
         unique case (i_mem_mask)

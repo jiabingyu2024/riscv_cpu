@@ -49,8 +49,16 @@ module perip_bridge(
     logic [31:0] seg_wdata, cnt_rdata, mmio_rdata, dram_rdata;
     logic [39:0] seg_output;
 
+    // 因为 perip_addr 已经被核前置到了 EX 阶段（从而满足 BRAM 的地址时序）
+    // 而组合逻辑的外设（如 SW/KEY/SEG的回读）需要在下一拍 MEM 阶段出数据
+    // 所以需要把地址打一拍留存到 MEM 阶段使用
+    logic [31:0] mem_addr;
+    always_ff @(posedge clk) begin
+        mem_addr <= perip_addr;
+    end
+
     // we don't care perip_mask in LED, SEG, SW & KEY, only care in DRAM
-    // write process
+    // write process (Write is combinationally sampled at Edge M, effectively writing in MEM stage)
     always_ff @(posedge clk) begin
         if (perip_wen) begin
             case (perip_addr)
@@ -61,18 +69,16 @@ module perip_bridge(
     end
 
     // read process: in one cycle
+    // Note: mem_addr must be used since we are in the MEM cycle!
     always_comb begin
-        if (~perip_wen) begin
-            case (perip_addr)
-                SW0_ADDR:  mmio_rdata = virtual_sw_input[31:0];
-                SW1_ADDR:  mmio_rdata = virtual_sw_input[63:32];
-                KEY_ADDR:  mmio_rdata = {24'd0, virtual_key_input};
-                SEG_ADDR:  mmio_rdata = seg_wdata;
-                default:   mmio_rdata = 32'hDEAD_BEEF;
-            endcase
-        end else begin
-            mmio_rdata = 32'h0;
-        end
+        // 这里可以直接根据地址判断
+        case (mem_addr)
+            SW0_ADDR:  mmio_rdata = virtual_sw_input[31:0];
+            SW1_ADDR:  mmio_rdata = virtual_sw_input[63:32];
+            KEY_ADDR:  mmio_rdata = {24'd0, virtual_key_input};
+            SEG_ADDR:  mmio_rdata = seg_wdata;
+            default:   mmio_rdata = 32'hDEAD_BEEF;
+        endcase
     end
 
     // seg driver
@@ -112,12 +118,12 @@ module perip_bridge(
         .perip_rdata		(cnt_rdata)
     );
 
-    assign perip_rdata = {32{perip_addr == SW0_ADDR}} & mmio_rdata |
-                        {32{perip_addr == SW1_ADDR}} & mmio_rdata |
-                        {32{perip_addr == KEY_ADDR}} & mmio_rdata |
-                        {32{perip_addr == SEG_ADDR}} & mmio_rdata |
-                        {32{perip_addr >= DRAM_ADDR_START && perip_addr < DRAM_ADDR_END}} & dram_rdata |
-                        {32{perip_addr == CNT_ADDR}} & cnt_rdata;
+    assign perip_rdata = {32{mem_addr == SW0_ADDR}} & mmio_rdata |
+                        {32{mem_addr == SW1_ADDR}} & mmio_rdata |
+                        {32{mem_addr == KEY_ADDR}} & mmio_rdata |
+                        {32{mem_addr == SEG_ADDR}} & mmio_rdata |
+                        {32{mem_addr >= DRAM_ADDR_START && mem_addr < DRAM_ADDR_END}} & dram_rdata |
+                        {32{mem_addr == CNT_ADDR}} & cnt_rdata;
     
     assign virtual_led_output = LED;
     assign virtual_seg_output = seg_output;
