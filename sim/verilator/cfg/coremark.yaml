@@ -1,0 +1,15 @@
+build:
+  iterations: 2000
+  total_data_size: 2000
+  tool_prefix: riscv64-unknown-elf-
+
+timing:
+  source: tb_cycles
+
+report:
+  required_fields:
+    - result
+    - iterations
+    - crcfinal
+    - cycles
+  log_path: build/coremark/logs/coremark_run.log

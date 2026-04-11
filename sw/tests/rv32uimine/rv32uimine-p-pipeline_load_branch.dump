@@ -1,0 +1,99 @@
+
+generated/rv32uimine-p-pipeline_load_branch:     file format elf32-littleriscv
+
+
+Disassembly of section .text.init:
+
+00000000 <_start>:
+   0:	00000d13          	li	s10,0
+   4:	00000d93          	li	s11,0
+   8:	00000c93          	li	s9,0
+   c:	00100093          	li	ra,1
+  10:	00200113          	li	sp,2
+  14:	00300193          	li	gp,3
+  18:	00400213          	li	tp,4
+  1c:	00500293          	li	t0,5
+  20:	00600313          	li	t1,6
+  24:	00000393          	li	t2,0
+  28:	00000793          	li	a5,0
+  2c:	00000e93          	li	t4,0
+  30:	002080b3          	add	ra,ra,sp
+  34:	403080b3          	sub	ra,ra,gp
+  38:	0040f0b3          	and	ra,ra,tp
+  3c:	00008463          	beqz	ra,44 <test2>
+  40:	07c0006f          	j	bc <fail>
+
+00000044 <test2>:
+  44:	001e8e93          	addi	t4,t4,1
+  48:	40308133          	sub	sp,ra,gp
+  4c:	00517633          	and	a2,sp,t0
+  50:	00500213          	li	tp,5
+  54:	00400113          	li	sp,4
+  58:	00202023          	sw	sp,0(zero) # 0 <_start>
+  5c:	00000013          	nop
+  60:	00000013          	nop
+  64:	00000013          	nop
+  68:	00000013          	nop
+  6c:	00402223          	sw	tp,4(zero) # 4 <_start+0x4>
+  70:	00010493          	mv	s1,sp
+  74:	00400293          	li	t0,4
+  78:	00402283          	lw	t0,4(zero) # 4 <_start+0x4>
+  7c:	04928063          	beq	t0,s1,bc <fail>
+  80:	001e8e93          	addi	t4,t4,1
+  84:	0062e433          	or	s0,t0,t1
+
+00000088 <test_loop1>:
+  88:	00138393          	addi	t2,t2,1
+  8c:	000205b3          	add	a1,tp,zero
+  90:	40158433          	sub	s0,a1,ra
+  94:	0081f4b3          	and	s1,gp,s0
+  98:	00926533          	or	a0,tp,s1
+  9c:	0075a023          	sw	t2,0(a1)
+  a0:	00338863          	beq	t2,gp,b0 <out_loop1>
+  a4:	00478793          	addi	a5,a5,4
+  a8:	fe1ff06f          	j	88 <test_loop1>
+  ac:	00478793          	addi	a5,a5,4
+
+000000b0 <out_loop1>:
+  b0:	ffc78793          	addi	a5,a5,-4
+  b4:	00002183          	lw	gp,0(zero) # 0 <_start>
+  b8:	00f18a63          	beq	gp,a5,cc <pass>
+
+000000bc <fail>:
+  bc:	00100c93          	li	s9,1
+  c0:	00000d13          	li	s10,0
+  c4:	00100d93          	li	s11,1
+
+000000c8 <loop_fail>:
+  c8:	00000063          	beqz	zero,c8 <loop_fail>
+
+000000cc <pass>:
+  cc:	00100d13          	li	s10,1
+  d0:	00100d93          	li	s11,1
+
+000000d4 <loop_pass>:
+  d4:	00000063          	beqz	zero,d4 <loop_pass>
+	...
+
+Disassembly of section .tohost:
+
+00001000 <tohost>:
+	...
+
+00001040 <fromhost>:
+	...
+
+Disassembly of section .riscv.attributes:
+
+00000000 <.riscv.attributes>:
+   0:	1941                	addi	s2,s2,-16
+   2:	0000                	unimp
+   4:	7200                	flw	fs0,32(a2)
+   6:	7369                	lui	t1,0xffffa
+   8:	01007663          	bgeu	zero,a6,14 <_start+0x14>
+   c:	0000000f          	fence	unknown,unknown
+  10:	7205                	lui	tp,0xfffe1
+  12:	3376                	fld	ft6,376(sp)
+  14:	6932                	flw	fs2,12(sp)
+  16:	7032                	flw	ft0,44(sp)
+  18:	0030                	addi	a2,sp,8

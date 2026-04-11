@@ -1,0 +1,7 @@
+[TB] load irom=/home/jiabingyu/prj/riscv_cpu/build/coremark/mem/irom.mem
+[TB] load dram=/home/jiabingyu/prj/riscv_cpu/build/coremark/mem/dram.mem
+
+[TB] result=TIMEOUT cycles=500000000 sim_info=0x00000000
+[10000000370000] %Fatal: tb_coremark.sv:131: Assertion failed in tb_coremark: [TB] CoreMark TIMEOUT
+%Error: /home/jiabingyu/prj/riscv_cpu/tb/tb_coremark.sv:131: Verilog $stop
+Aborting...

@@ -1,0 +1,148 @@
+
+generated/rv32uimine-p-pipeline_forward:     file format elf32-littleriscv
+
+
+Disassembly of section .text.init:
+
+00000000 <_start>:
+   0:	00000d13          	li	s10,0
+   4:	00000d93          	li	s11,0
+   8:	00000c93          	li	s9,0
+   c:	ffffe5b7          	lui	a1,0xffffe
+  10:	00b02023          	sw	a1,0(zero) # 0 <_start>
+  14:	00100093          	li	ra,1
+  18:	001083b3          	add	t2,ra,ra
+  1c:	00200113          	li	sp,2
+  20:	40110433          	sub	s0,sp,ra
+  24:	00000013          	nop
+  28:	00000013          	nop
+  2c:	00000013          	nop
+  30:	00000013          	nop
+  34:	00000013          	nop
+  38:	02808063          	beq	ra,s0,58 <test2>
+  3c:	00000013          	nop
+  40:	00000013          	nop
+  44:	00000013          	nop
+  48:	1180006f          	j	160 <fail>
+  4c:	00000013          	nop
+  50:	00000013          	nop
+  54:	00000013          	nop
+
+00000058 <test2>:
+  58:	00300193          	li	gp,3
+  5c:	0021f4b3          	and	s1,gp,sp
+  60:	00400213          	li	tp,4
+  64:	00326533          	or	a0,tp,gp
+  68:	00000013          	nop
+  6c:	00000013          	nop
+  70:	00000013          	nop
+  74:	00000013          	nop
+  78:	00000013          	nop
+  7c:	0e950263          	beq	a0,s1,160 <fail>
+  80:	00000013          	nop
+  84:	00000013          	nop
+  88:	00000013          	nop
+  8c:	0100006f          	j	9c <test3>
+  90:	00000013          	nop
+  94:	00000013          	nop
+  98:	00000013          	nop
+
+0000009c <test3>:
+  9c:	00002803          	lw	a6,0(zero) # 0 <_start>
+  a0:	00500293          	li	t0,5
+  a4:	00538633          	add	a2,t2,t0
+  a8:	405106b3          	sub	a3,sp,t0
+  ac:	005686b3          	add	a3,a3,t0
+  b0:	005686b3          	add	a3,a3,t0
+  b4:	0021f733          	and	a4,gp,sp
+  b8:	00600313          	li	t1,6
+  bc:	003367b3          	or	a5,t1,gp
+  c0:	006308b3          	add	a7,t1,t1
+  c4:	00000013          	nop
+  c8:	02d60063          	beq	a2,a3,e8 <test4>
+  cc:	00000013          	nop
+  d0:	00000013          	nop
+  d4:	00000013          	nop
+  d8:	0880006f          	j	160 <fail>
+  dc:	00000013          	nop
+  e0:	00000013          	nop
+  e4:	00000013          	nop
+
+000000e8 <test4>:
+  e8:	40308133          	sub	sp,ra,gp
+  ec:	00517933          	and	s2,sp,t0
+  f0:	002369b3          	or	s3,t1,sp
+  f4:	00210a33          	add	s4,sp,sp
+  f8:	07512223          	sw	s5,100(sp)
+  fc:	40308233          	sub	tp,ra,gp
+ 100:	00527933          	and	s2,tp,t0
+ 104:	00226bb3          	or	s7,tp,sp
+ 108:	00420a33          	add	s4,tp,tp
+ 10c:	07622223          	sw	s6,100(tp) # 64 <test2+0xc>
+ 110:	ffffe137          	lui	sp,0xffffe
+ 114:	00000013          	nop
+ 118:	00000013          	nop
+ 11c:	00000013          	nop
+ 120:	00000013          	nop
+ 124:	00000013          	nop
+ 128:	00112023          	sw	ra,0(sp) # ffffe000 <begin_signature+0xffffc000>
+ 12c:	00000013          	nop
+ 130:	00000013          	nop
+ 134:	00000013          	nop
+ 138:	00000013          	nop
+ 13c:	00000013          	nop
+ 140:	053b8063          	beq	s7,s3,180 <pass>
+ 144:	00000013          	nop
+ 148:	00000013          	nop
+ 14c:	00000013          	nop
+ 150:	0100006f          	j	160 <fail>
+ 154:	00000013          	nop
+ 158:	00000013          	nop
+ 15c:	00000013          	nop
+
+00000160 <fail>:
+ 160:	00100c93          	li	s9,1
+ 164:	00000d13          	li	s10,0
+ 168:	00100d93          	li	s11,1
+
+0000016c <loop_fail>:
+ 16c:	00000063          	beqz	zero,16c <loop_fail>
+ 170:	00000013          	nop
+ 174:	00000013          	nop
+ 178:	00000013          	nop
+ 17c:	00000013          	nop
+
+00000180 <pass>:
+ 180:	00100d13          	li	s10,1
+ 184:	00100d93          	li	s11,1
+
+00000188 <loop_pass>:
+ 188:	00000063          	beqz	zero,188 <loop_pass>
+ 18c:	00000013          	nop
+ 190:	00000013          	nop
+ 194:	00000013          	nop
+ 198:	00000013          	nop
+	...
+
+Disassembly of section .tohost:
+
+00001000 <tohost>:
+	...
+
+00001040 <fromhost>:
+	...
+
+Disassembly of section .riscv.attributes:
+
+00000000 <.riscv.attributes>:
+   0:	1941                	addi	s2,s2,-16
+   2:	0000                	unimp
+   4:	7200                	flw	fs0,32(a2)
+   6:	7369                	lui	t1,0xffffa
+   8:	01007663          	bgeu	zero,a6,14 <_start+0x14>
+   c:	0000000f          	fence	unknown,unknown
+  10:	7205                	lui	tp,0xfffe1
+  12:	3376                	fld	ft6,376(sp)
+  14:	6932                	flw	fs2,12(sp)
+  16:	7032                	flw	ft0,44(sp)
+  18:	0030                	addi	a2,sp,8

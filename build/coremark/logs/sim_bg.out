@@ -1,0 +1,2 @@
+[TB] load irom=/home/jiabingyu/prj/riscv_cpu/build/coremark/mem/irom.mem
+[TB] load dram=/home/jiabingyu/prj/riscv_cpu/build/coremark/mem/dram.mem
