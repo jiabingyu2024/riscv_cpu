@@ -1,7 +1,0 @@
-[TB] load irom=/home/jiabingyu/prj/riscv_cpu/build/coremark/mem/irom.mem
-[TB] load dram=/home/jiabingyu/prj/riscv_cpu/build/coremark/mem/dram.mem
-[TB] heartbeat cycles=50000000 / limit 20000000000
-[TB] heartbeat cycles=100000000 / limit 20000000000
-[TB] heartbeat cycles=150000000 / limit 20000000000
-[TB] heartbeat cycles=200000000 / limit 20000000000
-[TB] heartbeat cycles=250000000 / limit 20000000000

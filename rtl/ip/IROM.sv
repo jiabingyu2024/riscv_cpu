@@ -9,7 +9,7 @@
 module IROM #(
     parameter int unsigned ADDR_WIDTH = 12,
     parameter int unsigned DATA_WIDTH = 32,
-    parameter string INIT_FILE = "rtl/ip/irom.mem"
+    parameter string INIT_FILE = ""
 ) (
     input  logic [ADDR_WIDTH-1:0] a,
     output logic [DATA_WIDTH-1:0] spo

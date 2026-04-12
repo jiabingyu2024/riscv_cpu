@@ -1,2 +1,0 @@
-[elf_to_mem] input=/home/jiabingyu/prj/riscv_cpu/build/coremark/elf/coremark.elf irom_words=3895 dram_words=8 irom_out=/home/jiabingyu/prj/riscv_cpu/build/coremark/mem/irom.mem dram_out=/home/jiabingyu/prj/riscv_cpu/build/coremark/mem/dram.mem
-[build_coremark] done elf=/home/jiabingyu/prj/riscv_cpu/build/coremark/elf/coremark.elf log=/home/jiabingyu/prj/riscv_cpu/build/coremark/logs/build.log

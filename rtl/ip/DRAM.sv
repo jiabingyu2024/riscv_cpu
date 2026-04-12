@@ -9,7 +9,7 @@
 module DRAM #(
     parameter int unsigned ADDR_WIDTH = 16,
     parameter int unsigned DATA_WIDTH = 32,
-    parameter string INIT_FILE = "rtl/ip/dram.mem"
+    parameter string INIT_FILE = ""
 ) (
     input  logic                  clk,
     input  logic [ADDR_WIDTH-1:0] a,

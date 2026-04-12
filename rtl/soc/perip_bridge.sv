@@ -44,39 +44,18 @@ module perip_bridge(
     localparam SEG_ADDR  = 32'h8020_0020;  // seg
     localparam LED_ADDR  = 32'h8020_0040;  // led[31:0]
     localparam CNT_ADDR  = 32'h8020_0050;  // counter
-`ifdef SIM_VERILATOR
-    localparam UART_TX_ADDR   = 32'h8020_0060;  // tx char, write-only
-    localparam UART_STAT_ADDR = 32'h8020_0064;  // bit0: ready, read-only
-    localparam SIM_DONE_ADDR  = 32'h8020_0070;  // pass/fail code, write-only
-    localparam SIM_INFO_ADDR  = 32'h8020_0074;  // optional info code, write-only
-`endif
 
     logic [31:0] LED;
     logic [31:0] seg_wdata, cnt_rdata, mmio_rdata, dram_rdata;
     logic [39:0] seg_output;
-`ifdef SIM_VERILATOR
-    logic [31:0] sim_done_code;
-    logic [31:0] sim_info_code;
-`endif
 
     // we don't care perip_mask in LED, SEG, SW & KEY, only care in DRAM
     // write process
     always_ff @(posedge clk) begin
-        if (rst) begin
-            LED <= 32'h0;
-            seg_wdata <= 32'h0;
-`ifdef SIM_VERILATOR
-            sim_done_code <= 32'h0;
-            sim_info_code <= 32'h0;
-`endif
-        end else if (perip_wen) begin
+        if (perip_wen) begin
             case (perip_addr)
                 LED_ADDR:   LED <= perip_wdata;
                 SEG_ADDR:   seg_wdata <= perip_wdata;
-`ifdef SIM_VERILATOR
-                SIM_DONE_ADDR: sim_done_code <= perip_wdata;
-                SIM_INFO_ADDR: sim_info_code <= perip_wdata;
-`endif
             endcase
         end
     end
@@ -89,11 +68,6 @@ module perip_bridge(
                 SW1_ADDR:  mmio_rdata = virtual_sw_input[63:32];
                 KEY_ADDR:  mmio_rdata = {24'd0, virtual_key_input};
                 SEG_ADDR:  mmio_rdata = seg_wdata;
-`ifdef SIM_VERILATOR
-                UART_STAT_ADDR: mmio_rdata = 32'h0000_0001;
-                SIM_DONE_ADDR:  mmio_rdata = sim_done_code;
-                SIM_INFO_ADDR:  mmio_rdata = sim_info_code;
-`endif
                 default:   mmio_rdata = 32'hDEAD_BEEF;
             endcase
         end else begin
@@ -142,11 +116,6 @@ module perip_bridge(
                         {32{perip_addr == SW1_ADDR}} & mmio_rdata |
                         {32{perip_addr == KEY_ADDR}} & mmio_rdata |
                         {32{perip_addr == SEG_ADDR}} & mmio_rdata |
-`ifdef SIM_VERILATOR
-                        {32{perip_addr == UART_STAT_ADDR}} & mmio_rdata |
-                        {32{perip_addr == SIM_DONE_ADDR}} & mmio_rdata |
-                        {32{perip_addr == SIM_INFO_ADDR}} & mmio_rdata |
-`endif
                         {32{perip_addr >= DRAM_ADDR_START && perip_addr < DRAM_ADDR_END}} & dram_rdata |
                         {32{perip_addr == CNT_ADDR}} & cnt_rdata;
     
