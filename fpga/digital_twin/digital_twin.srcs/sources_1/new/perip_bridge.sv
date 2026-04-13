@@ -70,15 +70,23 @@ module perip_bridge(
 
     // read process: in one cycle
     // Note: mem_addr must be used since we are in the MEM cycle!
+    logic mem_wen;
+    always_ff @(posedge clk) begin
+        mem_wen <= perip_wen;
+    end
+
     always_comb begin
-        // 这里可以直接根据地址判断
-        case (mem_addr)
-            SW0_ADDR:  mmio_rdata = virtual_sw_input[31:0];
-            SW1_ADDR:  mmio_rdata = virtual_sw_input[63:32];
-            KEY_ADDR:  mmio_rdata = {24'd0, virtual_key_input};
-            SEG_ADDR:  mmio_rdata = seg_wdata;
-            default:   mmio_rdata = 32'hDEAD_BEEF;
-        endcase
+        if (~mem_wen) begin
+            case (mem_addr)
+                SW0_ADDR:  mmio_rdata = virtual_sw_input[31:0];
+                SW1_ADDR:  mmio_rdata = virtual_sw_input[63:32];
+                KEY_ADDR:  mmio_rdata = {24'd0, virtual_key_input};
+                SEG_ADDR:  mmio_rdata = seg_wdata;
+                default:   mmio_rdata = 32'hDEAD_BEEF;
+            endcase
+        end else begin
+            mmio_rdata = 32'h0;
+        end
     end
 
     // seg driver
