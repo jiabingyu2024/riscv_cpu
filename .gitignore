@@ -1,4 +1,18 @@
 
+# =========================
+# Local simulation/build artifacts
+# =========================
+build/
+*.vcd
+*.fst
+*.vvp
+*.vcd.gz
+obj_dir/
+
+# Python local caches
+__pycache__/
+*.py[cod]
+
 
 # =========================
 # Vivado generated artifacts (project-local)

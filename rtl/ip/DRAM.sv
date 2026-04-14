@@ -22,7 +22,9 @@ module DRAM #(
     logic [DATA_WIDTH-1:0] mem [0:DEPTH-1];
 
     initial begin
-        $readmemh(INIT_FILE, mem);
+        if (INIT_FILE != "") begin
+            $readmemh(INIT_FILE, mem);
+        end
     end
 
     always_ff @(posedge clk) begin
