@@ -43,6 +43,13 @@ struct Meta {
     std::string test_case;
 };
 
+struct PerfStats {
+    uint64_t cycles = 0;
+    uint64_t instret = 0;
+    uint64_t branches = 0;
+    uint64_t branch_miss = 0;
+};
+
 std::string trim(const std::string& input) {
     size_t first = 0;
     while (first < input.size() && std::isspace(static_cast<unsigned char>(input[first]))) ++first;
@@ -245,6 +252,49 @@ void drive_comb(VmyCPU* top, MemoryModel& mem) {
     top->perip_rdata = mem.read_data(top->perip_addr, top->perip_mask);
 }
 
+double ratio(uint64_t numerator, uint64_t denominator) {
+    if (denominator == 0) return 0.0;
+    return static_cast<double>(numerator) / static_cast<double>(denominator);
+}
+
+uint64_t branch_hit(const PerfStats& stats) {
+    return stats.branches >= stats.branch_miss ? stats.branches - stats.branch_miss : 0;
+}
+
+double branch_hit_rate(const PerfStats& stats) {
+    return stats.branches ? 100.0 * ratio(branch_hit(stats), stats.branches) : 0.0;
+}
+
+double cpi(const PerfStats& stats) {
+    return ratio(stats.cycles, stats.instret);
+}
+
+double ipc(const PerfStats& stats) {
+    return ratio(stats.instret, stats.cycles);
+}
+
+double branch_mpki(const PerfStats& stats) {
+    return stats.instret ? 1000.0 * ratio(stats.branch_miss, stats.instret) : 0.0;
+}
+
+bool core_inst_valid(VmyCPU___024root* rootp) {
+    return rootp->myCPU__DOT__u_core__DOT__reg_write_e ||
+           rootp->myCPU__DOT__u_core__DOT__mem_write_e ||
+           rootp->myCPU__DOT__u_core__DOT__update_en_e;
+}
+
+bool core_branch_update(VmyCPU___024root* rootp) {
+    return rootp->myCPU__DOT__u_core__DOT__update_en_e;
+}
+
+bool core_branch_miss(VmyCPU___024root* rootp) {
+    return rootp->myCPU__DOT__u_core__DOT__error_e;
+}
+
+uint32_t core_pc_e(VmyCPU___024root* rootp) {
+    return rootp->myCPU__DOT__u_core__DOT__pc_e;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -266,9 +316,7 @@ int main(int argc, char** argv) {
     }
 
     uint64_t sim_time = 0;
-    uint64_t cycles = 0;
-    uint64_t branch_total = 0;
-    uint64_t branch_miss = 0;
+    PerfStats stats;
 
     auto tick_half = [&]() {
         drive_comb(top, mem);
@@ -286,7 +334,7 @@ int main(int argc, char** argv) {
     }
     top->cpu_rst = 0;
 
-    while (!Verilated::gotFinish() && cycles < opt.max_cycles && !mem.finished()) {
+    while (!Verilated::gotFinish() && stats.cycles < opt.max_cycles && !mem.finished()) {
         top->cpu_clk = 0;
         tick_half();
 
@@ -296,16 +344,17 @@ int main(int argc, char** argv) {
         if (top->perip_wen) {
             mem.write_data(top->perip_addr, top->perip_mask, top->perip_wdata);
         }
-        mem.observe_pc(top->rootp->myCPU__DOT__u_core__DOT__pc_e);
-        if (top->rootp->myCPU__DOT__u_core__DOT__update_en_e) {
-            ++branch_total;
-            if (top->rootp->myCPU__DOT__u_core__DOT__error_e) {
-                ++branch_miss;
-            }
+        mem.observe_pc(core_pc_e(top->rootp));
+        if (core_inst_valid(top->rootp)) {
+            ++stats.instret;
+        }
+        if (core_branch_update(top->rootp)) {
+            ++stats.branches;
+            if (core_branch_miss(top->rootp)) ++stats.branch_miss;
         }
         if (trace) trace->dump(sim_time);
         ++sim_time;
-        ++cycles;
+        ++stats.cycles;
     }
 
     top->final();
@@ -314,22 +363,25 @@ int main(int argc, char** argv) {
         delete trace;
     }
 
-    uint64_t branch_hit = branch_total >= branch_miss ? branch_total - branch_miss : 0;
-    double hit_rate = branch_total ? (100.0 * static_cast<double>(branch_hit) / static_cast<double>(branch_total)) : 0.0;
-
     bool has_oracle = (meta.tohost != 0) || (meta.pass_pc != 0) || (meta.fail_pc != 0);
     bool pass = mem.finished() && mem.passed();
-    bool done_without_oracle = !has_oracle && cycles >= opt.max_cycles;
-    bool timeout = has_oracle && !mem.finished() && cycles >= opt.max_cycles;
+    bool done_without_oracle = !has_oracle && stats.cycles >= opt.max_cycles;
+    bool timeout = has_oracle && !mem.finished() && stats.cycles >= opt.max_cycles;
 
+    std::cout << std::fixed << std::setprecision(2);
     std::cout << (pass ? "PASS" : (done_without_oracle ? "DONE" : (timeout ? "TIMEOUT" : "FAIL")));
     if (!meta.suite.empty()) std::cout << " suite=" << meta.suite;
     if (!meta.test_case.empty()) std::cout << " case=" << meta.test_case;
-    std::cout << " cycles=" << cycles
-              << " branches=" << branch_total
-              << " hit=" << branch_hit
-              << " miss=" << branch_miss
-              << " hit_rate=" << std::fixed << std::setprecision(2) << hit_rate << "%";
+    std::cout << " cycles=" << stats.cycles
+              << " instret=" << stats.instret
+              << " cpi=" << cpi(stats)
+              << " ipc=" << ipc(stats)
+              << " sample_valid=" << (stats.instret != 0 ? 1 : 0)
+              << " branches=" << stats.branches
+              << " hit=" << branch_hit(stats)
+              << " miss=" << stats.branch_miss
+              << " hit_rate=" << branch_hit_rate(stats) << "%"
+              << " branch_mpki=" << branch_mpki(stats);
     if (meta.tohost != 0) {
         std::cout << " tohost=0x" << std::hex << std::setw(8) << std::setfill('0') << mem.tohost_value() << std::dec;
     }

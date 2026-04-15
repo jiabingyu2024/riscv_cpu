@@ -31,6 +31,13 @@ struct Meta {
     std::string test_case;
 };
 
+struct PerfStats {
+    uint64_t cycles = 0;
+    uint64_t instret = 0;
+    uint64_t branches = 0;
+    uint64_t branch_miss = 0;
+};
+
 bool starts_with(const std::string& text, const std::string& prefix) {
     return text.rfind(prefix, 0) == 0;
 }
@@ -97,6 +104,69 @@ Options parse_args(int argc, char** argv) {
     return opt;
 }
 
+double ratio(uint64_t numerator, uint64_t denominator) {
+    if (denominator == 0) return 0.0;
+    return static_cast<double>(numerator) / static_cast<double>(denominator);
+}
+
+uint64_t branch_hit(const PerfStats& stats) {
+    return stats.branches >= stats.branch_miss ? stats.branches - stats.branch_miss : 0;
+}
+
+double branch_hit_rate(const PerfStats& stats) {
+    return stats.branches ? 100.0 * ratio(branch_hit(stats), stats.branches) : 0.0;
+}
+
+double cpi(const PerfStats& stats) {
+    return ratio(stats.cycles, stats.instret);
+}
+
+double ipc(const PerfStats& stats) {
+    return ratio(stats.instret, stats.cycles);
+}
+
+double branch_mpki(const PerfStats& stats) {
+    return stats.instret ? 1000.0 * ratio(stats.branch_miss, stats.instret) : 0.0;
+}
+
+bool core_inst_valid(Vtb_src_top___024root* rootp) {
+    return rootp->tb_src_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__reg_write_e ||
+           rootp->tb_src_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__mem_write_e ||
+           rootp->tb_src_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__update_en_e;
+}
+
+bool core_branch_update(Vtb_src_top___024root* rootp) {
+    return rootp->tb_src_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__update_en_e;
+}
+
+bool core_branch_miss(Vtb_src_top___024root* rootp) {
+    return rootp->tb_src_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__error_e;
+}
+
+uint32_t core_pc_e(Vtb_src_top___024root* rootp) {
+    return rootp->tb_src_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__pc_e;
+}
+
+bool counter_start(Vtb_src_top___024root* rootp) {
+    return rootp->tb_src_top__DOT__u_dut__DOT__bridge_inst__DOT__counter_inst__DOT__start;
+}
+
+uint32_t counter_ms(Vtb_src_top___024root* rootp) {
+    return rootp->tb_src_top__DOT__u_dut__DOT__bridge_inst__DOT__counter_inst__DOT__cnt_ms;
+}
+
+void print_perf_fields(std::ostream& out, const PerfStats& stats, const std::string& prefix) {
+    out << " " << prefix << "cycles=" << stats.cycles
+        << " " << prefix << "instret=" << stats.instret
+        << " " << prefix << "cpi=" << cpi(stats)
+        << " " << prefix << "ipc=" << ipc(stats)
+        << " " << prefix << "branches=" << stats.branches
+        << " " << prefix << "hit=" << branch_hit(stats)
+        << " " << prefix << "miss=" << stats.branch_miss
+        << " " << prefix << "hit_rate=" << branch_hit_rate(stats) << "%"
+        << " " << prefix << "branch_mpki=" << branch_mpki(stats);
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -114,9 +184,8 @@ int main(int argc, char** argv) {
     }
 
     uint64_t sim_ticks = 0;
-    uint64_t cpu_cycles = 0;
-    uint64_t branch_total = 0;
-    uint64_t branch_miss = 0;
+    PerfStats total_stats;
+    PerfStats work_stats;
     uint64_t stable_loops = 0;
     uint64_t counter_stop_cpu_cycle = 0;
     uint32_t last_pc = 0;
@@ -134,7 +203,7 @@ int main(int argc, char** argv) {
     auto accelerate_counter = [&]() {
         if (!opt.fast_counter) return;
         if (top->i_rst) return;
-        if (!top->rootp->tb_src_top__DOT__u_dut__DOT__bridge_inst__DOT__counter_inst__DOT__start) return;
+        if (!counter_start(top->rootp)) return;
         top->rootp->tb_src_top__DOT__u_dut__DOT__bridge_inst__DOT__counter_inst__DOT__cnt_1ms = 49999;
     };
 
@@ -154,7 +223,7 @@ int main(int argc, char** argv) {
     }
     top->i_rst = 0;
 
-    while (!Verilated::gotFinish() && cpu_cycles < opt.max_cpu_cycles) {
+    while (!Verilated::gotFinish() && total_stats.cycles < opt.max_cpu_cycles) {
         for (int substep = 0; substep < 4; ++substep) {
             if ((substep == 0 || substep == 2) && top->i_clk_50mhz == 0) {
                 accelerate_counter();
@@ -166,26 +235,40 @@ int main(int argc, char** argv) {
             eval_dump();
 
             if (substep == 0 || substep == 2) {
-                bool counter_start = top->rootp->tb_src_top__DOT__u_dut__DOT__bridge_inst__DOT__counter_inst__DOT__start;
-                uint32_t pc = top->rootp->tb_src_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__pc_e;
+                bool counter_active = counter_start(top->rootp);
+                uint32_t pc = core_pc_e(top->rootp);
+                bool inst_valid = core_inst_valid(top->rootp);
 
-                if (top->rootp->tb_src_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__update_en_e) {
-                    ++branch_total;
-                    if (top->rootp->tb_src_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__error_e) {
-                        ++branch_miss;
+                ++total_stats.cycles;
+                if (inst_valid) {
+                    ++total_stats.instret;
+                }
+                if (core_branch_update(top->rootp)) {
+                    ++total_stats.branches;
+                    if (core_branch_miss(top->rootp)) ++total_stats.branch_miss;
+                }
+
+                if (counter_active) {
+                    ++work_stats.cycles;
+                    if (inst_valid) {
+                        ++work_stats.instret;
+                    }
+                    if (core_branch_update(top->rootp)) {
+                        ++work_stats.branches;
+                        if (core_branch_miss(top->rootp)) ++work_stats.branch_miss;
                     }
                 }
 
-                if (counter_start) {
+                if (counter_active) {
                     counter_started = true;
                 }
-                if (last_counter_start && !counter_start) {
+                if (last_counter_start && !counter_active) {
                     counter_stopped = true;
-                    counter_stop_cpu_cycle = cpu_cycles;
+                    counter_stop_cpu_cycle = total_stats.cycles;
                 }
-                last_counter_start = counter_start;
+                last_counter_start = counter_active;
 
-                uint32_t cnt_ms = top->rootp->tb_src_top__DOT__u_dut__DOT__bridge_inst__DOT__counter_inst__DOT__cnt_ms;
+                uint32_t cnt_ms = counter_ms(top->rootp);
                 if (counter_started && opt.run_ms != 0 && cnt_ms >= opt.run_ms) {
                     run_ms_reached = true;
                 }
@@ -197,7 +280,6 @@ int main(int argc, char** argv) {
                     last_pc = pc;
                 }
 
-                ++cpu_cycles;
             }
         }
 
@@ -212,19 +294,22 @@ int main(int argc, char** argv) {
         delete trace;
     }
 
-    uint32_t time_ms = top->rootp->tb_src_top__DOT__u_dut__DOT__bridge_inst__DOT__counter_inst__DOT__cnt_ms;
-    uint64_t branch_hit = branch_total >= branch_miss ? branch_total - branch_miss : 0;
-    double hit_rate = branch_total ? (100.0 * static_cast<double>(branch_hit) / static_cast<double>(branch_total)) : 0.0;
+    uint32_t time_ms = counter_ms(top->rootp);
 
     bool stopped_and_stable = counter_stopped && stable_loops >= opt.stable_cpu_cycles;
-    bool protected_limit = cpu_cycles >= opt.max_cpu_cycles && !run_ms_reached && !stopped_and_stable;
+    bool protected_limit = total_stats.cycles >= opt.max_cpu_cycles && !run_ms_reached && !stopped_and_stable;
+    bool complete = stopped_and_stable;
+    bool sampled = (run_ms_reached || protected_limit) && work_stats.instret != 0;
+
+    std::cout << std::fixed << std::setprecision(2);
     std::cout << (protected_limit ? "SIM_LIMIT" : "DONE");
     if (!meta.suite.empty()) std::cout << " suite=" << meta.suite;
     if (!meta.test_case.empty()) std::cout << " case=" << meta.test_case;
     std::cout << " time_ms=" << time_ms
               << " run_ms=" << opt.run_ms
-              << " cycles=" << cpu_cycles
               << " reason=" << (run_ms_reached ? "time_reached" : (stopped_and_stable ? "counter_stopped" : "sim_limit"))
+              << " complete=" << (complete ? 1 : 0)
+              << " sampled=" << (sampled ? 1 : 0)
               << " counter_scale=" << (opt.fast_counter ? "fast" : "real")
               << " strict_sim_limit=" << (opt.strict_sim_limit ? 1 : 0)
               << " counter_started=" << (counter_started ? 1 : 0)
@@ -232,10 +317,11 @@ int main(int argc, char** argv) {
     if (counter_stopped) {
         std::cout << " counter_stop_cycle=" << counter_stop_cpu_cycle;
     }
-    std::cout << " branches=" << branch_total
-              << " hit=" << branch_hit
-              << " miss=" << branch_miss
-              << " hit_rate=" << std::fixed << std::setprecision(2) << hit_rate << "%\n";
+    std::cout << " sample_valid=" << (total_stats.instret != 0 ? 1 : 0)
+              << " work_sample_valid=" << (work_stats.instret != 0 ? 1 : 0);
+    print_perf_fields(std::cout, total_stats, "");
+    print_perf_fields(std::cout, work_stats, "work_");
+    std::cout << "\n";
 
     delete top;
     return (protected_limit && opt.strict_sim_limit) ? 124 : 0;
