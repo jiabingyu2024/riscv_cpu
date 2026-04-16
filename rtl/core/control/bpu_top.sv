@@ -33,8 +33,8 @@ module bpu_top (
     output logic  [`PC_BUS]                         o_predict_target
 );
 
-    localparam int BPU_ENTRIES = 16;
-    localparam int BPU_IDX_W   = 4;
+    localparam int BPU_ENTRIES = 128;
+    localparam int BPU_IDX_W   = 7;
     localparam int BPU_TAG_W   = `PC_WID - BPU_IDX_W - 2;
 
     logic [BPU_TAG_W-1:0] tag_mem     [0:BPU_ENTRIES-1];
