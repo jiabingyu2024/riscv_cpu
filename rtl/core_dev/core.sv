@@ -5,7 +5,7 @@
 //   等子模块并完成信号互连；不包含组合功能逻辑（仲裁、译码等应在下级模块实现）。
 // 接口/协作审查（供采纳）：
 //   - 当前仅 clk/rst_n；外设、总线、中断等按赛题在顶层或外层 wrapper 扩展。
-//   - 命名：子模块例化前缀 u_；流水线相关时钟/复位/控制建议 F/D/E/M/W 分级命名便于 debug。
+//   - 命名：子模块例化前缀 u_；流水线相关时钟/复位/控制建议 P/F/D/E/M/W 分级命名便于 debug。
 //==============================================================================
 `include "cpu_defines.svh"
 
@@ -15,12 +15,13 @@ module core(
 
     input  logic  [`DATA_BUS]                        irom_data,
     output logic  [`PC_BUS]                          irom_addr,
+    output logic                                     irom_ena,   // assign irom_ena = stall_p_f;
 
     input  logic  [`DATA_BUS]                        dram_rdata,
     output logic                                     dram_wen,
     output logic  [`RAM_ADDR_BUS]                    dram_addr,
     output logic  [`DATA_BUS]                        dram_wdata,
-    output logic  [1:0]                              dram_mask
+    output logic  [3:0]                              dram_mask
 
 );
     logic [`PC_BUS]   pc_next_hz;
@@ -41,7 +42,7 @@ module core(
     logic [3:0]       inst_spec_d;
     logic [3:0]       alu_ctrl_d;
     logic [2:0]       func3_d;
-    logic [1:0]       mem_mask_d;
+    logic [3:0]       mem_mask_d;
     logic             load_unsigned_d;
     logic             is_branch_d;
     logic [`DATA_BUS] imm_d;
@@ -65,7 +66,7 @@ module core(
     logic [3:0]       inst_spec_e;
     logic [3:0]       alu_ctrl_e;
     logic [2:0]       func3_e;
-    logic [1:0]       mem_mask_e;
+    logic [3:0]       mem_mask_e;
     logic             load_unsigned_e;
     logic             is_branch_e;
     logic [`PC_BUS]   pc_e;
@@ -93,7 +94,7 @@ module core(
     logic             mem_write_m;
     logic             wb_src_m;
     logic             reg_write_m;
-    logic [1:0]       mem_mask_m;
+    logic [3:0]       mem_mask_m;
     logic             load_unsigned_m;
     logic [`DATA_BUS] mem_data_m;
 

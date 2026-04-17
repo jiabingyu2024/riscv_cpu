@@ -33,7 +33,7 @@ module stage_id(
 
     output logic  [3:0]                     o_alu_ctrl,
     output logic  [2:0]                     o_func3,
-    output logic  [1:0]                     o_mem_mask,
+    output logic  [3:0]                     o_mem_mask,
     output logic                            o_load_unsigned,
 
     output logic                            o_is_branch,
