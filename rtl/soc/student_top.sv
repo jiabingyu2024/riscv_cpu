@@ -40,14 +40,17 @@ module student_top#(
     logic [31:0] pc;
     logic [11:0] inst_addr;
     logic [31:0] instruction;
+    logic irom_ena;
+    logic irom_clk;
 
     // perip
     logic [31:0] perip_addr, perip_wdata, perip_rdata;
     logic perip_wen;
-    logic [1:0] perip_mask;
+    logic [3:0] perip_mask;
 
     // 16KB = 2^12 * 32bit
     assign inst_addr = pc[13:2];
+    assign irom_clk = ~w_cpu_clk;
 
     myCPU Core_cpu (
         .cpu_rst            (w_clk_rst),
@@ -56,6 +59,7 @@ module student_top#(
         // Interface to IROM
         .irom_addr          (pc),             
         .irom_data          (instruction),   
+        .irom_ena           (irom_ena),
 
         // Interface to DRAM & periphera
         .perip_addr         (perip_addr),     
@@ -66,6 +70,8 @@ module student_top#(
     );
 
     IROM Mem_IROM (
+        .clk        (irom_clk),
+        .ena        (irom_ena),
         .a          (inst_addr),
         .spo        (instruction)
     );
