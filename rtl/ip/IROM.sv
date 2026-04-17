@@ -12,10 +12,10 @@ module IROM #(
     parameter int unsigned DATA_WIDTH = 32,
     parameter string INIT_FILE = ""
 ) (
-    input  logic                  clk,
+    input  logic [ADDR_WIDTH-1:0] addra,
+    input  logic                  clka,
     input  logic                  ena,
-    input  logic [ADDR_WIDTH-1:0] a,
-    output logic [DATA_WIDTH-1:0] spo
+    output logic [DATA_WIDTH-1:0] douta
 );
     localparam int unsigned DEPTH = (1 << ADDR_WIDTH);
 
@@ -28,12 +28,12 @@ module IROM #(
         end
     end
 
-    always_ff @(posedge clk) begin
+    always_ff @(posedge clka) begin
         if (ena) begin
-            addr_q <= a;
+            addr_q <= addra;
         end
     end
 
-    assign spo = mem[addr_q];
+    assign douta = mem[addr_q];
 
 endmodule
