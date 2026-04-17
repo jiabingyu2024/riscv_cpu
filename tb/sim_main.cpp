@@ -50,6 +50,11 @@ struct PerfStats {
     uint64_t branch_miss = 0;
 };
 
+struct SyncMemoryPorts {
+    uint32_t irom_data = 0x00000013u;
+    uint32_t dram_rdata = 0;
+};
+
 std::string trim(const std::string& input) {
     size_t first = 0;
     while (first < input.size() && std::isspace(static_cast<unsigned char>(input[first]))) ++first;
@@ -247,9 +252,16 @@ private:
     uint32_t tohost_value_ = 0;
 };
 
-void drive_comb(VmyCPU* top, MemoryModel& mem) {
-    top->irom_data = mem.read_irom(top->irom_addr);
-    top->perip_rdata = mem.read_data(top->perip_addr, top->perip_mask);
+void drive_sync_outputs(VmyCPU* top, const SyncMemoryPorts& ports) {
+    top->irom_data = ports.irom_data;
+    top->perip_rdata = ports.dram_rdata;
+}
+
+void update_sync_outputs(SyncMemoryPorts& ports, MemoryModel& mem, bool irom_ena, uint32_t irom_addr, uint32_t dram_addr, uint8_t dram_mask) {
+    if (irom_ena) {
+        ports.irom_data = mem.read_irom(irom_addr);
+    }
+    ports.dram_rdata = mem.read_data(dram_addr, dram_mask);
 }
 
 double ratio(uint64_t numerator, uint64_t denominator) {
@@ -295,6 +307,10 @@ uint32_t core_pc_e(VmyCPU___024root* rootp) {
     return rootp->myCPU__DOT__u_core__DOT__pc_e;
 }
 
+bool core_irom_ena(VmyCPU___024root* rootp) {
+    return rootp->myCPU__DOT__irom_ena_unused;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -317,9 +333,10 @@ int main(int argc, char** argv) {
 
     uint64_t sim_time = 0;
     PerfStats stats;
+    SyncMemoryPorts sync_ports;
 
     auto tick_half = [&]() {
-        drive_comb(top, mem);
+        drive_sync_outputs(top, sync_ports);
         top->eval();
         if (trace) trace->dump(sim_time);
         ++sim_time;
@@ -338,12 +355,20 @@ int main(int argc, char** argv) {
         top->cpu_clk = 0;
         tick_half();
 
+        uint32_t sampled_irom_addr = top->irom_addr;
+        bool sampled_irom_ena = core_irom_ena(top->rootp);
+        uint32_t sampled_perip_addr = top->perip_addr;
+        uint8_t sampled_perip_mask = top->perip_mask;
+        bool sampled_perip_wen = top->perip_wen;
+        uint32_t sampled_perip_wdata = top->perip_wdata;
+
         top->cpu_clk = 1;
-        drive_comb(top, mem);
+        drive_sync_outputs(top, sync_ports);
         top->eval();
-        if (top->perip_wen) {
-            mem.write_data(top->perip_addr, top->perip_mask, top->perip_wdata);
+        if (sampled_perip_wen) {
+            mem.write_data(sampled_perip_addr, sampled_perip_mask, sampled_perip_wdata);
         }
+        update_sync_outputs(sync_ports, mem, sampled_irom_ena, sampled_irom_addr, sampled_perip_addr, sampled_perip_mask);
         mem.observe_pc(core_pc_e(top->rootp));
         if (core_inst_valid(top->rootp)) {
             ++stats.instret;

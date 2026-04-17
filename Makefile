@@ -20,8 +20,9 @@ RTL_INC := rtl/include
 RTL_SRCS := \
 	rtl/core/myCPU.sv \
 	rtl/core/core.sv \
+	rtl/core/pc/stage_pc.sv \
+	rtl/core/pc/pc_reg.sv \
 	rtl/core/if/stage_if.sv \
-	rtl/core/if/pc_reg.sv \
 	rtl/core/id/stage_id.sv \
 	rtl/core/id/control_unit.sv \
 	rtl/core/id/imm_unit.sv \
@@ -34,6 +35,7 @@ RTL_SRCS := \
 	rtl/core/control/bpu_top.sv \
 	rtl/core/control/forward_unit.sv \
 	rtl/core/control/hazard_unit.sv \
+	rtl/core/pipeline_regs/reg_pc_if.sv \
 	rtl/core/pipeline_regs/reg_if_id.sv \
 	rtl/core/pipeline_regs/reg_id_ex.sv \
 	rtl/core/pipeline_regs/reg_ex_mem.sv \
@@ -43,8 +45,9 @@ SRC_RTL_SRCS := \
 	tb/tb_src_top.sv \
 	rtl/core/myCPU.sv \
 	rtl/core/core.sv \
+	rtl/core/pc/stage_pc.sv \
+	rtl/core/pc/pc_reg.sv \
 	rtl/core/if/stage_if.sv \
-	rtl/core/if/pc_reg.sv \
 	rtl/core/id/stage_id.sv \
 	rtl/core/id/control_unit.sv \
 	rtl/core/id/imm_unit.sv \
@@ -57,6 +60,7 @@ SRC_RTL_SRCS := \
 	rtl/core/control/bpu_top.sv \
 	rtl/core/control/forward_unit.sv \
 	rtl/core/control/hazard_unit.sv \
+	rtl/core/pipeline_regs/reg_pc_if.sv \
 	rtl/core/pipeline_regs/reg_if_id.sv \
 	rtl/core/pipeline_regs/reg_id_ex.sv \
 	rtl/core/pipeline_regs/reg_ex_mem.sv \
