@@ -12,12 +12,13 @@ STRICT_SIM_LIMIT ?= 0
 BUILD_DIR := build
 SCRIPT := scripts/build_tests.py
 SIM_DIR := $(BUILD_DIR)/verilator
-SIM_BIN := $(SIM_DIR)/VmyCPU
+SIM_BIN := $(SIM_DIR)/Vtb_rv32ui_top
 SRC_SIM_DIR := $(BUILD_DIR)/verilator_src
 SRC_SIM_BIN := $(SRC_SIM_DIR)/Vtb_src_top
 
 RTL_INC := rtl/include
 RTL_SRCS := \
+	tb/tb_rv32ui_top.sv \
 	rtl/core/myCPU.sv \
 	rtl/core/core.sv \
 	rtl/core/pc/stage_pc.sv \
@@ -39,7 +40,15 @@ RTL_SRCS := \
 	rtl/core/pipeline_regs/reg_if_id.sv \
 	rtl/core/pipeline_regs/reg_id_ex.sv \
 	rtl/core/pipeline_regs/reg_ex_mem.sv \
-	rtl/core/pipeline_regs/reg_mem_wb.sv
+	rtl/core/pipeline_regs/reg_mem_wb.sv \
+	rtl/ip/IROM.sv \
+	rtl/ip/DRAM.sv \
+	rtl/soc/student_top.sv \
+	rtl/soc/perip_bridge.sv \
+	rtl/soc/dram_driver.sv \
+	rtl/soc/counter.sv \
+	rtl/soc/display_seg.sv \
+	rtl/soc/seg7.sv
 
 SRC_RTL_SRCS := \
 	tb/tb_src_top.sv \
@@ -81,7 +90,7 @@ build:
 
 sim:
 	OBJCACHE= verilator -Wall -Wno-fatal --timing --trace --public-flat-rw \
-		--top-module myCPU \
+		--top-module tb_rv32ui_top \
 		-I$(RTL_INC) \
 		--Mdir $(SIM_DIR) \
 		--cc $(RTL_SRCS) \
