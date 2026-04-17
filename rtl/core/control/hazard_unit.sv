@@ -24,11 +24,13 @@ module hazard_unit(
     input  logic                            i_error,
     input  logic  [`PC_BUS]                 i_right_pc,
 
+    output logic                            o_stall_p_f,
     output logic                            o_stall_f_d,
     output logic                            o_stall_d_e,
     output logic                            o_stall_e_m,
     output logic                            o_stall_m_w,
 
+    output logic                            o_flush_p_f,
     output logic                            o_flush_f_d,
     output logic                            o_flush_d_e,
     output logic                            o_flush_e_m,
@@ -46,11 +48,14 @@ module hazard_unit(
                              ((i_rd_addr_e == i_rs1_addr_d) || (i_rd_addr_e == i_rs2_addr_d));
 
     always_comb begin
+
+        o_stall_p_f = load_use_hazard;
         o_stall_f_d = load_use_hazard;
         o_stall_d_e = 1'b0;
         o_stall_e_m = 1'b0;
         o_stall_m_w = 1'b0;
 
+        o_flush_p_f = i_error;
         o_flush_f_d = i_error;
         o_flush_d_e = i_error || load_use_hazard;
         o_flush_e_m = 1'b0;
