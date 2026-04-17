@@ -18,4 +18,16 @@ module stage_if(
 
 );
 
+    always_comb begin
+        if (i_valid) begin
+            o_pc         = i_pc;
+            o_inst       = i_inst;
+            o_pc_predict = i_pc_predict;
+        end else begin
+            o_pc         = '0;
+            o_inst       = '0;
+            o_pc_predict = '0;
+        end
+    end
+
 endmodule

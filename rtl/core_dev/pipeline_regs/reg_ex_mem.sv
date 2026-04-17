@@ -4,7 +4,8 @@
 //   EX/MEM 流水线寄存器。锁存 ALU 结果、store 用的 rs2 数据、rd、访存与写回控制，供 MEM 级地址/写数据与旁路使用。
 // 接口/协作审查（供采纳）：
 //   - i_rs2_data 用于 store：需与 forward 对 store 数据的旁路约定一致（通常旁路到 EX 再打入此寄存器）。
-//   - 本模块不涉及 mem_read 和 mem_write，mask，因为dram和reg_ex_mem同一个流水线层级，dram同步读取
+//   - 本模块不锁存 mem_read/mem_write；DRAM 请求由 EX 侧直接发起。
+//   - mem_mask/load_unsigned 需要随 reg_ex_mem 锁存，用于下一拍对同步 DRAM 返回数据做扩展。
 //==============================================================================
 `include "cpu_defines.svh"
 
@@ -22,7 +23,7 @@ module reg_ex_mem (
     // input logic                               i_mem_write,
     input logic                               i_wb_src,
     input logic                               i_reg_write,
-    // input logic  [1:0]                        i_mem_mask,
+    input logic  [3:0]                        i_mem_mask,
     input logic                               i_load_unsigned,
 
     output logic [`RF_BUS]                    o_rd_addr,
@@ -33,7 +34,7 @@ module reg_ex_mem (
     // output logic                              o_mem_write,
     output logic                              o_wb_src,
     output logic                              o_reg_write,
-    // output logic  [1:0]                       o_mem_mask,
+    output logic [3:0]                        o_mem_mask,
     output logic                              o_load_unsigned
 
 );
@@ -47,7 +48,7 @@ module reg_ex_mem (
             // o_mem_write     <= 1'b0;
             o_wb_src        <= `WB_SRC_ALU;
             o_reg_write     <= 1'b0;
-            // o_mem_mask      <= `MASK_WORD;
+            o_mem_mask      <= `MASK_WORD;
             o_load_unsigned <= 1'b0;
         end else if (i_flush) begin
             o_rd_addr       <= '0;
@@ -57,7 +58,7 @@ module reg_ex_mem (
             // o_mem_write     <= 1'b0;
             o_wb_src        <= `WB_SRC_ALU;
             o_reg_write     <= 1'b0;
-            // o_mem_mask      <= `MASK_WORD;
+            o_mem_mask      <= `MASK_WORD;
             o_load_unsigned <= 1'b0;
         end else if (!i_stall) begin
             o_rd_addr       <= i_rd_addr;
@@ -67,7 +68,7 @@ module reg_ex_mem (
             // o_mem_write     <= i_mem_write;
             o_wb_src        <= i_wb_src;
             o_reg_write     <= i_reg_write;
-            // o_mem_mask      <= i_mem_mask;
+            o_mem_mask      <= i_mem_mask;
             o_load_unsigned <= i_load_unsigned;
         end
     end
