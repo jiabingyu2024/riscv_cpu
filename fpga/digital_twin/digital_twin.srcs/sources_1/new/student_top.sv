@@ -24,7 +24,9 @@ module student_top#(
     parameter                           P_SW_CNT            = 64,
     parameter                           P_LED_CNT           = 32,
     parameter                           P_SEG_CNT           = 40,
-    parameter                           P_KEY_CNT           = 8
+    parameter                           P_KEY_CNT           = 8,
+    parameter logic [31:0]              P_DRAM_ADDR_START   = 32'h8010_0000,
+    parameter logic [31:0]              P_DRAM_ADDR_END     = 32'h8013_FFFF
 ) (
     input                                       w_cpu_clk     ,
     input                                       w_clk_50Mhz   ,
@@ -40,14 +42,17 @@ module student_top#(
     logic [31:0] pc;
     logic [11:0] inst_addr;
     logic [31:0] instruction;
+    logic irom_ena;
+    logic irom_clk;
 
     // perip
     logic [31:0] perip_addr, perip_wdata, perip_rdata;
     logic perip_wen;
-    logic [1:0] perip_mask;
+    logic [3:0] perip_mask;
 
     // 16KB = 2^12 * 32bit
     assign inst_addr = pc[13:2];
+    assign irom_clk = ~w_cpu_clk;
 
     myCPU Core_cpu (
         .cpu_rst            (w_clk_rst),
@@ -56,6 +61,7 @@ module student_top#(
         // Interface to IROM
         .irom_addr          (pc),             
         .irom_data          (instruction),   
+        .irom_ena           (irom_ena),
 
         // Interface to DRAM & periphera
         .perip_addr         (perip_addr),     
@@ -65,12 +71,17 @@ module student_top#(
         .perip_rdata        (perip_rdata)     
     );
 
-    IROM Mem_IROM (
-        .a          (inst_addr),
-        .spo        (instruction)
+    IROM_0 Mem_IROM (
+        .addra      (inst_addr),
+        .clka       (irom_clk),
+        .ena        (irom_ena),
+        .douta      (instruction)
     );
     
-    perip_bridge bridge_inst (
+    perip_bridge #(
+        .DRAM_ADDR_START    (P_DRAM_ADDR_START),
+        .DRAM_ADDR_END      (P_DRAM_ADDR_END)
+    ) bridge_inst (
         .clk				(w_cpu_clk),
         .cnt_clk            (w_clk_50Mhz),
         .rst                (w_clk_rst),

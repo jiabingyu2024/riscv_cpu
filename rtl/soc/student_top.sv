@@ -71,7 +71,7 @@ module student_top#(
         .perip_rdata        (perip_rdata)     
     );
 
-    IROM Mem_IROM (
+    IROM_0 Mem_IROM (
         .addra      (inst_addr),
         .clka       (irom_clk),
         .ena        (irom_ena),

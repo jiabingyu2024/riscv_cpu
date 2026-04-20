@@ -93,7 +93,7 @@ module dram_driver(
         endcase
     end
 
-    DRAM Mem_DRAM (
+    DRAM_0 Mem_DRAM (
         .addra      (dram_addr),
         .clka       (clk),
         .dina       (dram_wdata),
