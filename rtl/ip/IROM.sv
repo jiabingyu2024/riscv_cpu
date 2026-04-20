@@ -7,7 +7,7 @@
  *              that registered address.
  *              Initialization uses `$readmemh` with a plain hex `.mem` file.
  */
-module IROM #(
+module IROM_0 #(
     parameter int unsigned ADDR_WIDTH = 12,
     parameter int unsigned DATA_WIDTH = 32,
     parameter string INIT_FILE = ""

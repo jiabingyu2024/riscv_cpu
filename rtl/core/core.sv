@@ -79,11 +79,11 @@ module core(
     logic [`PC_BUS]   pc_e;
     logic [`PC_BUS]   pc_predict_e;
 
-    logic [1:0]       b1_sel_e;
-    logic [1:0]       b2_sel_e;
-    logic [1:0]       t1_sel_e;
-    logic [1:0]       a1_sel_e;
-    logic [1:0]       a2_sel_e;
+    logic [2:0]       b1_sel_e;
+    logic [2:0]       b2_sel_e;
+    logic [2:0]       t1_sel_e;
+    logic [2:0]       a1_sel_e;
+    logic [2:0]       a2_sel_e;
 
     logic [`DATA_BUS] alu_res_e;
     logic [`DATA_BUS] a2_data_e;
@@ -97,11 +97,20 @@ module core(
     logic [`RF_BUS]   rd_addr_m;
     logic [`DATA_BUS] alu_res_m;
     logic [`DATA_BUS] a2_data_m;
+    logic             mem_write_m;
     logic             wb_src_m;
     logic             reg_write_m;
     logic [3:0]       mem_mask_m;
     logic             load_unsigned_m;
-    logic [`DATA_BUS] mem_data_m;
+
+    logic [`RF_BUS]   rd_addr_m2;
+    logic [`DATA_BUS] alu_res_m2;
+    logic             wb_src_m2;
+    logic             reg_write_m2;
+    logic [3:0]       mem_mask_m2;
+    logic             load_unsigned_m2;
+    logic [`DATA_BUS] mem_data_m2;
+    logic [`DATA_BUS] m1_m2_data;
 
     logic [`DATA_BUS] alu_res_w;
     logic [`RF_BUS]   rd_addr_w;
@@ -168,6 +177,8 @@ module core(
     );
 
     hazard_unit u_hazard_unit (
+        .i_clk           (clk),
+        .i_rst_n         (rst_n),
         .i_pc_cur        (pc_p),
         .i_rs1_addr_d    (rs1_addr_d),
         .i_rs2_addr_d    (rs2_addr_d),
@@ -282,8 +293,10 @@ module core(
         .i_rs1_addr      (rs1_addr_e),
         .i_rs2_addr      (rs2_addr_e),
         .i_rd_addr_e_m   (rd_addr_m),
+        .i_rd_addr_m_m   (rd_addr_m2),
         .i_rd_addr_m_w   (rd_addr_w),
         .i_reg_write_e_m (reg_write_m),
+        .i_reg_write_m_m (reg_write_m2),
         .i_reg_write_m_w (reg_write_w),
         .i_is_rs2_imm    (is_rs2_imm_e),
         .i_inst_spec     (inst_spec_e),
@@ -301,6 +314,7 @@ module core(
         .i_pc            (pc_e),
         .i_fwd_e_m       (alu_res_m),
         .i_fwd_m_w       (wb_data_w),
+        .i_fwd_m_m       (m1_m2_data),
         .i_pc_d_e        (pc_e),
         .i_pc_predict    (pc_predict_e),
         .i_b1_sel        (b1_sel_e),
@@ -322,7 +336,7 @@ module core(
         .o_right_pc      (right_pc_e)
     );
 
-    reg_ex_mem u_reg_ex_mem (
+    reg_ex_m1 u_reg_ex_m1 (
         .i_clk           (clk),
         .i_rst_n         (rst_n),
         .i_flush         (flush_e_m),
@@ -330,6 +344,8 @@ module core(
         .i_rd_addr       (rd_addr_e),
         .i_alu_res       (alu_res_e),
         .i_a2_data       (a2_data_e),
+        .i_mem_read      (mem_read_e),
+        .i_mem_write     (mem_write_e),
         .i_wb_src        (wb_src_e),
         .i_reg_write     (reg_write_e),
         .i_mem_mask      (mem_mask_e),
@@ -337,34 +353,57 @@ module core(
         .o_rd_addr       (rd_addr_m),
         .o_alu_res       (alu_res_m),
         .o_a2_data       (a2_data_m),
+        .o_mem_read      (),
+        .o_mem_write     (mem_write_m),
         .o_wb_src        (wb_src_m),
         .o_reg_write     (reg_write_m),
         .o_mem_mask      (mem_mask_m),
         .o_load_unsigned (load_unsigned_m)
     );
 
-    assign dram_wen   = mem_write_e ;
-    assign dram_addr  = alu_res_e[`RAM_ADDR_BUS];
-    assign dram_wdata = a2_data_e;
-    assign dram_mask  = mem_mask_e;
+    assign dram_wen   = mem_write_m;
+    assign dram_addr  = alu_res_m[`RAM_ADDR_BUS];
+    assign dram_wdata = a2_data_m;
+    assign dram_mask  = mem_mask_m;
 
-    stage_mem u_stage_mem (
-        .i_mem_mask      (mem_mask_m),
-        .i_load_unsigned (load_unsigned_m),
-        .i_dram_rdata    (dram_rdata),
-        .o_mem_rdata     (mem_data_m)
-    );
-
-    reg_mem_wb u_reg_mem_wb (
+    reg_m1_m2 u_reg_m1_m2 (
         .i_clk           (clk),
         .i_rst_n         (rst_n),
         .i_flush         (flush_m_w),
         .i_stall         (stall_m_w),
-        .i_reg_write     (reg_write_m),
-        .i_wb_src        (wb_src_m),
-        .i_alu_res       (alu_res_m),
         .i_rd_addr       (rd_addr_m),
-        .i_mem_data      (mem_data_m),
+        .i_alu_res       (alu_res_m),
+        .i_mem_mask      (mem_mask_m),
+        .i_wb_src        (wb_src_m),
+        .i_reg_write     (reg_write_m),
+        .i_load_unsigned (load_unsigned_m),
+        .o_rd_addr       (rd_addr_m2),
+        .o_alu_res       (alu_res_m2),
+        .o_mem_mask      (mem_mask_m2),
+        .o_wb_src        (wb_src_m2),
+        .o_reg_write     (reg_write_m2),
+        .o_load_unsigned (load_unsigned_m2)
+    );
+
+    stage_m2 u_stage_m2 (
+        .i_mem_mask      (mem_mask_m2),
+        .i_load_unsigned (load_unsigned_m2),
+        .i_dram_rdata    (dram_rdata),
+        .o_mem_rdata     (mem_data_m2)
+    );
+
+    assign m1_m2_data = alu_res_m2;
+
+    reg_m2_wb u_reg_m2_wb (
+        .i_clk           (clk),
+        .i_rst_n         (rst_n),
+        .i_flush         (1'b0),
+        .i_stall         (1'b0),
+        .i_reg_write     (reg_write_m2),
+        .i_wb_src        (wb_src_m2),
+        .i_alu_res       (alu_res_m2),
+        .i_rd_addr       (rd_addr_m2),
+        .i_mem_data      (mem_data_m2),
         .o_alu_res       (alu_res_w),
         .o_rd_addr       (rd_addr_w),
         .o_mem_data      (mem_data_w),

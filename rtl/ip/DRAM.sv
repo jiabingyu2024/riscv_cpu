@@ -7,7 +7,7 @@
  *              Address alignment and byte lane shifting are handled by
  *              `dram_driver`, so `addra` is already a word address.
  */
-module DRAM #(
+module DRAM_0 #(
     parameter int unsigned ADDR_WIDTH = 16,
     parameter int unsigned DATA_WIDTH = 32,
     parameter string INIT_FILE = ""

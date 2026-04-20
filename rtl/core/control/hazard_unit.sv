@@ -11,6 +11,8 @@
 `include "cpu_defines.svh"
 
 module hazard_unit(
+    input  logic                            i_clk,
+    input  logic                            i_rst_n,
     input  logic  [`PC_BUS]                 i_pc_cur,
     input  logic  [`RF_BUS]                 i_rs1_addr_d,
     input  logic  [`RF_BUS]                 i_rs2_addr_d,
@@ -42,10 +44,25 @@ module hazard_unit(
 
 );
 
-    logic load_use_hazard;
+    logic load_use_hazard_raw;
+    logic load_use_hazard_hold;
+    logic load_use_hazard;  // load_use 总计 stall 2 cycles（当前拍 + 额外 1 拍）
 
-    assign load_use_hazard = i_mem_read_e && i_reg_write_e && (i_rd_addr_e != '0) &&
-                             ((i_rd_addr_e == i_rs1_addr_d) || (i_rd_addr_e == i_rs2_addr_d));
+    assign load_use_hazard_raw = i_mem_read_e && i_reg_write_e && (i_rd_addr_e != '0) &&
+                                 ((i_rd_addr_e == i_rs1_addr_d) || (i_rd_addr_e == i_rs2_addr_d));
+    assign load_use_hazard = load_use_hazard_raw || load_use_hazard_hold;
+
+    always_ff @(posedge i_clk or negedge i_rst_n) begin
+        if (!i_rst_n) begin
+            load_use_hazard_hold <= 1'b0;
+        end else if (i_error) begin
+            load_use_hazard_hold <= 1'b0;
+        end else if (load_use_hazard_raw) begin
+            load_use_hazard_hold <= 1'b1;
+        end else begin
+            load_use_hazard_hold <= 1'b0;
+        end
+    end
 
     always_comb begin
 
