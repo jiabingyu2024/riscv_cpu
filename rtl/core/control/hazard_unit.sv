@@ -19,6 +19,9 @@ module hazard_unit(
     input  logic  [`RF_BUS]                 i_rd_addr_e,
     input  logic                            i_mem_read_e,
     input  logic                            i_reg_write_e,//load_use
+    input  logic  [`RF_BUS]                 i_rd_addr_m,
+    input  logic                            i_mem_read_m,
+    input  logic                            i_reg_write_m,
 
     input  logic                            i_predict_taken,
     input  logic  [`PC_BUS]                 i_predict_target,
@@ -44,20 +47,23 @@ module hazard_unit(
 
 );
 
-    logic load_use_hazard_raw;
+    logic load_use_hazard_raw_e;
+    logic load_use_hazard_raw_m;
     logic load_use_hazard_hold;
-    logic load_use_hazard;  // load_use 总计 stall 2 cycles（当前拍 + 额外 1 拍）
+    logic load_use_hazard;
 
-    assign load_use_hazard_raw = i_mem_read_e && i_reg_write_e && (i_rd_addr_e != '0) &&
-                                 ((i_rd_addr_e == i_rs1_addr_d) || (i_rd_addr_e == i_rs2_addr_d));
-    assign load_use_hazard = load_use_hazard_raw || load_use_hazard_hold;
+    assign load_use_hazard_raw_e = i_mem_read_e && i_reg_write_e && (i_rd_addr_e != '0) &&
+                                   ((i_rd_addr_e == i_rs1_addr_d) || (i_rd_addr_e == i_rs2_addr_d));
+    assign load_use_hazard_raw_m = i_mem_read_m && i_reg_write_m && (i_rd_addr_m != '0) &&
+                                   ((i_rd_addr_m == i_rs1_addr_d) || (i_rd_addr_m == i_rs2_addr_d));
+    assign load_use_hazard = load_use_hazard_raw_e || load_use_hazard_raw_m || load_use_hazard_hold;
 
     always_ff @(posedge i_clk or negedge i_rst_n) begin
         if (!i_rst_n) begin
             load_use_hazard_hold <= 1'b0;
         end else if (i_error) begin
             load_use_hazard_hold <= 1'b0;
-        end else if (load_use_hazard_raw) begin
+        end else if (load_use_hazard_raw_e) begin
             load_use_hazard_hold <= 1'b1;
         end else begin
             load_use_hazard_hold <= 1'b0;

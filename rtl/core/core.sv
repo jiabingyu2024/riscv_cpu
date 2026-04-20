@@ -97,6 +97,7 @@ module core(
     logic [`RF_BUS]   rd_addr_m;
     logic [`DATA_BUS] alu_res_m;
     logic [`DATA_BUS] a2_data_m;
+    logic             mem_read_m;
     logic             mem_write_m;
     logic             wb_src_m;
     logic             reg_write_m;
@@ -185,6 +186,9 @@ module core(
         .i_rd_addr_e     (rd_addr_e),
         .i_mem_read_e    (mem_read_e),
         .i_reg_write_e   (reg_write_e),
+        .i_rd_addr_m     (rd_addr_m),
+        .i_mem_read_m    (mem_read_m),
+        .i_reg_write_m   (reg_write_m),
         .i_predict_taken (predict_taken_f),
         .i_predict_target(predict_target_f),
         .i_error         (error_e),
@@ -353,7 +357,7 @@ module core(
         .o_rd_addr       (rd_addr_m),
         .o_alu_res       (alu_res_m),
         .o_a2_data       (a2_data_m),
-        .o_mem_read      (),
+        .o_mem_read      (mem_read_m),
         .o_mem_write     (mem_write_m),
         .o_wb_src        (wb_src_m),
         .o_reg_write     (reg_write_m),

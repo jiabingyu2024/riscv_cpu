@@ -31,7 +31,7 @@ RTL_SRCS := \
 	rtl/core/ex/stage_ex.sv \
 	rtl/core/ex/alu.sv \
 	rtl/core/ex/branch_cmp.sv \
-	rtl/core/mem/stage_mem.sv \
+	rtl/core/m2/stage_m2.sv \
 	rtl/core/wb/stage_wb.sv \
 	rtl/core/control/bpu_top.sv \
 	rtl/core/control/forward_unit.sv \
@@ -39,8 +39,9 @@ RTL_SRCS := \
 	rtl/core/pipeline_regs/reg_pc_if.sv \
 	rtl/core/pipeline_regs/reg_if_id.sv \
 	rtl/core/pipeline_regs/reg_id_ex.sv \
-	rtl/core/pipeline_regs/reg_ex_mem.sv \
-	rtl/core/pipeline_regs/reg_mem_wb.sv \
+	rtl/core/pipeline_regs/reg_ex_m1.sv \
+	rtl/core/pipeline_regs/reg_m1_m2.sv \
+	rtl/core/pipeline_regs/reg_m2_wb.sv \
 	rtl/ip/IROM.sv \
 	rtl/ip/DRAM.sv \
 	rtl/soc/student_top.sv \
@@ -64,7 +65,7 @@ SRC_RTL_SRCS := \
 	rtl/core/ex/stage_ex.sv \
 	rtl/core/ex/alu.sv \
 	rtl/core/ex/branch_cmp.sv \
-	rtl/core/mem/stage_mem.sv \
+	rtl/core/m2/stage_m2.sv \
 	rtl/core/wb/stage_wb.sv \
 	rtl/core/control/bpu_top.sv \
 	rtl/core/control/forward_unit.sv \
@@ -72,8 +73,9 @@ SRC_RTL_SRCS := \
 	rtl/core/pipeline_regs/reg_pc_if.sv \
 	rtl/core/pipeline_regs/reg_if_id.sv \
 	rtl/core/pipeline_regs/reg_id_ex.sv \
-	rtl/core/pipeline_regs/reg_ex_mem.sv \
-	rtl/core/pipeline_regs/reg_mem_wb.sv \
+	rtl/core/pipeline_regs/reg_ex_m1.sv \
+	rtl/core/pipeline_regs/reg_m1_m2.sv \
+	rtl/core/pipeline_regs/reg_m2_wb.sv \
 	rtl/ip/IROM.sv \
 	rtl/ip/DRAM.sv \
 	rtl/soc/student_top.sv \
