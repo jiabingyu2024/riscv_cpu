@@ -51,8 +51,6 @@ module hazard_unit(
     logic load_use_hazard_raw_m;
     logic load_use_hazard_hold;
     logic load_use_hazard;
-    logic redirect_valid_q;
-    logic [`PC_BUS] redirect_pc_q;
 
     assign load_use_hazard_raw_e = i_mem_read_e && i_reg_write_e && (i_rd_addr_e != '0) &&
                                    ((i_rd_addr_e == i_rs1_addr_d) || (i_rd_addr_e == i_rs2_addr_d));
@@ -63,7 +61,7 @@ module hazard_unit(
     always_ff @(posedge i_clk or negedge i_rst_n) begin
         if (!i_rst_n) begin
             load_use_hazard_hold <= 1'b0;
-        end else if (i_error || redirect_valid_q) begin
+        end else if (i_error) begin
             load_use_hazard_hold <= 1'b0;
         end else if (load_use_hazard_raw_e) begin
             load_use_hazard_hold <= 1'b1;
@@ -72,36 +70,24 @@ module hazard_unit(
         end
     end
 
-    always_ff @(posedge i_clk or negedge i_rst_n) begin
-        if (!i_rst_n) begin
-            redirect_valid_q <= 1'b0;
-            redirect_pc_q    <= '0;
-        end else begin
-            redirect_valid_q <= i_error;
-            if (i_error) begin
-                redirect_pc_q <= i_right_pc;
-            end
-        end
-    end
-
     always_comb begin
 
-        o_stall_p_f = load_use_hazard && !redirect_valid_q;
-        o_stall_f_d = load_use_hazard && !redirect_valid_q;
+        o_stall_p_f = load_use_hazard;
+        o_stall_f_d = load_use_hazard;
         o_stall_d_e = 1'b0;
         o_stall_e_m = 1'b0;
         o_stall_m_w = 1'b0;
 
-        o_flush_p_f = redirect_valid_q;
-        o_flush_f_d = redirect_valid_q;
-        o_flush_d_e = i_error || redirect_valid_q || load_use_hazard;
-        o_flush_e_m = redirect_valid_q;
+        o_flush_p_f = i_error;
+        o_flush_f_d = i_error;
+        o_flush_d_e = i_error || load_use_hazard;
+        o_flush_e_m = 1'b0;
         o_flush_m_w = 1'b0;
 
         o_pc_predict = i_predict_taken ? i_predict_target : (i_pc_cur + 32'd4);
 
-        if (redirect_valid_q) begin
-            o_pc_next = redirect_pc_q;
+        if (i_error) begin
+            o_pc_next = i_right_pc;
         end else if (load_use_hazard) begin
             o_pc_next = i_pc_cur;
         end else begin
