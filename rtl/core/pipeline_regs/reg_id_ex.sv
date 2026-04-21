@@ -13,7 +13,7 @@ module reg_id_ex(
     input logic                     i_clk,
     input logic                     i_rst_n,
     input logic                     i_flush,
-    input logic                     i_valid,
+    input logic                     i_stall,
 
     input logic [`DATA_BUS]         i_rs1_data,
     input logic [`RF_BUS]           i_rs1_addr,
@@ -71,8 +71,7 @@ module reg_id_ex(
     // output logic                    o_is_jtype,
     // output logic                    o_bcmp1_src,
     output logic [`PC_BUS]          o_pc_d_e,
-    output logic [`PC_BUS]          o_pc_predict,
-    output logic                    o_valid
+    output logic [`PC_BUS]          o_pc_predict
 );
 
     always_ff @(posedge i_clk or negedge i_rst_n) begin
@@ -96,28 +95,46 @@ module reg_id_ex(
             o_is_branch      <= 1'b0;
             o_pc_d_e         <= '0;
             o_pc_predict     <= '0;
-            o_valid          <= 1'b0;
-        end else begin
+        end else if (i_flush) begin
+            o_rs1_data       <= '0;
+            o_rs2_data       <= '0;
+            o_rd_addr        <= '0;
+            o_rs1_addr       <= '0;
+            o_rs2_addr       <= '0;
+            o_imm            <= '0;
+            o_mem_read       <= 1'b0;
+            o_reg_write      <= 1'b0;
+            o_mem_write      <= 1'b0;
+            o_wb_src         <= `WB_SRC_ALU;
+            o_is_rs2_imm     <= 1'b0;
+            o_inst_spec      <= '0;
+            o_alu_ctrl       <= `ALU_ADD;
+            o_func3          <= 3'b000;
+            o_mem_mask       <= `MASK_WORD;
+            o_load_unsigned  <= 1'b0;
+            o_is_branch      <= 1'b0;
+            o_pc_d_e         <= '0;
+            o_pc_predict     <= '0;
+        end else if (!i_stall) begin
             o_rs1_data       <= i_rs1_data;
             o_rs2_data       <= i_rs2_data;
             o_rd_addr        <= i_rd_addr;
             o_rs1_addr       <= i_rs1_addr;
             o_rs2_addr       <= i_rs2_addr;
             o_imm            <= i_imm;
-            o_mem_read       <= (i_valid && !i_flush) ? i_mem_read : 1'b0;
-            o_reg_write      <= (i_valid && !i_flush) ? i_reg_write : 1'b0;
-            o_mem_write      <= (i_valid && !i_flush) ? i_mem_write : 1'b0;
+            o_mem_read       <= i_mem_read;
+            o_reg_write      <= i_reg_write;
+            o_mem_write      <= i_mem_write;
             o_wb_src         <= i_wb_src;
             o_is_rs2_imm     <= i_is_rs2_imm;
-            o_inst_spec      <= (i_valid && !i_flush) ? i_inst_spec : '0;
+            o_inst_spec      <= i_inst_spec;
             o_alu_ctrl       <= i_alu_ctrl;
             o_func3          <= i_func3;
             o_mem_mask       <= i_mem_mask;
             o_load_unsigned  <= i_load_unsigned;
-            o_is_branch      <= (i_valid && !i_flush) ? i_is_branch : 1'b0;
-            o_pc_d_e         <= (i_valid && !i_flush) ? i_pc_d_e : '0;
-            o_pc_predict     <= (i_valid && !i_flush) ? i_pc_predict : '0;
-            o_valid          <= i_valid && !i_flush;
+            o_is_branch      <= i_is_branch;
+            o_pc_d_e         <= i_pc_d_e;
+            o_pc_predict     <= i_pc_predict;
         end
     end
 endmodule

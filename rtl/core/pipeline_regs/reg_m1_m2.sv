@@ -9,7 +9,7 @@ module reg_m1_m2 (
     input logic                               i_clk,
     input logic                               i_rst_n,
     input logic                               i_flush,
-    input logic                               i_valid,
+    input logic                               i_stall,
 
     input logic [`RF_BUS]                     i_rd_addr,
     input logic [`DATA_BUS]                   i_alu_res,
@@ -27,8 +27,7 @@ module reg_m1_m2 (
 
     output logic                              o_wb_src,
     output logic                              o_reg_write,
-    output logic                              o_load_unsigned,
-    output logic                              o_valid
+    output logic                              o_load_unsigned
 
 );
 
@@ -40,15 +39,20 @@ module reg_m1_m2 (
             o_reg_write     <= 1'b0;
             o_load_unsigned <= 1'b0;
             o_mem_mask      <= 4'b0000;
-            o_valid         <= 1'b0;
-        end else begin
+        end else if (i_flush) begin
+            o_rd_addr       <= '0;
+            o_alu_res       <= '0;
+            o_wb_src        <= `WB_SRC_ALU;
+            o_reg_write     <= 1'b0;
+            o_load_unsigned <= 1'b0;
+            o_mem_mask      <= 4'b0000;
+        end else if (!i_stall) begin
             o_rd_addr       <= i_rd_addr;
             o_alu_res       <= i_alu_res;
             o_wb_src        <= i_wb_src;
-            o_reg_write     <= (i_valid && !i_flush) ? i_reg_write : 1'b0;
+            o_reg_write     <= i_reg_write;
             o_load_unsigned <= i_load_unsigned;
             o_mem_mask      <= i_mem_mask;
-            o_valid         <= i_valid && !i_flush;
         end
     end
 

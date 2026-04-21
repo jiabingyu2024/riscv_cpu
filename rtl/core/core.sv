@@ -34,11 +34,6 @@ module core(
     logic [`PC_BUS]   pc_predict_f;
     logic [`INST_BUS] inst_f;
     logic [`PC_BUS]   pc_f;
-    logic             valid_d;
-    logic             valid_e;
-    logic             valid_m;
-    logic             valid_m2;
-    logic             valid_w;
     logic             predict_taken_f;
     logic [`PC_BUS]   predict_target_f;
 
@@ -127,6 +122,9 @@ module core(
 
     logic             stall_p_f;
     logic             stall_f_d;
+    logic             stall_d_e;
+    logic             stall_e_m;
+    logic             stall_m_w;
     logic             flush_p_f;
     logic             flush_f_d;
     logic             flush_d_e;
@@ -148,7 +146,6 @@ module core(
         .i_rst_n      (rst_n),
         .i_flush      (flush_p_f),
         .i_stall      (stall_p_f),
-        .i_valid      (1'b1),
         .i_pc         (pc_p),
         .i_pc_predict (pc_predict_p),
         .i_inst       (irom_data),
@@ -187,17 +184,20 @@ module core(
         .i_rs1_addr_d    (rs1_addr_d),
         .i_rs2_addr_d    (rs2_addr_d),
         .i_rd_addr_e     (rd_addr_e),
-        .i_mem_read_e    (mem_read_e && valid_e),
-        .i_reg_write_e   (reg_write_e && valid_e),
+        .i_mem_read_e    (mem_read_e),
+        .i_reg_write_e   (reg_write_e),
         .i_rd_addr_m     (rd_addr_m),
-        .i_mem_read_m    (mem_read_m && valid_m),
-        .i_reg_write_m   (reg_write_m && valid_m),
+        .i_mem_read_m    (mem_read_m),
+        .i_reg_write_m   (reg_write_m),
         .i_predict_taken (predict_taken_f),
         .i_predict_target(predict_target_f),
         .i_error         (error_e),
         .i_right_pc      (right_pc_e),
         .o_stall_p_f     (stall_p_f),
         .o_stall_f_d     (stall_f_d),
+        .o_stall_d_e     (stall_d_e),
+        .o_stall_e_m     (stall_e_m),
+        .o_stall_m_w     (stall_m_w),
         .o_flush_p_f     (flush_p_f),
         .o_flush_f_d     (flush_f_d),
         .o_flush_d_e     (flush_d_e),
@@ -212,14 +212,12 @@ module core(
         .i_rst_n      (rst_n),
         .i_flush      (flush_f_d),
         .i_stall      (stall_f_d),
-        .i_valid      (valid_pf),
         .i_pc_f_d     (pc_f),
         .i_inst_f_d   (inst_f),
         .i_pc_predict (pc_predict_f),
         .o_pc_f_d     (pc_d),
         .o_inst_f_d   (inst_d),
-        .o_pc_predict (pc_predict_d),
-        .o_valid      (valid_d)
+        .o_pc_predict (pc_predict_d)
     );
 
     stage_id u_stage_id (
@@ -228,7 +226,7 @@ module core(
         .i_pc_f_d        (pc_d),
         .i_inst_f_d      (inst_d),
         .i_pc_predict    (pc_predict_d),
-        .i_we            (reg_write_w && valid_w),
+        .i_we            (reg_write_w),
         .i_w_addr        (rd_addr_w),
         .i_w_data        (wb_data_w),
         .o_mem_read      (mem_read_d),
@@ -254,7 +252,7 @@ module core(
         .i_clk           (clk),
         .i_rst_n         (rst_n),
         .i_flush         (flush_d_e),
-        .i_valid         (valid_d),
+        .i_stall         (stall_d_e),
         .i_rs1_data      (rs1_data_d),
         .i_rs1_addr      (rs1_addr_d),
         .i_rs2_data      (rs2_data_d),
@@ -292,8 +290,7 @@ module core(
         .o_load_unsigned (load_unsigned_e),
         .o_is_branch     (is_branch_e),
         .o_pc_d_e        (pc_e),
-        .o_pc_predict    (pc_predict_e),
-        .o_valid         (valid_e)
+        .o_pc_predict    (pc_predict_e)
     );
 
     forward_unit u_forward_unit (
@@ -302,9 +299,9 @@ module core(
         .i_rd_addr_e_m   (rd_addr_m),
         .i_rd_addr_m_m   (rd_addr_m2),
         .i_rd_addr_m_w   (rd_addr_w),
-        .i_reg_write_e_m (reg_write_m && valid_m),
-        .i_reg_write_m_m (reg_write_m2 && valid_m2),
-        .i_reg_write_m_w (reg_write_w && valid_w),
+        .i_reg_write_e_m (reg_write_m),
+        .i_reg_write_m_m (reg_write_m2),
+        .i_reg_write_m_w (reg_write_w),
         .i_is_rs2_imm    (is_rs2_imm_e),
         .i_inst_spec     (inst_spec_e),
         .o_b1_sel        (b1_sel_e),
@@ -333,7 +330,6 @@ module core(
         .i_func3         (func3_e),
         .i_is_branch     (is_branch_e),
         .i_inst_spec     (inst_spec_e),
-        .i_valid         (valid_e),
         .o_alu_res       (alu_res_e),
         .o_a2_data       (a2_data_e),
         .o_update_taken  (update_taken_e),
@@ -348,7 +344,7 @@ module core(
         .i_clk           (clk),
         .i_rst_n         (rst_n),
         .i_flush         (flush_e_m),
-        .i_valid         (valid_e),
+        .i_stall         (stall_e_m),
         .i_rd_addr       (rd_addr_e),
         .i_alu_res       (alu_res_e),
         .i_a2_data       (a2_data_e),
@@ -366,11 +362,10 @@ module core(
         .o_wb_src        (wb_src_m),
         .o_reg_write     (reg_write_m),
         .o_mem_mask      (mem_mask_m),
-        .o_load_unsigned (load_unsigned_m),
-        .o_valid         (valid_m)
+        .o_load_unsigned (load_unsigned_m)
     );
 
-    assign dram_wen   = mem_write_m && valid_m;
+    assign dram_wen   = mem_write_m;
     assign dram_addr  = alu_res_m[`RAM_ADDR_BUS];
     assign dram_wdata = a2_data_m;
     assign dram_mask  = mem_mask_m;
@@ -379,7 +374,7 @@ module core(
         .i_clk           (clk),
         .i_rst_n         (rst_n),
         .i_flush         (flush_m_w),
-        .i_valid         (valid_m),
+        .i_stall         (stall_m_w),
         .i_rd_addr       (rd_addr_m),
         .i_alu_res       (alu_res_m),
         .i_mem_mask      (mem_mask_m),
@@ -391,8 +386,7 @@ module core(
         .o_mem_mask      (mem_mask_m2),
         .o_wb_src        (wb_src_m2),
         .o_reg_write     (reg_write_m2),
-        .o_load_unsigned (load_unsigned_m2),
-        .o_valid         (valid_m2)
+        .o_load_unsigned (load_unsigned_m2)
     );
 
     stage_m2 u_stage_m2 (
@@ -408,7 +402,7 @@ module core(
         .i_clk           (clk),
         .i_rst_n         (rst_n),
         .i_flush         (1'b0),
-        .i_valid         (valid_m2),
+        .i_stall         (1'b0),
         .i_reg_write     (reg_write_m2),
         .i_wb_src        (wb_src_m2),
         .i_alu_res       (alu_res_m2),
@@ -418,8 +412,7 @@ module core(
         .o_rd_addr       (rd_addr_w),
         .o_mem_data      (mem_data_w),
         .o_wb_src        (wb_src_w),
-        .o_reg_write     (reg_write_w),
-        .o_valid         (valid_w)
+        .o_reg_write     (reg_write_w)
     );
 
     stage_wb u_stage_wb (
