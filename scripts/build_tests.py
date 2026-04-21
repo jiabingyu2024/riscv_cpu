@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 import argparse
 import json
+import os
 import re
+import shutil
 import struct
+import subprocess
 from pathlib import Path
 
 
@@ -136,6 +139,56 @@ def write_words(path, words):
     path.write_text("".join(f"{word & 0xffff_ffff:08x}\n" for word in words), encoding="ascii")
 
 
+def write_words_binary(path, words):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("wb") as out:
+        for word in words:
+            out.write(struct.pack("<I", word & 0xffff_ffff))
+
+
+def find_objdump():
+    env_tool = os.environ.get("RISCV_OBJDUMP")
+    candidates = [
+        env_tool,
+        "riscv32-unknown-elf-objdump",
+        "riscv32-unknown-objdump",
+        "riscv64-unknown-elf-objdump",
+        "riscv64-unknown-objdump",
+    ]
+    for candidate in candidates:
+        if candidate and shutil.which(candidate):
+            return candidate
+    return ""
+
+
+def write_irom_dump(bin_path, dump_path, base_addr):
+    objdump = find_objdump()
+    if not objdump:
+        dump_path.write_text(
+            "No RISC-V objdump found. Set RISCV_OBJDUMP or install riscv32-unknown-elf-objdump.\n",
+            encoding="ascii",
+        )
+        return ""
+
+    cmd = [
+        objdump,
+        "-D",
+        "-b",
+        "binary",
+        "-m",
+        "riscv:rv32",
+        "-M",
+        "no-aliases,numeric",
+        f"--adjust-vma=0x{base_addr:08x}",
+        str(bin_path),
+    ]
+    result = subprocess.run(cmd, check=False, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    dump_path.write_text(result.stdout, encoding="utf-8", errors="replace")
+    if result.returncode != 0:
+        raise RuntimeError(f"{objdump} failed for {bin_path}; see {dump_path}")
+    return objdump
+
+
 def parse_coe(path):
     text = path.read_text(encoding="ascii", errors="ignore")
     radix_match = re.search(r"memory_initialization_radix\s*=\s*(\d+)\s*;", text, re.IGNORECASE)
@@ -244,6 +297,8 @@ def build_coe_suite(suite):
     dram_words = parse_coe(src_dir / "dram.coe")
     write_words(out_dir / "irom.hex", irom_words)
     write_words(out_dir / "dram.hex", dram_words)
+    write_words_binary(out_dir / "irom.bin", irom_words)
+    objdump = write_irom_dump(out_dir / "irom.bin", out_dir / "irom.dump", IROM_BASE)
     meta = {
         "kind": kind,
         "suite": suite,
@@ -254,6 +309,9 @@ def build_coe_suite(suite):
         "dram_base": f"0x{DRAM_BASE:08x}",
         "irom_words": len(irom_words),
         "dram_words": len(dram_words),
+        "irom_bin": "irom.bin",
+        "irom_dump": "irom.dump",
+        "objdump": objdump,
     }
     (out_dir / "meta.json").write_text(json.dumps(meta, indent=2) + "\n", encoding="ascii")
     return [meta]

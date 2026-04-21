@@ -91,28 +91,33 @@
 
 // used in fwd
 
-`define B1_RS1          2'b00
-`define B1_E_M          2'b01
-`define B1_M_W          2'b10
+`define B1_RS1          3'b000
+`define B1_E_M          3'b001
+`define B1_M_W          3'b010
+`define B1_M_M          3'b011   //新增一个EX/MEM的前递选择项  
 
-`define B2_RS2          2'b00
-`define B2_E_M          2'b01
-`define B2_M_W          2'b10   
+`define B2_RS2          3'b000
+`define B2_E_M          3'b001
+`define B2_M_W          3'b010
+`define B2_M_M          3'b011  //新增一个EX/MEM的前递选择项  
 
-`define T1_PC           2'b00
-`define T1_RS1          2'b01
-`define T1_E_M          2'b10
-`define T1_M_W          2'b11  //T2 始终是 imm
+`define T1_PC           3'b000
+`define T1_RS1          3'b001
+`define T1_E_M          3'b010
+`define T1_M_W          3'b011
+`define T1_M_M          3'b100  // T2 始终是 imm
 
-`define A1_RS1          2'b00
-`define A1_E_M          2'b01
-`define A1_M_W          2'b10
-`define A1_PC           2'b11
+`define A1_RS1          3'b000
+`define A1_E_M          3'b001
+`define A1_M_W          3'b010
+`define A1_PC           3'b011
+`define A1_M_M          3'b100
 
-`define A2_RS2          2'b00
-`define A2_E_M          2'b01
-`define A2_M_W          2'b10
-`define A2_imm          2'b11
+`define A2_RS2          3'b000
+`define A2_E_M          3'b001
+`define A2_M_W          3'b010
+`define A2_imm          3'b011
+`define A2_M_M          3'b100
 
 // used in mem
 
