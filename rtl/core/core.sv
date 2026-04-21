@@ -28,7 +28,6 @@ module core(
     logic [`PC_BUS]   pc_p;
     logic [`PC_BUS]   pc_predict_p;
     logic [`PC_BUS]   pc_pf;
-    logic [`INST_BUS] inst_pf;
     logic [`PC_BUS]   pc_predict_pf;
     logic             valid_pf;
     logic [`PC_BUS]   pc_predict_f;
@@ -150,16 +149,14 @@ module core(
         .i_stall      (stall_p_f),
         .i_pc         (pc_p),
         .i_pc_predict (pc_predict_p),
-        .i_inst       (irom_data),
         .o_pc         (pc_pf),
-        .o_inst       (inst_pf),
         .o_pc_predict (pc_predict_pf),
         .o_valid      (valid_pf)
     );
 
     stage_if u_stage_if (
         .i_pc         (pc_pf),
-        .i_inst       (inst_pf),
+        .i_inst       (irom_data),
         .i_pc_predict (pc_predict_pf),
         .i_valid      (valid_pf),
         .o_pc         (pc_f),

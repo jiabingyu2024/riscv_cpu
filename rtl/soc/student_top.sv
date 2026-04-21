@@ -52,7 +52,7 @@ module student_top#(
 
     // 16KB = 2^12 * 32bit
     assign inst_addr = pc[13:2];
-    assign irom_clk = ~w_cpu_clk;
+    assign irom_clk = w_cpu_clk;
 
     myCPU Core_cpu (
         .cpu_rst            (w_clk_rst),
