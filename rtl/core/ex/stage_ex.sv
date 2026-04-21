@@ -35,6 +35,7 @@ module stage_ex(
     // input  logic                            i_is_jtype,
     // input  logic                            i_is_lui,
     input  logic  [3:0]                     i_inst_spec,
+    input  logic                            i_valid,
 
     output logic  [`DATA_BUS]               o_alu_res,
     output logic  [`DATA_BUS]               o_a2_data,
@@ -54,6 +55,12 @@ module stage_ex(
     logic [`DATA_BUS] a2_data;
     logic [`PC_BUS]   t1_data;
     logic [`DATA_BUS] alu_res_raw;
+    logic             update_taken_raw;
+    logic             update_en_raw;
+    logic [`PC_BUS]   update_pc_raw;
+    logic [`PC_BUS]   update_target_raw;
+    logic             error_raw;
+    logic [`PC_BUS]   right_pc_raw;
 
     always_comb begin
         unique case (i_b1_sel)
@@ -112,15 +119,21 @@ module stage_ex(
         .i_t2_data       (i_imm),
         .i_is_branch     (i_is_branch),
         .i_inst_spec     (i_inst_spec),
-        .o_update_taken  (o_update_taken),
-        .o_update_en     (o_update_en),
-        .o_update_pc     (o_update_pc),
-        .o_update_target (o_update_target),
-        .o_error         (o_error),
-        .o_right_pc      (o_right_pc)
+        .o_update_taken  (update_taken_raw),
+        .o_update_en     (update_en_raw),
+        .o_update_pc     (update_pc_raw),
+        .o_update_target (update_target_raw),
+        .o_error         (error_raw),
+        .o_right_pc      (right_pc_raw)
     );
 
     always_comb begin
+        o_update_taken  = update_taken_raw;
+        o_update_en     = update_en_raw && i_valid;
+        o_update_pc     = update_pc_raw;
+        o_update_target = update_target_raw;
+        o_error         = error_raw && i_valid;
+        o_right_pc      = right_pc_raw;
         o_a2_data = b2_data;
 
         unique case (i_inst_spec)
