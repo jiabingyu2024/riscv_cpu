@@ -51,6 +51,8 @@ module hazard_unit(
     logic load_use_hazard_raw_m;
     logic load_use_hazard_hold;
     logic load_use_hazard;
+    logic branch_error_q;
+    logic [`PC_BUS] branch_right_pc_q;
 
     assign load_use_hazard_raw_e = i_mem_read_e && i_reg_write_e && (i_rd_addr_e != '0) &&
                                    ((i_rd_addr_e == i_rs1_addr_d) || (i_rd_addr_e == i_rs2_addr_d));
@@ -60,8 +62,21 @@ module hazard_unit(
 
     always_ff @(posedge i_clk or negedge i_rst_n) begin
         if (!i_rst_n) begin
+            branch_error_q    <= 1'b0;
+            branch_right_pc_q <= '0;
+        end else if (branch_error_q) begin
+            branch_error_q    <= 1'b0;
+            branch_right_pc_q <= '0;
+        end else begin
+            branch_error_q    <= i_error;
+            branch_right_pc_q <= i_right_pc;
+        end
+    end
+
+    always_ff @(posedge i_clk or negedge i_rst_n) begin
+        if (!i_rst_n) begin
             load_use_hazard_hold <= 1'b0;
-        end else if (i_error) begin
+        end else if (branch_error_q) begin
             load_use_hazard_hold <= 1'b0;
         end else if (load_use_hazard_raw_e) begin
             load_use_hazard_hold <= 1'b1;
@@ -78,16 +93,16 @@ module hazard_unit(
         o_stall_e_m = 1'b0;
         o_stall_m_w = 1'b0;
 
-        o_flush_p_f = i_error;
-        o_flush_f_d = i_error;
-        o_flush_d_e = i_error || load_use_hazard;
-        o_flush_e_m = 1'b0;
+        o_flush_p_f = branch_error_q;
+        o_flush_f_d = branch_error_q;
+        o_flush_d_e = branch_error_q || load_use_hazard;
+        o_flush_e_m = branch_error_q;
         o_flush_m_w = 1'b0;
 
         o_pc_predict = i_predict_taken ? i_predict_target : (i_pc_cur + 32'd4);
 
-        if (i_error) begin
-            o_pc_next = i_right_pc;
+        if (branch_error_q) begin
+            o_pc_next = branch_right_pc_q;
         end else if (load_use_hazard) begin
             o_pc_next = i_pc_cur;
         end else begin

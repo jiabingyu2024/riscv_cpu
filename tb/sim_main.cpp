@@ -150,13 +150,15 @@ double branch_mpki(const PerfStats& stats) {
 }
 
 bool core_inst_valid(Vtb_rv32ui_top___024root* rootp) {
-    return rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__reg_write_e ||
+    return !rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__flush_e_m &&
+           (rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__reg_write_e ||
            rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__mem_write_e ||
-           rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__update_en_e;
+           rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__update_en_e);
 }
 
 bool core_branch_update(Vtb_rv32ui_top___024root* rootp) {
-    return rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__update_en_e;
+    return !rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__flush_e_m &&
+           rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__update_en_e;
 }
 
 bool core_branch_miss(Vtb_rv32ui_top___024root* rootp) {
@@ -256,7 +258,9 @@ int main(int argc, char** argv) {
         eval_dump();
 
         observe_tohost_write(meta, status, sampled_perip_wen, sampled_perip_addr, sampled_perip_wdata);
-        observe_pc(meta, status, core_pc_e(top->rootp));
+        if (!top->rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__flush_e_m) {
+            observe_pc(meta, status, core_pc_e(top->rootp));
+        }
 
         if (core_inst_valid(top->rootp)) {
             ++stats.instret;

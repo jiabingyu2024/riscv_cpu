@@ -89,6 +89,7 @@ module core(
     logic [`DATA_BUS] a2_data_e;
     logic             update_taken_e;
     logic             update_en_e;
+    logic             update_en_bpu;
     logic [`PC_BUS]   update_pc_e;
     logic [`PC_BUS]   update_target_e;
     logic             error_e;
@@ -133,6 +134,7 @@ module core(
 
     assign irom_addr = pc_p;
     assign irom_ena  = !stall_p_f;
+    assign update_en_bpu = update_en_e && !flush_e_m;
 
     stage_pc u_stage_pc (
         .i_clk       (clk),
@@ -169,7 +171,7 @@ module core(
         .i_clk           (clk),
         .i_rst_n         (rst_n),
         .i_pc_cur        (pc_p),
-        .i_update_en     (update_en_e),
+        .i_update_en     (update_en_bpu),
         .i_update_taken  (update_taken_e),
         .i_update_target (update_target_e),
         .i_update_pc     (update_pc_e),
