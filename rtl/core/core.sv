@@ -88,9 +88,13 @@ module core(
     logic [`DATA_BUS] a2_data_e;
     logic             update_taken_e;
     logic             update_en_e;
-    logic             update_en_bpu;
     logic [`PC_BUS]   update_pc_e;
     logic [`PC_BUS]   update_target_e;
+    logic             update_en_bpu_d;
+    logic             update_en_bpu_q;
+    logic             update_taken_bpu_q;
+    logic [`PC_BUS]   update_pc_bpu_q;
+    logic [`PC_BUS]   update_target_bpu_q;
     logic             error_e;
     logic [`PC_BUS]   right_pc_e;
 
@@ -133,7 +137,21 @@ module core(
 
     assign irom_addr = pc_p;
     assign irom_ena  = !stall_p_f;
-    assign update_en_bpu = update_en_e && !flush_e_m;
+    assign update_en_bpu_d = update_en_e && !flush_e_m;
+
+    always_ff @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            update_en_bpu_q     <= 1'b0;
+            update_taken_bpu_q  <= 1'b0;
+            update_pc_bpu_q     <= '0;
+            update_target_bpu_q <= '0;
+        end else begin
+            update_en_bpu_q     <= update_en_bpu_d;
+            update_taken_bpu_q  <= update_taken_e;
+            update_pc_bpu_q     <= update_pc_e;
+            update_target_bpu_q <= update_target_e;
+        end
+    end
 
     stage_pc u_stage_pc (
         .i_clk       (clk),
@@ -168,10 +186,10 @@ module core(
         .i_clk           (clk),
         .i_rst_n         (rst_n),
         .i_pc_cur        (pc_p),
-        .i_update_en     (update_en_bpu),
-        .i_update_taken  (update_taken_e),
-        .i_update_target (update_target_e),
-        .i_update_pc     (update_pc_e),
+        .i_update_en     (update_en_bpu_q),
+        .i_update_taken  (update_taken_bpu_q),
+        .i_update_target (update_target_bpu_q),
+        .i_update_pc     (update_pc_bpu_q),
         .o_predict_taken (predict_taken_f),
         .o_predict_target(predict_target_f)
     );
