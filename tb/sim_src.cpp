@@ -27,6 +27,7 @@ struct Options {
 };
 
 struct Meta {
+    std::string kind;
     std::string suite;
     std::string test_case;
 };
@@ -71,6 +72,7 @@ Meta load_meta(const std::string& path) {
     std::ostringstream ss;
     ss << in.rdbuf();
     std::string text = ss.str();
+    meta.kind = json_string_value(text, "kind");
     meta.suite = json_string_value(text, "suite");
     meta.test_case = json_string_value(text, "case");
     return meta;
@@ -193,6 +195,7 @@ int main(int argc, char** argv) {
     bool counter_started = false;
     bool counter_stopped = false;
     bool run_ms_reached = false;
+    bool func_stable = false;
 
     auto eval_dump = [&]() {
         top->eval();
@@ -283,7 +286,8 @@ int main(int argc, char** argv) {
             }
         }
 
-        if (run_ms_reached || (counter_stopped && stable_loops >= opt.stable_cpu_cycles)) {
+        func_stable = meta.kind == "func" && stable_loops >= opt.stable_cpu_cycles;
+        if (run_ms_reached || func_stable || (counter_stopped && stable_loops >= opt.stable_cpu_cycles)) {
             break;
         }
     }
@@ -297,8 +301,8 @@ int main(int argc, char** argv) {
     uint32_t time_ms = counter_ms(top->rootp);
 
     bool stopped_and_stable = counter_stopped && stable_loops >= opt.stable_cpu_cycles;
-    bool protected_limit = total_stats.cycles >= opt.max_cpu_cycles && !run_ms_reached && !stopped_and_stable;
-    bool complete = stopped_and_stable;
+    bool complete = meta.kind == "func" ? (func_stable || run_ms_reached) : stopped_and_stable;
+    bool protected_limit = total_stats.cycles >= opt.max_cpu_cycles && !run_ms_reached && !complete;
     bool sampled = (run_ms_reached || protected_limit) && work_stats.instret != 0;
 
     std::cout << std::fixed << std::setprecision(2);
@@ -307,7 +311,7 @@ int main(int argc, char** argv) {
     if (!meta.test_case.empty()) std::cout << " case=" << meta.test_case;
     std::cout << " time_ms=" << time_ms
               << " run_ms=" << opt.run_ms
-              << " reason=" << (run_ms_reached ? "time_reached" : (stopped_and_stable ? "counter_stopped" : "sim_limit"))
+              << " reason=" << (run_ms_reached ? "time_reached" : (func_stable ? "pc_stable" : (stopped_and_stable ? "counter_stopped" : "sim_limit")))
               << " complete=" << (complete ? 1 : 0)
               << " sampled=" << (sampled ? 1 : 0)
               << " counter_scale=" << (opt.fast_counter ? "fast" : "real")

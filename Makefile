@@ -5,6 +5,8 @@ ISA ?=
 WAVE ?= 0
 MAX_CYCLES ?= 100000
 SRC_MAX_CYCLES ?= 8000000000
+FUNC_MAX_CYCLES ?= 2000000
+FUNC_RUN_MS ?= 10
 FAST_COUNTER ?= 0
 RUN_MS ?= 0
 STRICT_SIM_LIMIT ?= 0
@@ -116,6 +118,9 @@ run: build
 	elif [[ "$(SUITE)" == "rv32ui" ]]; then \
 		$(MAKE) sim; \
 		$(MAKE) run-one SUITE=$(SUITE) ISA=$(ISA) WAVE=$(WAVE) MAX_CYCLES=$(MAX_CYCLES); \
+	elif [[ "$(SUITE)" == "src_test" ]]; then \
+		$(MAKE) sim-src; \
+		$(MAKE) run-src SUITE=$(SUITE) WAVE=$(WAVE) SRC_MAX_CYCLES=$(FUNC_MAX_CYCLES) FAST_COUNTER=0 RUN_MS=$(FUNC_RUN_MS) STRICT_SIM_LIMIT=$(STRICT_SIM_LIMIT); \
 	else \
 		$(MAKE) sim-src; \
 		$(MAKE) run-src SUITE=$(SUITE) WAVE=$(WAVE) SRC_MAX_CYCLES=$(SRC_MAX_CYCLES) FAST_COUNTER=$(FAST_COUNTER) RUN_MS=$(RUN_MS) STRICT_SIM_LIMIT=$(STRICT_SIM_LIMIT); \
@@ -136,7 +141,11 @@ run-one:
 
 run-src:
 	@set -e -o pipefail; \
-	CASE_DIR="$(BUILD_DIR)/perf/$(SUITE)"; \
+	if [[ "$(SUITE)" == "src_test" ]]; then \
+		CASE_DIR="$(BUILD_DIR)/func/$(SUITE)"; \
+	else \
+		CASE_DIR="$(BUILD_DIR)/perf/$(SUITE)"; \
+	fi; \
 	if [[ ! -f "$$CASE_DIR/irom.hex" ]]; then echo "missing $$CASE_DIR/irom.hex; run make build SUITE=$(SUITE) first"; exit 2; fi; \
 	ARGS="+irom=$$CASE_DIR/irom.hex +dram=$$CASE_DIR/dram.hex +meta=$$CASE_DIR/meta.json +max-cycles=$(SRC_MAX_CYCLES) +run-ms=$(RUN_MS) +fast-counter=$(FAST_COUNTER) +strict-sim-limit=$(STRICT_SIM_LIMIT) +wave=$(WAVE) +wave-file=$$CASE_DIR/wave.vcd"; \
 	mkdir -p "$$CASE_DIR"; \

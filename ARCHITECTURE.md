@@ -5,7 +5,7 @@
 ## 顶层目录
 
 - `rtl/`：CPU、SoC 外设、仿真可用 IP wrapper 的 RTL 源码。原则上这是设计主体，日常测试框架改动不应修改此目录。
-- `tests/`：测试输入。`rv32ui/` 存放 RISC-V ISA 单元测试 ELF 与 dump；`src0/ src1/ src2/` 存放压力测试 COE。
+- `tests/`：测试输入。`rv32ui/` 存放 RISC-V ISA 单元测试 ELF 与 dump；`src0/ src1/ src2/` 存放压力测试 COE；`src_test/` 存放功能 COE。
 - `scripts/`：测试前端转换脚本，将 ELF/COE 转成 Verilator testbench 可直接加载的 `.hex` 和 `meta.json`。
 - `tb/`：Verilator testbench 源码。包含 C++ 仿真入口和 `student_top` 包装模块。
 - `build/`：自动生成目录。存放转换后的测试输入、Verilator 编译产物、运行日志和波形。
@@ -48,7 +48,7 @@ rtl/soc/student_top.sv
        -> rtl/soc/display_seg.sv
 ```
 
-`student_top.sv` 是 `src0/src1/src2` 压力测试使用的主要 DUT。它保留 IROM、DRAM、LED、SEG、counter 等真实外设路径。
+`student_top.sv` 是 `src0/src1/src2` 压力测试和 `src_test` 功能 COE 测试使用的主要 DUT。它保留 IROM、DRAM、LED、SEG、counter 等真实外设路径。
 
 板级顶层：
 
@@ -145,15 +145,42 @@ build/perf/src0/wave.vcd       # WAVE=1 时生成
 
 `src*` 是性能压力测试，不按 `PASS/FAIL` 单元测试解释。它们应报告 counter 运行时间、周期数、分支预测统计等。
 
+### src_test
+
+来源：
+
+```text
+tests/src_test/irom.coe
+tests/src_test/dram.coe
+```
+
+处理：
+
+```text
+scripts/build_tests.py
+```
+
+去向：
+
+```text
+build/func/src_test/irom.hex
+build/func/src_test/dram.hex
+build/func/src_test/meta.json
+build/func/src_test/run.log
+build/func/src_test/wave.vcd    # WAVE=1 时生成
+```
+
+`src_test` 是功能 COE 测试，使用与 `src0/src1/src2` 相同的 `student_top` 和 `tb_src_top` 仿真路径，但生成物放在 `build/func/` 下。当前没有 `rv32ui` 那样的 `tohost/pass/fail` oracle；默认运行到指定 `FUNC_RUN_MS` 后认为功能路径可持续执行，输出 counter、周期数和分支预测统计。
+
 ## Testbench 文件
 
 - `tb/sim_main.cpp`：`rv32ui` 单元测试 testbench。DUT 为 `myCPU`，C++ 侧实现 IROM/data memory/tohost 监听，并读取内部信号统计分支预测。
-- `tb/tb_src_top.sv`：`src*` 压力测试 wrapper。DUT 为 `student_top`，通过 plusargs 加载 `irom.hex/dram.hex` 到内部 `IROM/DRAM`。
-- `tb/sim_src.cpp`：`src*` 压力测试 C++ testbench。驱动 50MHz counter 时钟和 100MHz CPU 时钟，观察 counter、PC 和分支预测信号，输出性能结果。
+- `tb/tb_src_top.sv`：`src*` 压力测试和 `src_test` 功能 COE 测试 wrapper。DUT 为 `student_top`，通过 plusargs 加载 `irom.hex/dram.hex` 到内部 `IROM/DRAM`。
+- `tb/sim_src.cpp`：`src*`/`src_test` C++ testbench。驱动 50MHz counter 时钟和 100MHz CPU 时钟，观察 counter、PC 和分支预测信号，输出性能/功能运行统计。
 
 ## 当前约束与注意点
 
 - `rtl/` 当前不因仿真框架改动而修改。
-- `src*` 使用 `student_top`，不是 `top`，因为当前目标是 CPU+外设性能测试，不是 UART 数字孪生系统测试。
+- `src*` 和 `src_test` 使用 `student_top`，不是 `top`，因为当前目标是 CPU+外设仿真测试，不是 UART 数字孪生系统测试。
 - `IROM/DRAM` 的 RTL 仅在 `INIT_FILE` 非空时执行默认 `$readmemh`。`tb_src_top.sv` 会通过 plusargs 将真实 hex 加载到内部 memory。
 - `build/` 是生成目录，可以通过 `make clean` 删除后重新生成。

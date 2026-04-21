@@ -1,6 +1,6 @@
 # 仿真与性能测试使用说明
 
-本文档说明如何使用 `Makefile` 运行 `rv32ui` 单元测试和 `src0/src1/src2` 性能压力测试，以及如何理解输出参数。
+本文档说明如何使用 `Makefile` 运行 `rv32ui` 单元测试、`src0/src1/src2` 性能压力测试和 `src_test` 功能 COE 测试，以及如何理解输出参数。
 
 ## 基本环境
 
@@ -23,7 +23,7 @@ g++
 make list
 ```
 
-列出 `src*` 压力测试：
+列出 `src*` 压力测试和 `src_test` 功能 COE 测试：
 
 ```bash
 make list-src
@@ -278,6 +278,64 @@ make run SUITE=src0 WAVE=1 SRC_MAX_CYCLES=200000
 
 注意：不要对 70000ms 级别的真实全量运行开启 `WAVE=1`，VCD 会非常大且仿真会显著变慢。
 
+## src_test 功能 COE 测试
+
+`src_test` 和 `src0/src1/src2` 一样使用 COE 输入和 `student_top` 仿真路径，但它不是性能压力测试，也没有 `rv32ui` 的 `tohost/pass/fail` oracle。框架把它归类为功能 COE 测试，生成物放在 `build/func/src_test/`。
+
+### 构建输入
+
+```bash
+make build SUITE=src_test
+```
+
+生成物位置：
+
+```text
+build/func/src_test/irom.hex
+build/func/src_test/dram.hex
+build/func/src_test/meta.json
+```
+
+### 运行 src_test
+
+默认运行真实 counter 的 10ms 窗口：
+
+```bash
+make run SUITE=src_test
+```
+
+默认参数：
+
+```text
+FUNC_RUN_MS ?= 10
+FUNC_MAX_CYCLES ?= 2000000
+```
+
+可以调整运行时间或保护上限：
+
+```bash
+make run SUITE=src_test FUNC_RUN_MS=20 FUNC_MAX_CYCLES=4000000
+```
+
+快速调试时也可以直接调用 `run-src` 并开启 fast counter：
+
+```bash
+make run-src SUITE=src_test FAST_COUNTER=1 RUN_MS=10 SRC_MAX_CYCLES=1000000
+```
+
+### src_test 输出示例
+
+```text
+DONE suite=src_test case=src_test time_ms=10 run_ms=10 reason=time_reached complete=1 sampled=1 counter_scale=real strict_sim_limit=0 counter_started=1 counter_stopped=0 sample_valid=1 work_sample_valid=1 cycles=... instret=... cpi=... ipc=... branches=... hit=... miss=... hit_rate=... branch_mpki=... work_cycles=... work_instret=... work_cpi=... work_ipc=... work_branches=... work_hit=... work_miss=... work_hit_rate=... work_branch_mpki=...
+```
+
+字段解释沿用 `src` 输出字段，额外约定：
+
+- `reason=time_reached`：达到 `FUNC_RUN_MS/RUN_MS` 指定的功能运行窗口。
+- `complete=1`：对 `src_test` 表示已完成指定功能运行窗口，或 PC 稳定达到 `stable-cycles`。
+- `counter_stopped=0` 是正常现象；`src_test` 当前不要求程序主动停止 counter。
+- `work_*` 字段仍表示 counter 工作窗口内的统计，可用于确认程序持续执行和观察分支预测行为。
+
 ## 真实全量运行时间估算
 
 真实 counter 下：
@@ -308,4 +366,4 @@ make run SUITE=src0 SRC_MAX_CYCLES=8000000000
 
 ## IROM/DRAM 加载
 
-`rtl/ip/IROM.sv` 和 `rtl/ip/DRAM.sv` 仅在 `INIT_FILE` 非空时执行默认 `$readmemh`。`src*` 仿真中，`tb/tb_src_top.sv` 会通过 plusargs 将真实 `irom.hex/dram.hex` 加载到内部 memory。
+`rtl/ip/IROM.sv` 和 `rtl/ip/DRAM.sv` 仅在 `INIT_FILE` 非空时执行默认 `$readmemh`。`src*` 和 `src_test` 仿真中，`tb/tb_src_top.sv` 会通过 plusargs 将真实 `irom.hex/dram.hex` 加载到内部 memory。
