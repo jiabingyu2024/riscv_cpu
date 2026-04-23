@@ -25,7 +25,7 @@ module control_unit(
     output logic  [2:0]                     o_func3,
 
     output logic                            o_is_branch,
-    output logic  [1:0]                     o_mem_mask,
+    output logic  [3:0]                     o_mem_mask,
     output logic                            o_load_unsigned
     // output logic                            o_is_jtype,
     // output logic                            o_is_lui,

@@ -17,16 +17,15 @@ module stage_ex(
     input  logic  [`PC_BUS]                 i_pc,
     input  logic  [`DATA_BUS]               i_fwd_e_m,
     input  logic  [`DATA_BUS]               i_fwd_m_w,
-    input  logic  [`DATA_BUS]               i_fwd_m_m,   //新增一个EX/MEM的前递数据输入
 
     input  logic  [`PC_BUS]                 i_pc_d_e,
     input  logic  [`PC_BUS]                 i_pc_predict,
 
-    input  logic  [2:0]                     i_b1_sel,   //均增加一个i_fwd_m_m,同时修改 cpu_defines.svh
-    input  logic  [2:0]                     i_b2_sel,
-    input  logic  [2:0]                     i_t1_sel,
-    input  logic  [2:0]                     i_a1_sel,
-    input  logic  [2:0]                     i_a2_sel,
+    input  logic  [1:0]                     i_b1_sel,
+    input  logic  [1:0]                     i_b2_sel,
+    input  logic  [1:0]                     i_t1_sel,
+    input  logic  [1:0]                     i_a1_sel,
+    input  logic  [1:0]                     i_a2_sel,
 
     input  logic  [3:0]                     i_alu_ctrl,
     input  logic  [2:0]                     i_func3,
@@ -59,14 +58,12 @@ module stage_ex(
         unique case (i_b1_sel)
             `B1_E_M:   b1_data = i_fwd_e_m;
             `B1_M_W:   b1_data = i_fwd_m_w;
-            `B1_M_M:   b1_data = i_fwd_m_m;
             default:   b1_data = i_rs1_data;
         endcase
 
         unique case (i_b2_sel)
             `B2_E_M:   b2_data = i_fwd_e_m;
             `B2_M_W:   b2_data = i_fwd_m_w;
-            `B2_M_M:   b2_data = i_fwd_m_m;
             default:   b2_data = i_rs2_data;
         endcase
 
@@ -74,14 +71,12 @@ module stage_ex(
             `T1_RS1:   t1_data = i_rs1_data;
             `T1_E_M:   t1_data = i_fwd_e_m;
             `T1_M_W:   t1_data = i_fwd_m_w;
-            `T1_M_M:   t1_data = i_fwd_m_m;
             default:   t1_data = i_pc_d_e;
         endcase
 
         unique case (i_a1_sel)
             `A1_E_M:   a1_data = i_fwd_e_m;
             `A1_M_W:   a1_data = i_fwd_m_w;
-            `A1_M_M:   a1_data = i_fwd_m_m;
             `A1_PC:    a1_data = i_pc;
             default:   a1_data = i_rs1_data;
         endcase
@@ -89,7 +84,6 @@ module stage_ex(
         unique case (i_a2_sel)
             `A2_E_M:   a2_data = i_fwd_e_m;
             `A2_M_W:   a2_data = i_fwd_m_w;
-            `A2_M_M:   a2_data = i_fwd_m_m;
             `A2_imm:   a2_data = i_imm;
             default:   a2_data = i_rs2_data;
         endcase
