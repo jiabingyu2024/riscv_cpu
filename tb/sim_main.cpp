@@ -33,6 +33,9 @@ struct Meta {
     uint32_t tohost = 0;
     uint32_t pass_pc = 0;
     uint32_t fail_pc = 0;
+    uint32_t led_addr = 0;
+    uint32_t pass_led = 0;
+    uint32_t fail_led = 0;
     std::string kind;
     std::string suite;
     std::string test_case;
@@ -49,6 +52,12 @@ struct TestStatus {
     bool finished = false;
     bool passed = false;
     uint32_t tohost_value = 0;
+    uint32_t led_value = 0;
+    bool saw_led = false;
+    bool saw_write = false;
+    uint32_t last_write_addr = 0;
+    uint32_t last_write_data = 0;
+    uint32_t last_pc = 0;
 };
 
 bool starts_with(const std::string& text, const std::string& prefix) {
@@ -92,6 +101,9 @@ Meta load_meta(const std::string& path) {
     meta.tohost = parse_u32(json_string_value(text, "tohost"), meta.tohost);
     meta.pass_pc = parse_u32(json_string_value(text, "pass"), meta.pass_pc);
     meta.fail_pc = parse_u32(json_string_value(text, "fail"), meta.fail_pc);
+    meta.led_addr = parse_u32(json_string_value(text, "led_addr"), meta.led_addr);
+    meta.pass_led = parse_u32(json_string_value(text, "pass_led"), meta.pass_led);
+    meta.fail_led = parse_u32(json_string_value(text, "fail_led"), meta.fail_led);
     meta.kind = json_string_value(text, "kind");
     meta.suite = json_string_value(text, "suite");
     meta.test_case = json_string_value(text, "case");
@@ -191,10 +203,6 @@ bool soc_perip_wen(Vtb_rv32ui_top___024root* rootp) {
     return rootp->tb_rv32ui_top__DOT__u_dut__DOT__perip_wen;
 }
 
-uint32_t core_pc_f(Vtb_rv32ui_top___024root* rootp) {
-    return rootp->tb_rv32ui_top__DOT__u_dut__DOT__pc;
-}
-
 uint32_t soc_perip_addr(Vtb_rv32ui_top___024root* rootp) {
     return rootp->tb_rv32ui_top__DOT__u_dut__DOT__perip_addr;
 }
@@ -226,6 +234,28 @@ void observe_tohost_write(const Meta& meta, TestStatus& status, bool wen, uint32
     }
 }
 
+void observe_led_write(const Meta& meta, TestStatus& status, bool wen, uint32_t addr, uint32_t wdata) {
+    if (status.finished || meta.led_addr == 0 || !wen || addr != meta.led_addr) return;
+    status.led_value = wdata;
+    status.saw_led = true;
+    if (meta.fail_led != 0 && wdata == meta.fail_led) {
+        status.finished = true;
+        status.passed = false;
+        return;
+    }
+    if (meta.pass_led != 0 && wdata == meta.pass_led) {
+        status.finished = true;
+        status.passed = true;
+    }
+}
+
+void observe_perip_write(TestStatus& status, bool wen, uint32_t addr, uint32_t wdata) {
+    if (!wen) return;
+    status.saw_write = true;
+    status.last_write_addr = addr;
+    status.last_write_data = wdata;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -245,9 +275,6 @@ int main(int argc, char** argv) {
     uint64_t sim_time = 0;
     PerfStats stats;
     TestStatus status;
-    uint32_t last_pc = 0;
-    uint64_t stable_cycles = 0;
-
     auto eval_dump = [&]() {
         top->eval();
         if (trace) trace->dump(sim_time);
@@ -281,22 +308,13 @@ int main(int argc, char** argv) {
         top->i_clk_50mhz = !top->i_clk_50mhz;
         eval_dump();
 
+        observe_perip_write(status, sampled_perip_wen, sampled_perip_addr, sampled_perip_wdata);
         observe_tohost_write(meta, status, sampled_perip_wen, sampled_perip_addr, sampled_perip_wdata);
+        observe_led_write(meta, status, sampled_perip_wen, sampled_perip_addr, sampled_perip_wdata);
         if (!top->rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__flush_e_m) {
-            observe_pc(meta, status, core_pc_e(top->rootp));
-        }
-
-        uint32_t pc_f = core_pc_f(top->rootp);
-        if (pc_f == last_pc) {
-            ++stable_cycles;
-        } else {
-            last_pc = pc_f;
-            stable_cycles = 0;
-        }
-
-        if (!status.finished && meta.kind == "correctness" && stable_cycles >= 64 && stats.instret != 0) {
-            status.finished = true;
-            status.passed = true;
+            uint32_t pc_e = core_pc_e(top->rootp);
+            status.last_pc = pc_e;
+            observe_pc(meta, status, pc_e);
         }
 
         if (core_inst_valid(top->rootp)) {
@@ -315,11 +333,10 @@ int main(int argc, char** argv) {
         delete trace;
     }
 
-    bool has_oracle = (meta.tohost != 0) || (meta.pass_pc != 0) || (meta.fail_pc != 0);
-    bool no_oracle_correctness_pass = !has_oracle && meta.kind == "correctness" && stats.instret != 0 && stats.cycles >= opt.max_cycles;
-    bool pass = (status.finished && status.passed) || no_oracle_correctness_pass;
+    bool has_oracle = (meta.tohost != 0) || (meta.pass_pc != 0) || (meta.fail_pc != 0) || (meta.led_addr != 0);
+    bool pass = status.finished && status.passed;
     bool done_without_oracle = !has_oracle && meta.kind != "correctness" && stats.cycles >= opt.max_cycles;
-    bool timeout = has_oracle && !status.finished && stats.cycles >= opt.max_cycles;
+    bool timeout = stats.cycles >= opt.max_cycles && !status.finished && (has_oracle || meta.kind == "correctness");
 
     const char* result = pass ? "PASS" : (done_without_oracle ? "DONE" : (timeout ? "TIMEOUT" : "FAIL"));
 
@@ -332,6 +349,26 @@ int main(int argc, char** argv) {
     print_branch_line(std::cout, stats);
     if (meta.tohost != 0) {
         std::cout << "  tohost: 0x" << std::hex << std::setw(8) << std::setfill('0') << status.tohost_value << std::dec << std::setfill(' ') << "\n";
+    }
+    if (meta.led_addr != 0) {
+        std::cout << "  oracle: led addr=0x" << std::hex << std::setw(8) << std::setfill('0') << meta.led_addr
+                  << " pass=0x" << std::setw(8) << meta.pass_led
+                  << " fail=0x" << std::setw(8) << meta.fail_led << std::dec << std::setfill(' ') << "\n";
+        if (status.saw_led) {
+            std::cout << "  led: 0x" << std::hex << std::setw(8) << std::setfill('0') << status.led_value << std::dec << std::setfill(' ') << "\n";
+        } else {
+            std::cout << "  led: no write observed\n";
+        }
+    }
+    if (!pass && !done_without_oracle) {
+        std::cout << "  debug: last_pc=0x" << std::hex << std::setw(8) << std::setfill('0') << status.last_pc;
+        if (status.saw_write) {
+            std::cout << " last_write_addr=0x" << std::setw(8) << status.last_write_addr
+                      << " last_write_data=0x" << std::setw(8) << status.last_write_data;
+        } else {
+            std::cout << " no_perip_write";
+        }
+        std::cout << std::dec << std::setfill(' ') << "\n";
     }
 
     delete top;

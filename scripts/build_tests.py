@@ -254,6 +254,14 @@ def build_coe_suite(suite, kind):
         "irom_words": len(irom_words),
         "dram_words": len(dram_words),
     }
+    if suite == "src_test":
+        meta.update(
+            {
+                "led_addr": "0x80200040",
+                "pass_led": "0x24181824",
+                "fail_led": "0x01221c08",
+            }
+        )
     (out_dir / "meta.json").write_text(json.dumps(meta, indent=2) + "\n", encoding="ascii")
     return [meta]
 

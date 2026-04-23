@@ -30,7 +30,7 @@ module perip_bridge#(
     input  logic [31:0]  perip_addr			,
     input  logic [31:0]  perip_wdata		,
     input  logic         perip_wen			,
-	input  logic [1:0]	 perip_mask			,
+	input  logic [3:0]	 perip_mask			,
     output logic [31:0]  perip_rdata		,
 
     input  logic [63:0]  virtual_sw_input	,
@@ -54,6 +54,18 @@ module perip_bridge#(
     logic [31:0] seg_wdata, cnt_rdata, mmio_rdata, dram_rdata;
     logic [39:0] seg_output;
     logic cnt_enable_cfg;
+    logic dram_sel;
+    logic dram_sel_q;
+
+    assign dram_sel = (perip_addr >= DRAM_ADDR_START && perip_addr < DRAM_ADDR_END);
+
+    always_ff @(posedge clk) begin
+        if (rst) begin
+            dram_sel_q <= 1'b0;
+        end else begin
+            dram_sel_q <= dram_sel;
+        end
+    end
 
     // we don't care perip_mask in LED, SEG, SW & KEY, only care in DRAM
     // write process
@@ -116,7 +128,8 @@ module perip_bridge#(
         .perip_addr			(perip_addr[17:0]),
         .perip_wdata		(perip_wdata),
         .perip_mask			(perip_mask),
-        .dram_wen 			(perip_wen & (perip_addr >= DRAM_ADDR_START && perip_addr < DRAM_ADDR_END)),
+        .dram_ena           (dram_sel),
+        .dram_wen 			(perip_wen & dram_sel),
         .perip_rdata		(dram_rdata)
     );
 
@@ -133,7 +146,7 @@ module perip_bridge#(
                         {32{perip_addr == SW1_ADDR}} & mmio_rdata |
                         {32{perip_addr == KEY_ADDR}} & mmio_rdata |
                         {32{perip_addr == SEG_ADDR}} & mmio_rdata |
-                        {32{perip_addr >= DRAM_ADDR_START && perip_addr < DRAM_ADDR_END}} & dram_rdata |
+                        {32{dram_sel_q}} & dram_rdata |
                         {32{perip_addr == CNT_ADDR}} & cnt_rdata;
     
     assign virtual_led_output = LED;

@@ -40,15 +40,15 @@ SoC/仿真 DUT 路径：
 ```text
 rtl/soc/student_top.sv
   -> myCPU
-  -> rtl/ip/IROM.sv
+  -> rtl/ip/IROM_0.sv
   -> rtl/soc/perip_bridge.sv
        -> rtl/soc/dram_driver.sv
-            -> rtl/ip/DRAM.sv
+            -> rtl/ip/DRAM_0.sv
        -> rtl/soc/counter.sv
        -> rtl/soc/display_seg.sv
 ```
 
-`student_top.sv` 是命令行仿真使用的 DUT。`rv32ui/src_test` 正确性测试和 `src0/src1/src2` 性能测试都通过这一路径运行，保留 IROM、DRAM、LED、SEG、counter 等外设路径。
+`student_top.sv` 是命令行仿真使用的 DUT。`rv32ui/src_test` 正确性测试和 `src0/src1/src2` 性能测试都通过这一路径运行，保留 IROM、DRAM、LED、SEG、counter 等外设路径。`rv32ui` 使用 `tb/tb_rv32ui_top.sv` 的 `0x8000_1000` DRAM 映射；`src_test` 和 `src*` 使用默认 `0x8010_0000` DRAM 映射。
 
 板级顶层：
 
@@ -141,6 +141,18 @@ build/src_test/wave.vcd       # WAVE=1 时生成
 
 `src_test` 是 COE 正确性测试，进入 `tb/sim_main.cpp` 正确性 runner，输出 `PASS/FAIL/TIMEOUT` 和周期、分支预测统计。
 
+`src_test` 使用 `tb/tb_src_test_top.sv`，其 Verilator 输出目录为 `build/verilator_src_test/`。它保留 `student_top` 默认 DRAM 窗口，因为程序会访问 `0x8010_0000` 一带保存计数、栈数据和返回地址。
+
+`src_test` 的 `meta.json` 记录 LED oracle：
+
+```text
+led_addr = 0x80200040
+pass_led = 0x24181824
+fail_led = 0x01221c08
+```
+
+`tb/sim_main.cpp` 观察 LED MMIO 写入判定 PASS/FAIL。若达到保护上限仍没有 LED oracle，则输出 `TIMEOUT` 和调试信息。
+
 ### src0/src1/src2
 
 来源：
@@ -174,13 +186,14 @@ build/perf/src0/wave.vcd       # WAVE=1 时生成
 
 ## Testbench 文件
 
-- `tb/sim_main.cpp`：`rv32ui/src_test` 正确性 testbench。DUT 为 `student_top`，通过内部 IROM/DRAM 加载测试，并读取 SoC/CPU 内部信号统计周期和分支预测。
-- `tb/tb_src_top.sv`：`src*` 压力测试 wrapper。DUT 为 `student_top`，通过 plusargs 加载 `irom.hex/dram.hex` 到内部 `IROM/DRAM`。
+- `tb/sim_main.cpp`：`rv32ui/src_test` 正确性 runner。DUT 为 `student_top`，通过内部 IROM/DRAM 加载测试，并读取 SoC/CPU 内部信号统计周期和分支预测。`rv32ui` 使用 `tohost/pass/fail` oracle，`src_test` 使用 LED oracle。
+- `tb/tb_src_test_top.sv`：`src_test` correctness wrapper。模块名保持 `tb_rv32ui_top` 以复用 `sim_main.cpp` 的 Verilator 层级访问，但内部使用 `student_top` 默认 DRAM 映射。
+- `tb/tb_src_top.sv`：`src*` 压力测试 wrapper。DUT 为 `student_top`，通过 plusargs 加载 `irom.hex/dram.hex` 到内部 `IROM_0/DRAM_0`。
 - `tb/sim_src.cpp`：`src*` 压力测试 C++ testbench。驱动 50MHz counter 时钟和 100MHz CPU 时钟，观察 counter、PC 和分支预测信号，输出性能结果。
 
 ## 当前约束与注意点
 
-- 除仿真用 `rtl/ip/IROM.sv` 和 `rtl/ip/DRAM.sv` 外，`rtl/` 当前不因仿真框架改动而修改。
+- 除仿真用 `rtl/ip/IROM_0.sv` 和 `rtl/ip/DRAM_0.sv` 外，`rtl/` 当前不因仿真框架改动而修改。
 - `src*` 使用 `student_top`，不是 `top`，因为当前目标是 CPU+外设性能测试，不是 UART 数字孪生系统测试。
-- `IROM/DRAM` 是组合读行为模型，`tb_rv32ui_top.sv` 和 `tb_src_top.sv` 会通过 plusargs 将真实 hex 加载到内部 memory。
+- `IROM_0/DRAM_0` 是仿真 memory 行为模型，`tb_rv32ui_top.sv`、`tb_src_test_top.sv` 和 `tb_src_top.sv` 会通过 plusargs 将真实 hex 加载到内部 memory。
 - `build/` 是生成目录，可以通过 `make clean` 删除后重新生成。

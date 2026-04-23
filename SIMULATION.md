@@ -121,7 +121,7 @@ make run SUITE=rv32ui ISA=addi WAVE=1
 
 ## src_test 正确性测试
 
-`src_test` 使用 `tests/src_test/irom.coe` 和 `tests/src_test/dram.coe`，构建后进入原有正确性仿真框架，DUT 仍为 `student_top`。
+`src_test` 使用 `tests/src_test/irom.coe` 和 `tests/src_test/dram.coe`。它和 `rv32ui` 共用 `tb/sim_main.cpp` 正确性 runner，但使用单独的 `tb/tb_src_test_top.sv` wrapper，以保留 `student_top` 默认 DRAM 地址窗口 `0x8010_0000..0x8013_FFFF`。
 
 ### 构建输入
 
@@ -143,6 +143,14 @@ build/src_test/meta.json
 make run SUITE=src_test
 ```
 
+`src_test` 默认保护上限为 `SRC_TEST_MAX_CYCLES=615000000`。这是因为该程序包含较长的软件除法/取模循环，不能使用 `rv32ui` 的 `MAX_CYCLES=100000` 默认值。
+
+短跑调试：
+
+```bash
+make run SUITE=src_test SRC_TEST_MAX_CYCLES=5000000
+```
+
 带波形：
 
 ```bash
@@ -153,11 +161,19 @@ make run SUITE=src_test WAVE=1
 
 ```text
 PASS src_test/src_test
-  core: cycles=8000 instret=6248 cpi=1.28 ipc=0.78
-  branch: total=1569 hit=890 miss=679 hit_rate=56.72% mpki=108.67
+  core: cycles=... instret=... cpi=... ipc=...
+  branch: total=... hit=... miss=... hit_rate=... mpki=...
+  oracle: led addr=0x80200040 pass=0x24181824 fail=0x01221c08
+  led: 0x24181824
 ```
 
-说明：`src_test` 当前 COE 输入没有 ELF 符号、`tohost` 或 dump oracle；框架按正确性套件输出 `PASS`，并保留周期和分支预测统计。
+说明：
+
+- `src_test` 没有 ELF 符号、`tohost` 或 dump oracle。当前通过 LED MMIO 写入判断结果。
+- 写 `0x8020_0040 = 0x24181824` 判定为 `PASS`。
+- 写 `0x8020_0040 = 0x01221c08` 判定为 `FAIL`。
+- 达到 `SRC_TEST_MAX_CYCLES` 仍未观察到 LED oracle 时输出 `TIMEOUT`，并打印最后 PC 和最后一次外设写入，便于定位卡住位置。
+- 本机短样本测速：`5,000,000` CPU cycles 约 `6.5s`，完整 `615,000,000` cycles 线性估算约 `13.4min`。实际耗时会随机器负载变化。
 
 ## src0/src1/src2 性能压力测试
 
@@ -355,4 +371,4 @@ make run SUITE=src0 SRC_MAX_CYCLES=8000000000
 
 ## IROM/DRAM 加载
 
-`rtl/ip/IROM.sv` 和 `rtl/ip/DRAM.sv` 是 Verilator 使用的组合读行为模型，端口匹配 `student_top` 和 `dram_driver` 中的 `IROM/DRAM` 例化。`tb/tb_rv32ui_top.sv` 和 `tb/tb_src_top.sv` 会通过 plusargs 将真实 `irom.hex/dram.hex` 加载到内部 `mem`。
+`rtl/ip/IROM_0.sv` 和 `rtl/ip/DRAM_0.sv` 是 Verilator 使用的 memory 行为模型，端口匹配 `student_top` 和 `dram_driver` 中的 `IROM_0/DRAM_0` 例化。`tb/tb_rv32ui_top.sv`、`tb/tb_src_test_top.sv` 和 `tb/tb_src_top.sv` 会通过 plusargs 将真实 `irom.hex/dram.hex` 加载到内部 `mem`。
