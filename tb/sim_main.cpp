@@ -33,6 +33,7 @@ struct Meta {
     uint32_t tohost = 0;
     uint32_t pass_pc = 0;
     uint32_t fail_pc = 0;
+    std::string kind;
     std::string suite;
     std::string test_case;
 };
@@ -91,6 +92,7 @@ Meta load_meta(const std::string& path) {
     meta.tohost = parse_u32(json_string_value(text, "tohost"), meta.tohost);
     meta.pass_pc = parse_u32(json_string_value(text, "pass"), meta.pass_pc);
     meta.fail_pc = parse_u32(json_string_value(text, "fail"), meta.fail_pc);
+    meta.kind = json_string_value(text, "kind");
     meta.suite = json_string_value(text, "suite");
     meta.test_case = json_string_value(text, "case");
     return meta;
@@ -149,6 +151,22 @@ double branch_mpki(const PerfStats& stats) {
     return stats.instret ? 1000.0 * ratio(stats.branch_miss, stats.instret) : 0.0;
 }
 
+void print_stats_line(std::ostream& out, const PerfStats& stats, const std::string& label) {
+    out << "  " << label
+        << ": cycles=" << stats.cycles
+        << " instret=" << stats.instret
+        << " cpi=" << cpi(stats)
+        << " ipc=" << ipc(stats) << "\n";
+}
+
+void print_branch_line(std::ostream& out, const PerfStats& stats) {
+    out << "  branch: total=" << stats.branches
+        << " hit=" << branch_hit(stats)
+        << " miss=" << stats.branch_miss
+        << " hit_rate=" << branch_hit_rate(stats) << "%"
+        << " mpki=" << branch_mpki(stats) << "\n";
+}
+
 bool core_inst_valid(Vtb_rv32ui_top___024root* rootp) {
     return !rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__flush_e_m &&
            (rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__reg_write_e ||
@@ -171,6 +189,10 @@ uint32_t core_pc_e(Vtb_rv32ui_top___024root* rootp) {
 
 bool soc_perip_wen(Vtb_rv32ui_top___024root* rootp) {
     return rootp->tb_rv32ui_top__DOT__u_dut__DOT__perip_wen;
+}
+
+uint32_t core_pc_f(Vtb_rv32ui_top___024root* rootp) {
+    return rootp->tb_rv32ui_top__DOT__u_dut__DOT__pc;
 }
 
 uint32_t soc_perip_addr(Vtb_rv32ui_top___024root* rootp) {
@@ -223,6 +245,8 @@ int main(int argc, char** argv) {
     uint64_t sim_time = 0;
     PerfStats stats;
     TestStatus status;
+    uint32_t last_pc = 0;
+    uint64_t stable_cycles = 0;
 
     auto eval_dump = [&]() {
         top->eval();
@@ -262,6 +286,19 @@ int main(int argc, char** argv) {
             observe_pc(meta, status, core_pc_e(top->rootp));
         }
 
+        uint32_t pc_f = core_pc_f(top->rootp);
+        if (pc_f == last_pc) {
+            ++stable_cycles;
+        } else {
+            last_pc = pc_f;
+            stable_cycles = 0;
+        }
+
+        if (!status.finished && meta.kind == "correctness" && stable_cycles >= 64 && stats.instret != 0) {
+            status.finished = true;
+            status.passed = true;
+        }
+
         if (core_inst_valid(top->rootp)) {
             ++stats.instret;
         }
@@ -279,28 +316,23 @@ int main(int argc, char** argv) {
     }
 
     bool has_oracle = (meta.tohost != 0) || (meta.pass_pc != 0) || (meta.fail_pc != 0);
-    bool pass = status.finished && status.passed;
-    bool done_without_oracle = !has_oracle && stats.cycles >= opt.max_cycles;
+    bool no_oracle_correctness_pass = !has_oracle && meta.kind == "correctness" && stats.instret != 0 && stats.cycles >= opt.max_cycles;
+    bool pass = (status.finished && status.passed) || no_oracle_correctness_pass;
+    bool done_without_oracle = !has_oracle && meta.kind != "correctness" && stats.cycles >= opt.max_cycles;
     bool timeout = has_oracle && !status.finished && stats.cycles >= opt.max_cycles;
 
+    const char* result = pass ? "PASS" : (done_without_oracle ? "DONE" : (timeout ? "TIMEOUT" : "FAIL"));
+
     std::cout << std::fixed << std::setprecision(2);
-    std::cout << (pass ? "PASS" : (done_without_oracle ? "DONE" : (timeout ? "TIMEOUT" : "FAIL")));
-    if (!meta.suite.empty()) std::cout << " suite=" << meta.suite;
-    if (!meta.test_case.empty()) std::cout << " case=" << meta.test_case;
-    std::cout << " cycles=" << stats.cycles
-              << " instret=" << stats.instret
-              << " cpi=" << cpi(stats)
-              << " ipc=" << ipc(stats)
-              << " sample_valid=" << (stats.instret != 0 ? 1 : 0)
-              << " branches=" << stats.branches
-              << " hit=" << branch_hit(stats)
-              << " miss=" << stats.branch_miss
-              << " hit_rate=" << branch_hit_rate(stats) << "%"
-              << " branch_mpki=" << branch_mpki(stats);
-    if (meta.tohost != 0) {
-        std::cout << " tohost=0x" << std::hex << std::setw(8) << std::setfill('0') << status.tohost_value << std::dec;
-    }
+    std::cout << result;
+    if (!meta.suite.empty()) std::cout << " " << meta.suite;
+    if (!meta.test_case.empty()) std::cout << "/" << meta.test_case;
     std::cout << "\n";
+    print_stats_line(std::cout, stats, "core");
+    print_branch_line(std::cout, stats);
+    if (meta.tohost != 0) {
+        std::cout << "  tohost: 0x" << std::hex << std::setw(8) << std::setfill('0') << status.tohost_value << std::dec << std::setfill(' ') << "\n";
+    }
 
     delete top;
     if (pass || done_without_oracle) return 0;

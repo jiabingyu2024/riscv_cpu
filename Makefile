@@ -21,8 +21,7 @@ RTL_SRCS := \
 	tb/tb_rv32ui_top.sv \
 	rtl/core/myCPU.sv \
 	rtl/core/core.sv \
-	rtl/core/pc/stage_pc.sv \
-	rtl/core/pc/pc_reg.sv \
+	rtl/core/if/pc_reg.sv \
 	rtl/core/if/stage_if.sv \
 	rtl/core/id/stage_id.sv \
 	rtl/core/id/control_unit.sv \
@@ -31,17 +30,15 @@ RTL_SRCS := \
 	rtl/core/ex/stage_ex.sv \
 	rtl/core/ex/alu.sv \
 	rtl/core/ex/branch_cmp.sv \
-	rtl/core/m2/stage_m2.sv \
+	rtl/core/mem/stage_mem.sv \
 	rtl/core/wb/stage_wb.sv \
 	rtl/core/control/bpu_top.sv \
 	rtl/core/control/forward_unit.sv \
 	rtl/core/control/hazard_unit.sv \
-	rtl/core/pipeline_regs/reg_pc_if.sv \
 	rtl/core/pipeline_regs/reg_if_id.sv \
 	rtl/core/pipeline_regs/reg_id_ex.sv \
-	rtl/core/pipeline_regs/reg_ex_m1.sv \
-	rtl/core/pipeline_regs/reg_m1_m2.sv \
-	rtl/core/pipeline_regs/reg_m2_wb.sv \
+	rtl/core/pipeline_regs/reg_ex_mem.sv \
+	rtl/core/pipeline_regs/reg_mem_wb.sv \
 	rtl/ip/IROM.sv \
 	rtl/ip/DRAM.sv \
 	rtl/soc/student_top.sv \
@@ -55,8 +52,7 @@ SRC_RTL_SRCS := \
 	tb/tb_src_top.sv \
 	rtl/core/myCPU.sv \
 	rtl/core/core.sv \
-	rtl/core/pc/stage_pc.sv \
-	rtl/core/pc/pc_reg.sv \
+	rtl/core/if/pc_reg.sv \
 	rtl/core/if/stage_if.sv \
 	rtl/core/id/stage_id.sv \
 	rtl/core/id/control_unit.sv \
@@ -65,17 +61,15 @@ SRC_RTL_SRCS := \
 	rtl/core/ex/stage_ex.sv \
 	rtl/core/ex/alu.sv \
 	rtl/core/ex/branch_cmp.sv \
-	rtl/core/m2/stage_m2.sv \
+	rtl/core/mem/stage_mem.sv \
 	rtl/core/wb/stage_wb.sv \
 	rtl/core/control/bpu_top.sv \
 	rtl/core/control/forward_unit.sv \
 	rtl/core/control/hazard_unit.sv \
-	rtl/core/pipeline_regs/reg_pc_if.sv \
 	rtl/core/pipeline_regs/reg_if_id.sv \
 	rtl/core/pipeline_regs/reg_id_ex.sv \
-	rtl/core/pipeline_regs/reg_ex_m1.sv \
-	rtl/core/pipeline_regs/reg_m1_m2.sv \
-	rtl/core/pipeline_regs/reg_m2_wb.sv \
+	rtl/core/pipeline_regs/reg_ex_mem.sv \
+	rtl/core/pipeline_regs/reg_mem_wb.sv \
 	rtl/ip/IROM.sv \
 	rtl/ip/DRAM.sv \
 	rtl/soc/student_top.sv \
@@ -85,7 +79,7 @@ SRC_RTL_SRCS := \
 	rtl/soc/display_seg.sv \
 	rtl/soc/seg7.sv
 
-.PHONY: build sim sim-src run run-one run-all run-src clean list list-src
+.PHONY: build sim sim-src run run-one run-all run-src run-correctness clean list list-src
 
 build:
 	python3 $(SCRIPT) --suite $(SUITE) $(if $(ISA),--isa $(ISA),)
@@ -116,6 +110,9 @@ run: build
 	elif [[ "$(SUITE)" == "rv32ui" ]]; then \
 		$(MAKE) sim; \
 		$(MAKE) run-one SUITE=$(SUITE) ISA=$(ISA) WAVE=$(WAVE) MAX_CYCLES=$(MAX_CYCLES); \
+	elif [[ "$(SUITE)" == "src_test" ]]; then \
+		$(MAKE) sim; \
+		$(MAKE) run-correctness SUITE=$(SUITE) WAVE=$(WAVE) MAX_CYCLES=$(MAX_CYCLES); \
 	else \
 		$(MAKE) sim-src; \
 		$(MAKE) run-src SUITE=$(SUITE) WAVE=$(WAVE) SRC_MAX_CYCLES=$(SRC_MAX_CYCLES) FAST_COUNTER=$(FAST_COUNTER) RUN_MS=$(RUN_MS) STRICT_SIM_LIMIT=$(STRICT_SIM_LIMIT); \
@@ -141,6 +138,15 @@ run-src:
 	ARGS="+irom=$$CASE_DIR/irom.hex +dram=$$CASE_DIR/dram.hex +meta=$$CASE_DIR/meta.json +max-cycles=$(SRC_MAX_CYCLES) +run-ms=$(RUN_MS) +fast-counter=$(FAST_COUNTER) +strict-sim-limit=$(STRICT_SIM_LIMIT) +wave=$(WAVE) +wave-file=$$CASE_DIR/wave.vcd"; \
 	mkdir -p "$$CASE_DIR"; \
 	$(SRC_SIM_BIN) $$ARGS | tee "$$CASE_DIR/run.log"
+
+run-correctness:
+	@set -e -o pipefail; \
+	CASE_DIR="$(BUILD_DIR)/$(SUITE)"; \
+	if [[ ! -f "$$CASE_DIR/irom.hex" ]]; then echo "missing $$CASE_DIR/irom.hex; run make build SUITE=$(SUITE) first"; exit 2; fi; \
+	ARGS="+irom=$$CASE_DIR/irom.hex +meta=$$CASE_DIR/meta.json +max-cycles=$(MAX_CYCLES) +wave=$(WAVE) +wave-file=$$CASE_DIR/wave.vcd"; \
+	if [[ -f "$$CASE_DIR/dram.hex" ]]; then ARGS="$$ARGS +dram=$$CASE_DIR/dram.hex"; fi; \
+	mkdir -p "$$CASE_DIR"; \
+	$(SIM_BIN) $$ARGS | tee "$$CASE_DIR/run.log"
 
 run-all:
 	@set -e -o pipefail; \

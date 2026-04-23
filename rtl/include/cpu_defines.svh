@@ -125,8 +125,8 @@
 `define RAM_ADDR_WID   32
 `define RAM_ADDR_BUS   `RAM_ADDR_WID-1:0
 
-`define MASK_BYTE       4'B0001
-`define MASK_HALF       4'B0011
-`define MASK_WORD       4'B1111
+`define MASK_BYTE       2'b00
+`define MASK_HALF       2'b01
+`define MASK_WORD       2'b10
 
 `endif // CPU_DEFINES_SVH

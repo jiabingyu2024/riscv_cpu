@@ -148,23 +148,33 @@ uint32_t core_pc_e(Vtb_src_top___024root* rootp) {
 }
 
 bool counter_start(Vtb_src_top___024root* rootp) {
-    return rootp->tb_src_top__DOT__u_dut__DOT__bridge_inst__DOT__counter_inst__DOT__start;
+    return rootp->tb_src_top__DOT__u_dut__DOT__bridge_inst__DOT__cnt_enable_cfg;
 }
 
 uint32_t counter_ms(Vtb_src_top___024root* rootp) {
-    return rootp->tb_src_top__DOT__u_dut__DOT__bridge_inst__DOT__counter_inst__DOT__cnt_ms;
+    return rootp->tb_src_top__DOT__u_dut__DOT__bridge_inst__DOT__cnt_rdata;
 }
 
-void print_perf_fields(std::ostream& out, const PerfStats& stats, const std::string& prefix) {
-    out << " " << prefix << "cycles=" << stats.cycles
-        << " " << prefix << "instret=" << stats.instret
-        << " " << prefix << "cpi=" << cpi(stats)
-        << " " << prefix << "ipc=" << ipc(stats)
-        << " " << prefix << "branches=" << stats.branches
-        << " " << prefix << "hit=" << branch_hit(stats)
-        << " " << prefix << "miss=" << stats.branch_miss
-        << " " << prefix << "hit_rate=" << branch_hit_rate(stats) << "%"
-        << " " << prefix << "branch_mpki=" << branch_mpki(stats);
+void print_perf_block(std::ostream& out, const PerfStats& stats, const std::string& label) {
+    out << "  " << label
+        << ": cycles=" << stats.cycles
+        << " instret=" << stats.instret
+        << " cpi=" << cpi(stats)
+        << " ipc=" << ipc(stats) << "\n"
+        << "    branch: total=" << stats.branches
+        << " hit=" << branch_hit(stats)
+        << " miss=" << stats.branch_miss
+        << " hit_rate=" << branch_hit_rate(stats) << "%"
+        << " mpki=" << branch_mpki(stats) << "\n";
+}
+
+void print_perf_summary(std::ostream& out, const PerfStats& stats, const std::string& label) {
+    out << "  " << label
+        << ": cycles=" << stats.cycles
+        << " instret=" << stats.instret
+        << " cpi=" << cpi(stats)
+        << " ipc=" << ipc(stats)
+        << " branch_hit=" << branch_hit_rate(stats) << "%\n";
 }
 
 }  // namespace
@@ -301,27 +311,33 @@ int main(int argc, char** argv) {
     bool complete = stopped_and_stable;
     bool sampled = (run_ms_reached || protected_limit) && work_stats.instret != 0;
 
+    const char* result = protected_limit ? "SIM_LIMIT" : "DONE";
+    const char* reason = run_ms_reached ? "time_reached" : (stopped_and_stable ? "counter_stopped" : "sim_limit");
+
     std::cout << std::fixed << std::setprecision(2);
-    std::cout << (protected_limit ? "SIM_LIMIT" : "DONE");
-    if (!meta.suite.empty()) std::cout << " suite=" << meta.suite;
-    if (!meta.test_case.empty()) std::cout << " case=" << meta.test_case;
-    std::cout << " time_ms=" << time_ms
-              << " run_ms=" << opt.run_ms
-              << " reason=" << (run_ms_reached ? "time_reached" : (stopped_and_stable ? "counter_stopped" : "sim_limit"))
-              << " complete=" << (complete ? 1 : 0)
-              << " sampled=" << (sampled ? 1 : 0)
-              << " counter_scale=" << (opt.fast_counter ? "fast" : "real")
-              << " strict_sim_limit=" << (opt.strict_sim_limit ? 1 : 0)
-              << " counter_started=" << (counter_started ? 1 : 0)
-              << " counter_stopped=" << (counter_stopped ? 1 : 0);
+    std::cout << result;
+    if (!meta.suite.empty()) std::cout << " " << meta.suite;
+    if (!meta.test_case.empty()) std::cout << "/" << meta.test_case;
+    std::cout << "\n"
+              << "  status: reason=" << reason
+              << " complete=" << (complete ? "yes" : "no")
+              << " sampled=" << (sampled ? "yes" : "no")
+              << " counter=" << (counter_started ? (counter_stopped ? "stopped" : "running") : "not_started")
+              << "\n"
+              << "  time: elapsed_ms=" << time_ms
+              << " target_ms=" << opt.run_ms
+              << " scale=" << (opt.fast_counter ? "fast" : "real")
+              << " strict_limit=" << (opt.strict_sim_limit ? "yes" : "no") << "\n";
     if (counter_stopped) {
-        std::cout << " counter_stop_cycle=" << counter_stop_cpu_cycle;
+        std::cout << "  stop: cycle=" << counter_stop_cpu_cycle << "\n";
     }
-    std::cout << " sample_valid=" << (total_stats.instret != 0 ? 1 : 0)
-              << " work_sample_valid=" << (work_stats.instret != 0 ? 1 : 0);
-    print_perf_fields(std::cout, total_stats, "");
-    print_perf_fields(std::cout, work_stats, "work_");
-    std::cout << "\n";
+    if (work_stats.instret != 0) {
+        print_perf_block(std::cout, work_stats, "work");
+        print_perf_summary(std::cout, total_stats, "total");
+    } else {
+        print_perf_block(std::cout, total_stats, "total");
+        std::cout << "  work: no valid sample\n";
+    }
 
     delete top;
     return (protected_limit && opt.strict_sim_limit) ? 124 : 0;

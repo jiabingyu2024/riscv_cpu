@@ -1,6 +1,6 @@
 # 仿真与性能测试使用说明
 
-本文档说明如何使用 `Makefile` 运行 `rv32ui` 单元测试和 `src0/src1/src2` 性能压力测试，以及如何理解输出参数。
+本文档说明如何使用 `Makefile` 运行 `rv32ui/src_test` 正确性测试和 `src0/src1/src2` 性能压力测试，以及如何理解输出参数。
 
 ## 基本环境
 
@@ -23,7 +23,7 @@ g++
 make list
 ```
 
-列出 `src*` 压力测试：
+列出 `src*` COE 测试：
 
 ```bash
 make list-src
@@ -73,7 +73,10 @@ make run SUITE=rv32ui ISA=addi WAVE=1
 输出示例：
 
 ```text
-PASS suite=rv32ui case=addi cycles=302 instret=255 cpi=1.18 ipc=0.84 sample_valid=1 branches=41 hit=27 miss=14 hit_rate=65.85% branch_mpki=54.90 tohost=0x00000001
+PASS rv32ui/addi
+  core: cycles=306 instret=255 cpi=1.20 ipc=0.83
+  branch: total=41 hit=25 miss=16 hit_rate=60.98% mpki=62.75
+  tohost: 0x00000001
 ```
 
 ### 运行全部 rv32ui
@@ -93,18 +96,16 @@ make run SUITE=rv32ui
 - `PASS`：测试通过。
 - `FAIL`：测试执行到失败路径，或 `tohost` 写入非 1 值。
 - `TIMEOUT`：达到 `MAX_CYCLES` 保护上限仍未结束。
-- `suite`：测试套件，固定为 `rv32ui`。
-- `case`：测试名，如 `addi/lw/jal`。
-- `cycles`：仿真统计的 CPU 周期数。
+- 首行：结果、测试套件和测试名，如 `PASS rv32ui/addi`。
+- `core.cycles`：仿真统计的 CPU 周期数。
 - `instret`：testbench 观察到的有效执行指令数。当前由 EX 级控制信号近似统计，不需要修改 RTL。
 - `cpi`：`cycles / instret`。`rv32ui` 包含测试框架代码，只适合做单条 case 的粗略对比。
 - `ipc`：`instret / cycles`。
-- `sample_valid`：`instret > 0` 时为 `1`，表示 CPI/IPC 有有效分母。
-- `branches`：观察到的 BPU 更新次数，近似表示分支/跳转类指令统计点。
+- `branch.total`：观察到的 BPU 更新次数，近似表示分支/跳转类指令统计点。
 - `hit`：预测命中数。
 - `miss`：预测失败数。
 - `hit_rate`：`hit / branches`。
-- `branch_mpki`：每千条有效指令的预测失败次数，计算为 `miss * 1000 / instret`。
+- `mpki`：每千条有效指令的预测失败次数，计算为 `miss * 1000 / instret`。
 - `tohost`：RISC-V 测试结果上报地址的值。`0x00000001` 表示通过。
 
 ### rv32ui 相关参数
@@ -118,9 +119,49 @@ make run SUITE=rv32ui ISA=addi WAVE=1
 - `MAX_CYCLES`：单元测试保护上限，默认 `100000`。
 - `WAVE=1`：生成 VCD 波形。波形位于 `build/rv32ui/<case>/wave.vcd`。
 
+## src_test 正确性测试
+
+`src_test` 使用 `tests/src_test/irom.coe` 和 `tests/src_test/dram.coe`，构建后进入原有正确性仿真框架，DUT 仍为 `student_top`。
+
+### 构建输入
+
+```bash
+make build SUITE=src_test
+```
+
+生成物位置：
+
+```text
+build/src_test/irom.hex
+build/src_test/dram.hex
+build/src_test/meta.json
+```
+
+### 运行
+
+```bash
+make run SUITE=src_test
+```
+
+带波形：
+
+```bash
+make run SUITE=src_test WAVE=1
+```
+
+输出示例：
+
+```text
+PASS src_test/src_test
+  core: cycles=8000 instret=6248 cpi=1.28 ipc=0.78
+  branch: total=1569 hit=890 miss=679 hit_rate=56.72% mpki=108.67
+```
+
+说明：`src_test` 当前 COE 输入没有 ELF 符号、`tohost` 或 dump oracle；框架按正确性套件输出 `PASS`，并保留周期和分支预测统计。
+
 ## src0/src1/src2 性能压力测试
 
-`src0/src1/src2` 和 `rv32ui` 不同。它们不是 pass/fail 单元测试，而是运行完整程序后通过 `counter` 获取性能时间。
+`src0/src1/src2` 是性能测试。它们不是 pass/fail 单元测试，而是运行完整程序后通过 `counter` 获取性能时间。
 
 当前默认 DUT 为 `student_top` wrapper：
 
@@ -178,39 +219,45 @@ make run SUITE=src2 SRC_MAX_CYCLES=8000000000
 如果程序自然停止 counter：
 
 ```text
-DONE suite=src0 case=src0 time_ms=72341 run_ms=0 reason=counter_stopped complete=1 sampled=0 counter_scale=real strict_sim_limit=0 counter_started=1 counter_stopped=1 counter_stop_cycle=... sample_valid=1 work_sample_valid=1 cycles=... instret=... cpi=... ipc=... branches=... hit=... miss=... hit_rate=... branch_mpki=... work_cycles=... work_instret=... work_cpi=... work_ipc=... work_branches=... work_hit=... work_miss=... work_hit_rate=... work_branch_mpki=...
+DONE src0/src0
+  status: reason=counter_stopped complete=yes sampled=no counter=stopped
+  time: elapsed_ms=72341 target_ms=0 scale=real strict_limit=no
+  stop: cycle=...
+  work: cycles=... instret=... cpi=... ipc=...
+    branch: total=... hit=... miss=... hit_rate=... mpki=...
+  total: cycles=... instret=... cpi=... ipc=... branch_hit=...%
 ```
 
 如果保护上限太小：
 
 ```text
-SIM_LIMIT suite=src0 case=src0 time_ms=7 run_ms=0 reason=sim_limit complete=0 sampled=1 counter_scale=real strict_sim_limit=0 counter_started=1 counter_stopped=0 sample_valid=1 work_sample_valid=1 cycles=200000 instret=132450 cpi=1.51 ipc=0.66 branches=46652 hit=25635 miss=21017 hit_rate=54.95% branch_mpki=158.68 work_cycles=198300 work_instret=131900 work_cpi=1.50 work_ipc=0.67 work_branches=46200 work_hit=25400 work_miss=20800 work_hit_rate=54.98% work_branch_mpki=157.70
+SIM_LIMIT src0/src0
+  status: reason=sim_limit complete=no sampled=yes counter=running
+  time: elapsed_ms=0 target_ms=0 scale=real strict_limit=no
+  work: cycles=6875 instret=5865 cpi=1.17 ipc=0.85
+    branch: total=1657 hit=1332 miss=325 hit_rate=80.39% mpki=55.41
+  total: cycles=8000 instret=6697 cpi=1.19 ipc=0.84 branch_hit=76.18%
 ```
 
 ### src 输出字段
 
 - `DONE`：性能测试正常结束。默认全量条件是程序停止 counter。
 - `SIM_LIMIT`：达到仿真保护上限，不是业务 timeout。通常表示 `SRC_MAX_CYCLES` 太小，或程序没有停止 counter。
-- `suite/case`：压力测试名，如 `src0`。
-- `time_ms`：从 RTL `counter_inst.cnt_ms` 读出的毫秒数。真实模式下等价于程序看到的硬件计时。
-- `run_ms`：采样模式目标时间。默认 `0`，表示不按时间截断。
-- `reason`：
+- 首行：结果、测试套件和测试名，如 `SIM_LIMIT src0/src0`。
+- `status.reason`：
   - `counter_stopped`：程序写 `0xFFFF_FFFF` 停止 counter 后结束，这是默认全量完成条件。
   - `time_reached`：显式设置 `RUN_MS>0` 后，到达指定 `time_ms` 采样结束。
   - `sim_limit`：达到保护上限。
 - `complete`：完整跑到程序停止 counter 时为 `1`。
 - `sampled`：提前结束但已取得有效工作窗口指令数时为 `1`。这种情况下可参考 `work_cpi/work_ipc/work_branch_mpki` 做部分性能评估。
-- `counter_scale`：
+- `time.elapsed_ms`：从 RTL counter 读出的毫秒数。
+- `time.target_ms`：采样模式目标时间。默认 `0`，表示不按时间截断。
+- `time.scale`：
   - `real`：真实 counter，默认模式。
   - `fast`：testbench 加速 counter，仅用于调试/快速采样，不代表真实 50MHz 性能。
-- `counter_started`：是否观察到程序启动 counter。
-- `counter_stopped`：是否观察到程序停止 counter。
-- `sample_valid`：总窗口 `instret > 0` 时为 `1`。
-- `work_sample_valid`：counter 工作窗口 `work_instret > 0` 时为 `1`。
-- `cycles/instret/cpi/ipc`：从复位释放后到仿真结束的总窗口统计。
-- `branches/hit/miss/hit_rate/branch_mpki`：总窗口分支预测统计。
-- `work_cycles/work_instret/work_cpi/work_ipc`：只在 RTL counter `start=1` 期间统计的工作窗口性能指标。`src*` 评估优先看这一组。
-- `work_branches/work_hit/work_miss/work_hit_rate/work_branch_mpki`：工作窗口分支预测统计。
+- `counter`：`not_started/running/stopped`。
+- `work`：只在 RTL counter 工作期间统计的性能指标。`src*` 评估优先看这一组。
+- `total`：从复位释放后到仿真结束的总窗口摘要，用于辅助判断整体仿真进度。
 
 ### 部分运行时的性能口径
 
@@ -308,4 +355,4 @@ make run SUITE=src0 SRC_MAX_CYCLES=8000000000
 
 ## IROM/DRAM 加载
 
-`rtl/ip/IROM.sv` 和 `rtl/ip/DRAM.sv` 仅在 `INIT_FILE` 非空时执行默认 `$readmemh`。`src*` 仿真中，`tb/tb_src_top.sv` 会通过 plusargs 将真实 `irom.hex/dram.hex` 加载到内部 memory。
+`rtl/ip/IROM.sv` 和 `rtl/ip/DRAM.sv` 是 Verilator 使用的组合读行为模型，端口匹配 `student_top` 和 `dram_driver` 中的 `IROM/DRAM` 例化。`tb/tb_rv32ui_top.sv` 和 `tb/tb_src_top.sv` 会通过 plusargs 将真实 `irom.hex/dram.hex` 加载到内部 `mem`。

@@ -233,18 +233,18 @@ def build_rv32ui(isa):
     return metas
 
 
-def build_coe_suite(suite):
+def build_coe_suite(suite, kind):
     src_dir = TESTS_DIR / suite
     if not src_dir.is_dir():
         raise RuntimeError(f"missing {src_dir}")
-    out_dir = BUILD_DIR / "perf" / suite
+    out_dir = BUILD_DIR / suite if kind == "correctness" else BUILD_DIR / "perf" / suite
     out_dir.mkdir(parents=True, exist_ok=True)
     irom_words = parse_coe(src_dir / "irom.coe")
     dram_words = parse_coe(src_dir / "dram.coe")
     write_words(out_dir / "irom.hex", irom_words)
     write_words(out_dir / "dram.hex", dram_words)
     meta = {
-        "kind": "perf",
+        "kind": kind,
         "suite": suite,
         "case": suite,
         "base_pc": f"0x{IROM_BASE:08x}",
@@ -260,7 +260,7 @@ def build_coe_suite(suite):
 
 def main():
     parser = argparse.ArgumentParser(description="Build simulation inputs from rv32ui ELF or COE tests.")
-    parser.add_argument("--suite", required=True, choices=["rv32ui", "src0", "src1", "src2"])
+    parser.add_argument("--suite", required=True, choices=["rv32ui", "src_test", "src0", "src1", "src2"])
     parser.add_argument("--isa", default="", help="rv32ui case name without rv32ui-p- prefix")
     args = parser.parse_args()
 
@@ -269,7 +269,8 @@ def main():
     else:
         if args.isa:
             raise RuntimeError("--isa is only valid for rv32ui")
-        metas = build_coe_suite(args.suite)
+        kind = "correctness" if args.suite == "src_test" else "perf"
+        metas = build_coe_suite(args.suite, kind)
 
     for meta in metas:
         print(f"built {meta['suite']}/{meta['case']}")
