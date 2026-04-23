@@ -24,7 +24,9 @@ module student_top#(
     parameter                           P_SW_CNT            = 64,
     parameter                           P_LED_CNT           = 32,
     parameter                           P_SEG_CNT           = 40,
-    parameter                           P_KEY_CNT           = 8
+    parameter                           P_KEY_CNT           = 8,
+    parameter logic [31:0]              P_DRAM_ADDR_START   = 32'h8010_0000,
+    parameter logic [31:0]              P_DRAM_ADDR_END     = 32'h8013_FFFF
 ) (
     input                                       w_cpu_clk     ,
     input                                       w_clk_50Mhz   ,
@@ -70,7 +72,10 @@ module student_top#(
         .spo        (instruction)
     );
     
-    perip_bridge bridge_inst (
+    perip_bridge #(
+        .P_DRAM_ADDR_START(P_DRAM_ADDR_START),
+        .P_DRAM_ADDR_END  (P_DRAM_ADDR_END)
+    ) bridge_inst (
         .clk				(w_cpu_clk),
         .cnt_clk            (w_clk_50Mhz),
         .rst                (w_clk_rst),
