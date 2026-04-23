@@ -1,52 +1,98 @@
+# Conservative ignore rules for this RISC-V CPU / FPGA project.
+# Keep source, tests, constraints, IP configuration, and memory images visible.
 
-# =========================
-# Local simulation/build artifacts
-# =========================
-build/
-*.vcd
-*.fst
-*.vvp
-*.vcd.gz
-obj_dir/
+# -----------------------------------------------------------------------------
+# OS / editor noise
+# -----------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+Desktop.ini
+*~
+*.swp
+*.swo
 
+.vscode/
+.idea/
+
+# -----------------------------------------------------------------------------
 # Python local caches
+# -----------------------------------------------------------------------------
 __pycache__/
 *.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
+# -----------------------------------------------------------------------------
+# Local simulation and build outputs
+# -----------------------------------------------------------------------------
+build/
+obj_dir/
+sim_build/
 
-# =========================
-# Vivado generated artifacts (project-local)
-# Safe to ignore: regenerable by opening .xpr and rerunning IP/synth/impl
-# =========================
-fpga/digital_twin/.Xil/
-fpga/digital_twin/digital_twin.cache/
-fpga/digital_twin/digital_twin.hw/
-fpga/digital_twin/digital_twin.ip_user_files/
-fpga/digital_twin/digital_twin.runs/
-fpga/digital_twin/digital_twin.sim/
-fpga/digital_twin/digital_twin.gen/
+*.vcd
+*.vcd.gz
+*.fst
+*.ghw
+*.wdb
+*.vvp
+*.o
+*.d
 
-# Vivado runtime logs (project root)
-fpga/digital_twin/*.jou
-fpga/digital_twin/*.log
-fpga/digital_twin/*.str
-fpga/digital_twin/*.pb
-fpga/digital_twin/*.wdf
+# -----------------------------------------------------------------------------
+# Vivado generated files
+# -----------------------------------------------------------------------------
+.Xil/
+**/.Xil/
 
-# Vivado transient writeability test files
+fpga/**/vivado*.jou
+fpga/**/vivado*.log
+fpga/**/*.str
+fpga/**/*.pb
+fpga/**/*.wdf
+fpga/**/*.backup.jou
+fpga/**/*.backup.log
 fpga/**/.hdi.isWriteableTest*.tmp
 
-# =========================
-# Optional large bitstream artifacts
-# (if you want to version bit/bin/ltx, remove these 3 lines)
-# =========================
+# Regenerable Vivado project output directories.
+fpga/**/*.cache/
+fpga/**/*.gen/
+fpga/**/*.hw/
+fpga/**/*.ip_user_files/
+fpga/**/*.runs/
+fpga/**/*.sim/
+fpga/**/*.Xil/
+
+# Heavy generated implementation artifacts. Remove a pattern if a handoff requires
+# committing a specific generated artifact.
 fpga/**/*.bit
 fpga/**/*.bin
 fpga/**/*.ltx
 
-# =========================
-# Keep source-of-truth files tracked
-# =========================
-!fpga/digital_twin/digital_twin.xpr
-!fpga/digital_twin/digital_twin.srcs/**
-!fpga/coe/**
+# -----------------------------------------------------------------------------
+# Explicitly keep project source-of-truth files visible
+# -----------------------------------------------------------------------------
+!Makefile
+!*.md
+!scripts/**/*.py
+
+!rtl/**/*.v
+!rtl/**/*.sv
+!rtl/**/*.svh
+!tb/**/*.cpp
+!tb/**/*.h
+!tb/**/*.hpp
+!tb/**/*.v
+!tb/**/*.sv
+!tb/**/*.svh
+
+!tests/**
+!fpga/**/*.xpr
+!fpga/**/*.xci
+!fpga/**/*.xdc
+!fpga/**/*.coe
+!fpga/**/*.wcfg
+!fpga/**/*.tcl
+!fpga/**/*.v
+!fpga/**/*.sv
+!fpga/**/*.svh
