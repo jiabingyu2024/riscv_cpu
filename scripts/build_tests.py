@@ -258,8 +258,11 @@ def build_coe_suite(suite, kind):
         meta.update(
             {
                 "led_addr": "0x80200040",
-                "pass_led": "0x24181824",
-                "fail_led": "0x01221c08",
+                "pass_led": "0x01221c08",
+                "fail_led": "0x24181824",
+                "virtual_sw_lo": "0x80000001",
+                "virtual_sw_hi": "0x00000000",
+                "virtual_key": "0x00000001",
             }
         )
     (out_dir / "meta.json").write_text(json.dumps(meta, indent=2) + "\n", encoding="ascii")

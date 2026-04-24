@@ -163,15 +163,15 @@ make run SUITE=src_test WAVE=1
 PASS src_test/src_test
   core: cycles=... instret=... cpi=... ipc=...
   branch: total=... hit=... miss=... hit_rate=... mpki=...
-  oracle: led addr=0x80200040 pass=0x24181824 fail=0x01221c08
-  led: 0x24181824
+  oracle: led addr=0x80200040 pass=0x01221c08 fail=0x24181824
+  led: 0x01221c08
 ```
 
 说明：
 
 - `src_test` 没有 ELF 符号、`tohost` 或 dump oracle。当前通过 LED MMIO 写入判断结果。
-- 写 `0x8020_0040 = 0x24181824` 判定为 `PASS`。
-- 写 `0x8020_0040 = 0x01221c08` 判定为 `FAIL`。
+- 写 `0x8020_0040 = 0x01221c08` 判定为 `PASS`。
+- 写 `0x8020_0040 = 0x24181824` 判定为 `FAIL`。
 - 达到 `SRC_TEST_MAX_CYCLES` 仍未观察到 LED oracle 时输出 `TIMEOUT`，并打印最后 PC 和最后一次外设写入，便于定位卡住位置。
 - 本机短样本测速：`5,000,000` CPU cycles 约 `6.5s`，完整 `615,000,000` cycles 线性估算约 `13.4min`。实际耗时会随机器负载变化。
 

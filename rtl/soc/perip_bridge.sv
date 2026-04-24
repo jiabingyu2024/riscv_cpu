@@ -56,14 +56,25 @@ module perip_bridge#(
     logic cnt_enable_cfg;
     logic dram_sel;
     logic dram_sel_q;
+    logic mmio_sel_q;
+    logic cnt_sel_q;
+    logic [31:0] perip_addr_q;
 
     assign dram_sel = (perip_addr >= DRAM_ADDR_START && perip_addr < DRAM_ADDR_END);
 
     always_ff @(posedge clk) begin
         if (rst) begin
             dram_sel_q <= 1'b0;
+            mmio_sel_q <= 1'b0;
+            cnt_sel_q  <= 1'b0;
+            perip_addr_q <= 32'd0;
         end else begin
             dram_sel_q <= dram_sel;
+            mmio_sel_q <= ~perip_wen & ~dram_sel &
+                          ((perip_addr == SW0_ADDR) | (perip_addr == SW1_ADDR) |
+                           (perip_addr == KEY_ADDR) | (perip_addr == SEG_ADDR));
+            cnt_sel_q  <= ~perip_wen & (perip_addr == CNT_ADDR);
+            perip_addr_q <= perip_addr;
         end
     end
 
@@ -91,8 +102,8 @@ module perip_bridge#(
 
     // read process: in one cycle
     always_comb begin
-        if (~perip_wen) begin
-            case (perip_addr)
+        if (mmio_sel_q) begin
+            case (perip_addr_q)
                 SW0_ADDR:  mmio_rdata = virtual_sw_input[31:0];
                 SW1_ADDR:  mmio_rdata = virtual_sw_input[63:32];
                 KEY_ADDR:  mmio_rdata = {24'd0, virtual_key_input};
@@ -142,12 +153,9 @@ module perip_bridge#(
         .perip_rdata		(cnt_rdata)
     );
 
-    assign perip_rdata = {32{perip_addr == SW0_ADDR}} & mmio_rdata |
-                        {32{perip_addr == SW1_ADDR}} & mmio_rdata |
-                        {32{perip_addr == KEY_ADDR}} & mmio_rdata |
-                        {32{perip_addr == SEG_ADDR}} & mmio_rdata |
+    assign perip_rdata = {32{mmio_sel_q}} & mmio_rdata |
                         {32{dram_sel_q}} & dram_rdata |
-                        {32{perip_addr == CNT_ADDR}} & cnt_rdata;
+                        {32{cnt_sel_q}} & cnt_rdata;
     
     assign virtual_led_output = LED;
     assign virtual_seg_output = seg_output;

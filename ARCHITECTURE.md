@@ -147,8 +147,8 @@ build/src_test/wave.vcd       # WAVE=1 时生成
 
 ```text
 led_addr = 0x80200040
-pass_led = 0x24181824
-fail_led = 0x01221c08
+pass_led = 0x01221c08
+fail_led = 0x24181824
 ```
 
 `tb/sim_main.cpp` 观察 LED MMIO 写入判定 PASS/FAIL。若达到保护上限仍没有 LED oracle，则输出 `TIMEOUT` 和调试信息。

@@ -36,6 +36,9 @@ struct Meta {
     uint32_t led_addr = 0;
     uint32_t pass_led = 0;
     uint32_t fail_led = 0;
+    uint32_t virtual_sw_lo = 0;
+    uint32_t virtual_sw_hi = 0;
+    uint32_t virtual_key = 0;
     std::string kind;
     std::string suite;
     std::string test_case;
@@ -104,6 +107,9 @@ Meta load_meta(const std::string& path) {
     meta.led_addr = parse_u32(json_string_value(text, "led_addr"), meta.led_addr);
     meta.pass_led = parse_u32(json_string_value(text, "pass_led"), meta.pass_led);
     meta.fail_led = parse_u32(json_string_value(text, "fail_led"), meta.fail_led);
+    meta.virtual_sw_lo = parse_u32(json_string_value(text, "virtual_sw_lo"), meta.virtual_sw_lo);
+    meta.virtual_sw_hi = parse_u32(json_string_value(text, "virtual_sw_hi"), meta.virtual_sw_hi);
+    meta.virtual_key = parse_u32(json_string_value(text, "virtual_key"), meta.virtual_key);
     meta.kind = json_string_value(text, "kind");
     meta.suite = json_string_value(text, "suite");
     meta.test_case = json_string_value(text, "case");
@@ -284,8 +290,8 @@ int main(int argc, char** argv) {
     top->i_clk_50mhz = 0;
     top->i_cpu_clk = 0;
     top->i_rst = 1;
-    top->i_virtual_key = 0;
-    top->i_virtual_sw = 0;
+    top->i_virtual_key = meta.virtual_key;
+    top->i_virtual_sw = (static_cast<uint64_t>(meta.virtual_sw_hi) << 32) | meta.virtual_sw_lo;
     eval_dump();
 
     for (int idx = 0; idx < 16; ++idx) {
