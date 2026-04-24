@@ -35,7 +35,12 @@ struct PerfStats {
     uint64_t cycles = 0;
     uint64_t instret = 0;
     uint64_t branches = 0;
+    uint64_t btb_hit = 0;
+    uint64_t predict_taken = 0;
     uint64_t branch_miss = 0;
+    uint64_t load_use_stall = 0;
+    uint64_t data_hazard_stall = 0;
+    uint64_t flush = 0;
 };
 
 bool starts_with(const std::string& text, const std::string& prefix) {
@@ -129,18 +134,32 @@ double branch_mpki(const PerfStats& stats) {
     return stats.instret ? 1000.0 * ratio(stats.branch_miss, stats.instret) : 0.0;
 }
 
-bool core_inst_valid(Vtb_src_top___024root* rootp) {
-    return rootp->tb_src_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__reg_write_e ||
-           rootp->tb_src_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__mem_write_e ||
-           rootp->tb_src_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__update_en_e;
+PerfStats core_perf_stats(Vtb_src_top___024root* rootp) {
+    PerfStats stats;
+    stats.cycles = rootp->tb_src_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__cycle_count;
+    stats.instret = rootp->tb_src_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__instret_count;
+    stats.branches = rootp->tb_src_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__branch_count;
+    stats.btb_hit = rootp->tb_src_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__btb_hit_count;
+    stats.predict_taken = rootp->tb_src_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__predict_taken_count;
+    stats.branch_miss = rootp->tb_src_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__branch_mispredict_count;
+    stats.load_use_stall = rootp->tb_src_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__load_use_stall_count;
+    stats.data_hazard_stall = rootp->tb_src_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__data_hazard_stall_count;
+    stats.flush = rootp->tb_src_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__flush_count;
+    return stats;
 }
 
-bool core_branch_update(Vtb_src_top___024root* rootp) {
-    return rootp->tb_src_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__update_en_e;
-}
-
-bool core_branch_miss(Vtb_src_top___024root* rootp) {
-    return rootp->tb_src_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__error_e;
+PerfStats perf_delta(const PerfStats& end, const PerfStats& begin) {
+    PerfStats delta;
+    delta.cycles = end.cycles - begin.cycles;
+    delta.instret = end.instret - begin.instret;
+    delta.branches = end.branches - begin.branches;
+    delta.btb_hit = end.btb_hit - begin.btb_hit;
+    delta.predict_taken = end.predict_taken - begin.predict_taken;
+    delta.branch_miss = end.branch_miss - begin.branch_miss;
+    delta.load_use_stall = end.load_use_stall - begin.load_use_stall;
+    delta.data_hazard_stall = end.data_hazard_stall - begin.data_hazard_stall;
+    delta.flush = end.flush - begin.flush;
+    return delta;
 }
 
 uint32_t core_pc_e(Vtb_src_top___024root* rootp) {
@@ -160,10 +179,15 @@ void print_perf_block(std::ostream& out, const PerfStats& stats, const std::stri
         << ": cycles=" << stats.cycles
         << " instret=" << stats.instret
         << " cpi=" << cpi(stats)
-        << " ipc=" << ipc(stats) << "\n"
+        << " ipc=" << ipc(stats)
+        << " load_use=" << stats.load_use_stall
+        << " data_stall=" << stats.data_hazard_stall
+        << " flush=" << stats.flush << "\n"
         << "    branch: total=" << stats.branches
         << " hit=" << branch_hit(stats)
         << " miss=" << stats.branch_miss
+        << " btb_hit=" << stats.btb_hit
+        << " predict_taken=" << stats.predict_taken
         << " hit_rate=" << branch_hit_rate(stats) << "%"
         << " mpki=" << branch_mpki(stats) << "\n";
 }
@@ -174,7 +198,11 @@ void print_perf_summary(std::ostream& out, const PerfStats& stats, const std::st
         << " instret=" << stats.instret
         << " cpi=" << cpi(stats)
         << " ipc=" << ipc(stats)
-        << " branch_hit=" << branch_hit_rate(stats) << "%\n";
+        << " branch_hit=" << branch_hit_rate(stats)
+        << "% btb_hit=" << stats.btb_hit
+        << " predict_taken=" << stats.predict_taken
+        << " load_use=" << stats.load_use_stall
+        << " flush=" << stats.flush << "\n";
 }
 
 }  // namespace
@@ -194,8 +222,6 @@ int main(int argc, char** argv) {
     }
 
     uint64_t sim_ticks = 0;
-    PerfStats total_stats;
-    PerfStats work_stats;
     uint64_t stable_loops = 0;
     uint64_t counter_stop_cpu_cycle = 0;
     uint32_t last_pc = 0;
@@ -203,6 +229,9 @@ int main(int argc, char** argv) {
     bool counter_started = false;
     bool counter_stopped = false;
     bool run_ms_reached = false;
+    PerfStats work_begin_stats;
+    PerfStats work_end_stats;
+    uint64_t sim_cpu_cycles = 0;
 
     auto eval_dump = [&]() {
         top->eval();
@@ -233,7 +262,7 @@ int main(int argc, char** argv) {
     }
     top->i_rst = 0;
 
-    while (!Verilated::gotFinish() && total_stats.cycles < opt.max_cpu_cycles) {
+    while (!Verilated::gotFinish() && sim_cpu_cycles < opt.max_cpu_cycles) {
         for (int substep = 0; substep < 4; ++substep) {
             if ((substep == 0 || substep == 2) && top->i_clk_50mhz == 0) {
                 accelerate_counter();
@@ -247,34 +276,19 @@ int main(int argc, char** argv) {
             if (substep == 0 || substep == 2) {
                 bool counter_active = counter_start(top->rootp);
                 uint32_t pc = core_pc_e(top->rootp);
-                bool inst_valid = core_inst_valid(top->rootp);
-
-                ++total_stats.cycles;
-                if (inst_valid) {
-                    ++total_stats.instret;
-                }
-                if (core_branch_update(top->rootp)) {
-                    ++total_stats.branches;
-                    if (core_branch_miss(top->rootp)) ++total_stats.branch_miss;
-                }
+                PerfStats live_stats = core_perf_stats(top->rootp);
 
                 if (counter_active) {
-                    ++work_stats.cycles;
-                    if (inst_valid) {
-                        ++work_stats.instret;
+                    if (!counter_started) {
+                        work_begin_stats = live_stats;
                     }
-                    if (core_branch_update(top->rootp)) {
-                        ++work_stats.branches;
-                        if (core_branch_miss(top->rootp)) ++work_stats.branch_miss;
-                    }
-                }
-
-                if (counter_active) {
                     counter_started = true;
+                    work_end_stats = live_stats;
                 }
                 if (last_counter_start && !counter_active) {
                     counter_stopped = true;
-                    counter_stop_cpu_cycle = total_stats.cycles;
+                    counter_stop_cpu_cycle = live_stats.cycles;
+                    work_end_stats = live_stats;
                 }
                 last_counter_start = counter_active;
 
@@ -290,6 +304,8 @@ int main(int argc, char** argv) {
                     last_pc = pc;
                 }
 
+                ++sim_cpu_cycles;
+
             }
         }
 
@@ -297,6 +313,9 @@ int main(int argc, char** argv) {
             break;
         }
     }
+
+    PerfStats total_stats = core_perf_stats(top->rootp);
+    PerfStats work_stats = counter_started ? perf_delta(work_end_stats, work_begin_stats) : PerfStats{};
 
     top->final();
     if (trace) {
@@ -307,7 +326,7 @@ int main(int argc, char** argv) {
     uint32_t time_ms = counter_ms(top->rootp);
 
     bool stopped_and_stable = counter_stopped && stable_loops >= opt.stable_cpu_cycles;
-    bool protected_limit = total_stats.cycles >= opt.max_cpu_cycles && !run_ms_reached && !stopped_and_stable;
+    bool protected_limit = sim_cpu_cycles >= opt.max_cpu_cycles && !run_ms_reached && !stopped_and_stable;
     bool complete = stopped_and_stable;
     bool sampled = (run_ms_reached || protected_limit) && work_stats.instret != 0;
 

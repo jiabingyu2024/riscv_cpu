@@ -15,17 +15,18 @@ module stage_ex(
     input  logic  [`DATA_BUS]               i_rs2_data,
     input  logic  [`DATA_BUS]               i_imm,
     input  logic  [`PC_BUS]                 i_pc,
+    input  logic  [`PC_BUS]                 i_pc_plus_imm,
     input  logic  [`DATA_BUS]               i_fwd_e_m,
     input  logic  [`DATA_BUS]               i_fwd_m_w,
 
     input  logic  [`PC_BUS]                 i_pc_d_e,
     input  logic  [`PC_BUS]                 i_pc_predict,
 
-    input  logic  [1:0]                     i_b1_sel,
-    input  logic  [1:0]                     i_b2_sel,
-    input  logic  [1:0]                     i_t1_sel,
-    input  logic  [1:0]                     i_a1_sel,
-    input  logic  [1:0]                     i_a2_sel,
+    input  logic  [2:0]                     i_b1_sel,
+    input  logic  [2:0]                     i_b2_sel,
+    input  logic  [2:0]                     i_t1_sel,
+    input  logic  [2:0]                     i_a1_sel,
+    input  logic  [2:0]                     i_a2_sel,
 
     input  logic  [3:0]                     i_alu_ctrl,
     input  logic  [2:0]                     i_func3,
@@ -51,7 +52,7 @@ module stage_ex(
     logic [`DATA_BUS] b2_data;
     logic [`DATA_BUS] a1_data;
     logic [`DATA_BUS] a2_data;
-    logic [`PC_BUS]   t1_data;
+    logic [`DATA_BUS] jalr_base_data;
     logic [`DATA_BUS] alu_res_raw;
 
     always_comb begin
@@ -68,10 +69,9 @@ module stage_ex(
         endcase
 
         unique case (i_t1_sel)
-            `T1_RS1:   t1_data = i_rs1_data;
-            `T1_E_M:   t1_data = i_fwd_e_m;
-            `T1_M_W:   t1_data = i_fwd_m_w;
-            default:   t1_data = i_pc_d_e;
+            `T1_E_M:   jalr_base_data = i_fwd_e_m;
+            `T1_M_W:   jalr_base_data = i_fwd_m_w;
+            default:   jalr_base_data = i_rs1_data;
         endcase
 
         unique case (i_a1_sel)
@@ -102,8 +102,9 @@ module stage_ex(
         .i_func3         (i_func3),
         .i_pc_d_e        (i_pc_d_e),
         .i_pc_predict    (i_pc_predict),
-        .i_t1_data       (t1_data),
-        .i_t2_data       (i_imm),
+        .i_pc_plus_imm   (i_pc_plus_imm),
+        .i_jalr_base     (jalr_base_data),
+        .i_imm           (i_imm),
         .i_is_branch     (i_is_branch),
         .i_inst_spec     (i_inst_spec),
         .o_update_taken  (o_update_taken),

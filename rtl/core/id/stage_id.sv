@@ -35,6 +35,8 @@ module stage_id(
     output logic  [2:0]                     o_func3,
     output logic  [1:0]                     o_mem_mask,
     output logic                            o_load_unsigned,
+    output logic                            o_use_rs1,
+    output logic                            o_use_rs2,
 
     output logic                            o_is_branch,
     // output logic                            o_is_jtype,
@@ -42,6 +44,7 @@ module stage_id(
     // output logic                            o_bcmp1_src,
 
     output logic  [`DATA_BUS]               o_imm,
+    output logic  [`PC_BUS]                 o_pc_plus_imm,
     output logic  [`DATA_BUS]               o_rs1_data,
     output logic  [`RF_BUS]                 o_rs1_addr,
     output logic  [`DATA_BUS]               o_rs2_data,
@@ -70,13 +73,17 @@ module stage_id(
         .o_func3         (o_func3),
         .o_is_branch     (o_is_branch),
         .o_mem_mask      (o_mem_mask),
-        .o_load_unsigned (o_load_unsigned)
+        .o_load_unsigned (o_load_unsigned),
+        .o_use_rs1       (o_use_rs1),
+        .o_use_rs2       (o_use_rs2)
     );
 
     imm_unit u_imm_unit (
         .i_instr (i_inst_f_d),
         .o_imm   (o_imm)
     );
+
+    assign o_pc_plus_imm = i_pc_f_d + o_imm;
 
     regfile u_regfile (
         .i_clk      (i_clk),

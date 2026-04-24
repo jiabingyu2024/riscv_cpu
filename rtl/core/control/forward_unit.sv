@@ -25,11 +25,11 @@ module forward_unit (
 
 
 
-    output logic  [1:0]                     o_b1_sel,
-    output logic  [1:0]                     o_b2_sel,
-    output logic  [1:0]                     o_t1_sel,
-    output logic  [1:0]                     o_a1_sel,
-    output logic  [1:0]                     o_a2_sel
+    output logic  [2:0]                     o_b1_sel,
+    output logic  [2:0]                     o_b2_sel,
+    output logic  [2:0]                     o_t1_sel,
+    output logic  [2:0]                     o_a1_sel,
+    output logic  [2:0]                     o_a2_sel
 );
 
     logic hit_rs1_e_m;

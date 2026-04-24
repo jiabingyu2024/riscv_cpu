@@ -42,7 +42,12 @@ struct PerfStats {
     uint64_t cycles = 0;
     uint64_t instret = 0;
     uint64_t branches = 0;
+    uint64_t btb_hit = 0;
+    uint64_t predict_taken = 0;
     uint64_t branch_miss = 0;
+    uint64_t load_use_stall = 0;
+    uint64_t data_hazard_stall = 0;
+    uint64_t flush = 0;
 };
 
 struct TestStatus {
@@ -156,31 +161,34 @@ void print_stats_line(std::ostream& out, const PerfStats& stats, const std::stri
         << ": cycles=" << stats.cycles
         << " instret=" << stats.instret
         << " cpi=" << cpi(stats)
-        << " ipc=" << ipc(stats) << "\n";
+        << " ipc=" << ipc(stats)
+        << " load_use=" << stats.load_use_stall
+        << " data_stall=" << stats.data_hazard_stall
+        << " flush=" << stats.flush << "\n";
 }
 
 void print_branch_line(std::ostream& out, const PerfStats& stats) {
     out << "  branch: total=" << stats.branches
         << " hit=" << branch_hit(stats)
         << " miss=" << stats.branch_miss
+        << " btb_hit=" << stats.btb_hit
+        << " predict_taken=" << stats.predict_taken
         << " hit_rate=" << branch_hit_rate(stats) << "%"
         << " mpki=" << branch_mpki(stats) << "\n";
 }
 
-bool core_inst_valid(Vtb_rv32ui_top___024root* rootp) {
-    return !rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__flush_e_m &&
-           (rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__reg_write_e ||
-           rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__mem_write_e ||
-           rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__update_en_e);
-}
-
-bool core_branch_update(Vtb_rv32ui_top___024root* rootp) {
-    return !rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__flush_e_m &&
-           rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__update_en_e;
-}
-
-bool core_branch_miss(Vtb_rv32ui_top___024root* rootp) {
-    return rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__error_e;
+PerfStats core_perf_stats(Vtb_rv32ui_top___024root* rootp) {
+    PerfStats stats;
+    stats.cycles = rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__cycle_count;
+    stats.instret = rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__instret_count;
+    stats.branches = rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__branch_count;
+    stats.btb_hit = rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__btb_hit_count;
+    stats.predict_taken = rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__predict_taken_count;
+    stats.branch_miss = rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__branch_mispredict_count;
+    stats.load_use_stall = rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__load_use_stall_count;
+    stats.data_hazard_stall = rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__data_hazard_stall_count;
+    stats.flush = rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__flush_count;
+    return stats;
 }
 
 uint32_t core_pc_e(Vtb_rv32ui_top___024root* rootp) {
@@ -243,10 +251,10 @@ int main(int argc, char** argv) {
     }
 
     uint64_t sim_time = 0;
-    PerfStats stats;
     TestStatus status;
     uint32_t last_pc = 0;
     uint64_t stable_cycles = 0;
+    uint64_t sim_cycles = 0;
 
     auto eval_dump = [&]() {
         top->eval();
@@ -268,7 +276,7 @@ int main(int argc, char** argv) {
     }
     top->i_rst = 0;
 
-    while (!Verilated::gotFinish() && stats.cycles < opt.max_cycles && !status.finished) {
+    while (!Verilated::gotFinish() && sim_cycles < opt.max_cycles && !status.finished) {
         top->i_cpu_clk = 0;
         top->i_clk_50mhz = !top->i_clk_50mhz;
         eval_dump();
@@ -294,19 +302,12 @@ int main(int argc, char** argv) {
             stable_cycles = 0;
         }
 
-        if (!status.finished && meta.kind == "correctness" && stable_cycles >= 64 && stats.instret != 0) {
+        PerfStats live_stats = core_perf_stats(top->rootp);
+        if (!status.finished && meta.kind == "correctness" && stable_cycles >= 64 && live_stats.instret != 0) {
             status.finished = true;
             status.passed = true;
         }
-
-        if (core_inst_valid(top->rootp)) {
-            ++stats.instret;
-        }
-        if (core_branch_update(top->rootp)) {
-            ++stats.branches;
-            if (core_branch_miss(top->rootp)) ++stats.branch_miss;
-        }
-        ++stats.cycles;
+        ++sim_cycles;
     }
 
     top->final();
@@ -315,11 +316,12 @@ int main(int argc, char** argv) {
         delete trace;
     }
 
+    PerfStats stats = core_perf_stats(top->rootp);
     bool has_oracle = (meta.tohost != 0) || (meta.pass_pc != 0) || (meta.fail_pc != 0);
-    bool no_oracle_correctness_pass = !has_oracle && meta.kind == "correctness" && stats.instret != 0 && stats.cycles >= opt.max_cycles;
+    bool no_oracle_correctness_pass = !has_oracle && meta.kind == "correctness" && stats.instret != 0 && sim_cycles >= opt.max_cycles;
     bool pass = (status.finished && status.passed) || no_oracle_correctness_pass;
-    bool done_without_oracle = !has_oracle && meta.kind != "correctness" && stats.cycles >= opt.max_cycles;
-    bool timeout = has_oracle && !status.finished && stats.cycles >= opt.max_cycles;
+    bool done_without_oracle = !has_oracle && meta.kind != "correctness" && sim_cycles >= opt.max_cycles;
+    bool timeout = has_oracle && !status.finished && sim_cycles >= opt.max_cycles;
 
     const char* result = pass ? "PASS" : (done_without_oracle ? "DONE" : (timeout ? "TIMEOUT" : "FAIL"));
 

@@ -22,6 +22,7 @@ module reg_id_ex(
     input logic [`RF_BUS]           i_rd_addr,
 
     input logic [`DATA_BUS]         i_imm,
+    input logic [`PC_BUS]           i_pc_plus_imm,
 
     input logic                     i_mem_read,
     input logic                     i_reg_write,
@@ -52,6 +53,7 @@ module reg_id_ex(
     output logic [4:0]              o_rs2_addr,
 
     output logic [`DATA_BUS]        o_imm,
+    output logic [`PC_BUS]          o_pc_plus_imm,
 
     output logic                    o_mem_read,
     output logic                    o_reg_write,
@@ -82,6 +84,7 @@ module reg_id_ex(
             o_rs1_addr       <= '0;
             o_rs2_addr       <= '0;
             o_imm            <= '0;
+            o_pc_plus_imm    <= '0;
             o_mem_read       <= 1'b0;
             o_reg_write      <= 1'b0;
             o_mem_write      <= 1'b0;
@@ -102,6 +105,7 @@ module reg_id_ex(
             o_rs1_addr       <= '0;
             o_rs2_addr       <= '0;
             o_imm            <= '0;
+            o_pc_plus_imm    <= '0;
             o_mem_read       <= 1'b0;
             o_reg_write      <= 1'b0;
             o_mem_write      <= 1'b0;
@@ -122,6 +126,7 @@ module reg_id_ex(
             o_rs1_addr       <= i_rs1_addr;
             o_rs2_addr       <= i_rs2_addr;
             o_imm            <= i_imm;
+            o_pc_plus_imm    <= i_pc_plus_imm;
             o_mem_read       <= i_mem_read;
             o_reg_write      <= i_reg_write;
             o_mem_write      <= i_mem_write;

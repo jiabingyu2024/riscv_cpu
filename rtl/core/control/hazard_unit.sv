@@ -12,12 +12,16 @@
 
 module hazard_unit(
     input  logic  [`PC_BUS]                 i_pc_cur,
+    input  logic  [`INST_BUS]               i_inst_f,
     input  logic  [`RF_BUS]                 i_rs1_addr_d,
     input  logic  [`RF_BUS]                 i_rs2_addr_d,
+    input  logic                            i_use_rs1_d,
+    input  logic                            i_use_rs2_d,
     input  logic  [`RF_BUS]                 i_rd_addr_e,
     input  logic                            i_mem_read_e,
     input  logic                            i_reg_write_e,//load_use
 
+    input  logic                            i_btb_hit,
     input  logic                            i_predict_taken,
     input  logic  [`PC_BUS]                 i_predict_target,
 
@@ -34,6 +38,7 @@ module hazard_unit(
     output logic                            o_flush_e_m,
     output logic                            o_flush_m_w,
 
+    output logic                            o_predict_taken_final,
     output logic  [`PC_BUS]                 o_pc_next,
     output logic  [`PC_BUS]                 o_pc_predict
 
@@ -41,9 +46,22 @@ module hazard_unit(
 );
 
     logic load_use_hazard;
-
+    logic hit_rs1_load_e;
+    logic hit_rs2_load_e;
+    logic is_jal_f;
+    logic is_branch_f;
+    logic [`PC_BUS] jal_target_f;
+    logic [`PC_BUS] branch_target_f;
+    logic            branch_backward_f;
+    assign hit_rs1_load_e = i_use_rs1_d && (i_rd_addr_e == i_rs1_addr_d);
+    assign hit_rs2_load_e = i_use_rs2_d && (i_rd_addr_e == i_rs2_addr_d);
     assign load_use_hazard = i_mem_read_e && i_reg_write_e && (i_rd_addr_e != '0) &&
-                             ((i_rd_addr_e == i_rs1_addr_d) || (i_rd_addr_e == i_rs2_addr_d));
+                             (hit_rs1_load_e || hit_rs2_load_e);
+    assign is_jal_f = (i_inst_f[6:0] == `OP_JAL);
+    assign is_branch_f = (i_inst_f[6:0] == `OP_B_TYPE);
+    assign jal_target_f = i_pc_cur + {{11{i_inst_f[31]}}, i_inst_f[31], i_inst_f[19:12], i_inst_f[20], i_inst_f[30:21], 1'b0};
+    assign branch_target_f = i_pc_cur + {{19{i_inst_f[31]}}, i_inst_f[31], i_inst_f[7], i_inst_f[30:25], i_inst_f[11:8], 1'b0};
+    assign branch_backward_f = branch_target_f < i_pc_cur;
 
     always_comb begin
         o_stall_f_d = load_use_hazard;
@@ -53,10 +71,22 @@ module hazard_unit(
 
         o_flush_f_d = i_error;
         o_flush_d_e = i_error || load_use_hazard;
-        o_flush_e_m = 1'b0;
+        o_flush_e_m = i_error;
         o_flush_m_w = 1'b0;
 
-        o_pc_predict = i_predict_taken ? i_predict_target : (i_pc_cur + 32'd4);
+        o_predict_taken_final = 1'b0;
+        o_pc_predict = i_pc_cur + 32'd4;
+
+        if (is_jal_f) begin
+            o_predict_taken_final = 1'b1;
+            o_pc_predict = jal_target_f;
+        end else if (is_branch_f && !i_btb_hit && branch_backward_f) begin
+            o_predict_taken_final = 1'b1;
+            o_pc_predict = branch_target_f;
+        end else begin
+            o_predict_taken_final = i_predict_taken;
+            o_pc_predict = i_predict_taken ? i_predict_target : (i_pc_cur + 32'd4);
+        end
 
         if (i_error) begin
             o_pc_next = i_right_pc;

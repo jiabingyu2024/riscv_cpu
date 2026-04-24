@@ -26,7 +26,9 @@ module control_unit(
 
     output logic                            o_is_branch,
     output logic  [1:0]                     o_mem_mask,
-    output logic                            o_load_unsigned
+    output logic                            o_load_unsigned,
+    output logic                            o_use_rs1,
+    output logic                            o_use_rs2
     // output logic                            o_is_jtype,
     // output logic                            o_is_lui,
     
@@ -52,10 +54,14 @@ module control_unit(
         o_is_branch     = 1'b0;
         o_mem_mask      = `MASK_WORD;
         o_load_unsigned = 1'b0;
+        o_use_rs1       = 1'b0;
+        o_use_rs2       = 1'b0;
 
         unique case (opcode)
             `OP_R_TYPE: begin
                 o_reg_write = 1'b1;
+                o_use_rs1   = 1'b1;
+                o_use_rs2   = 1'b1;
                 unique case (func3)
                     `FUNC3_ADD_SUB: o_alu_ctrl = (func7 == `FUNC7_SUB) ? `ALU_SUB : `ALU_ADD;
                     `FUNC3_SLT:     o_alu_ctrl = `ALU_LT;
@@ -72,6 +78,7 @@ module control_unit(
             `OP_I_TYPE: begin
                 o_reg_write  = 1'b1;
                 o_is_rs2_imm = 1'b1;
+                o_use_rs1    = 1'b1;
                 unique case (func3)
                     `FUNC3_ADD_SUB: o_alu_ctrl = `ALU_ADD;
                     `FUNC3_SLT:     o_alu_ctrl = `ALU_LT;
@@ -92,6 +99,7 @@ module control_unit(
                 o_is_rs2_imm    = 1'b1;
                 o_alu_ctrl      = `ALU_ADD;
                 o_load_unsigned = func3[2];
+                o_use_rs1       = 1'b1;
                 unique case (func3)
                     `FUNC3_LB, `FUNC3_LBU: o_mem_mask = `MASK_BYTE;
                     `FUNC3_LH, `FUNC3_LHU: o_mem_mask = `MASK_HALF;
@@ -103,6 +111,8 @@ module control_unit(
                 o_mem_write  = 1'b1;
                 o_is_rs2_imm = 1'b1;
                 o_alu_ctrl   = `ALU_ADD;
+                o_use_rs1    = 1'b1;
+                o_use_rs2    = 1'b1;
                 unique case (func3)
                     `FUNC3_SB: o_mem_mask = `MASK_BYTE;
                     `FUNC3_SH: o_mem_mask = `MASK_HALF;
@@ -112,6 +122,8 @@ module control_unit(
 
             `OP_B_TYPE: begin
                 o_is_branch = 1'b1;
+                o_use_rs1   = 1'b1;
+                o_use_rs2   = 1'b1;
             end
 
             `OP_JAL: begin
@@ -124,6 +136,7 @@ module control_unit(
                 o_is_rs2_imm = 1'b1;
                 o_inst_spec  = `EX_JALR;
                 o_alu_ctrl   = `ALU_ADD;
+                o_use_rs1    = 1'b1;
             end
 
             `OP_LUI: begin

@@ -18,8 +18,9 @@ module branch_cmp(
     input  logic  [`PC_BUS]                 i_pc_d_e,
     input  logic  [`PC_BUS]                 i_pc_predict,
 
-    input  logic  [`PC_BUS]                 i_t1_data,
-    input  logic  [`PC_BUS]                 i_t2_data,
+    input  logic  [`PC_BUS]                 i_pc_plus_imm,
+    input  logic  [`DATA_BUS]               i_jalr_base,
+    input  logic  [`DATA_BUS]               i_imm,
 
     input  logic                            i_is_branch,
     // input  logic                            i_is_jtype,
@@ -39,7 +40,7 @@ module branch_cmp(
 
     always_comb begin
         branch_taken  = 1'b0;
-        branch_target = i_t1_data + i_t2_data;
+        branch_target = i_pc_plus_imm;
 
         if (i_is_branch) begin
             unique case (i_func3)
@@ -55,7 +56,7 @@ module branch_cmp(
             branch_taken = 1'b1;
         end else if (i_inst_spec == `EX_JALR) begin
             branch_taken  = 1'b1;
-            branch_target = (i_t1_data + i_t2_data) & ~32'd1;
+            branch_target = (i_jalr_base + i_imm) & ~32'd1;
         end
 
         o_update_en     = i_is_branch || (i_inst_spec == `EX_JAL) || (i_inst_spec == `EX_JALR);

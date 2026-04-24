@@ -29,6 +29,7 @@ module bpu_top (
     input  logic  [`PC_BUS]                         i_update_target,
     input  logic  [`PC_BUS]                         i_update_pc,
     
+    output logic                                    o_btb_hit,
     output logic                                    o_predict_taken,
     output logic  [`PC_BUS]                         o_predict_target
 );
@@ -77,7 +78,8 @@ module bpu_top (
     end
 
     always_comb begin
-        o_predict_taken  = valid_mem[rd_idx] && (tag_mem[rd_idx] == rd_tag) && counter_mem[rd_idx][1];
+        o_btb_hit        = valid_mem[rd_idx] && (tag_mem[rd_idx] == rd_tag);
+        o_predict_taken  = o_btb_hit && counter_mem[rd_idx][1];
         o_predict_target = target_mem[rd_idx];
     end
 endmodule
