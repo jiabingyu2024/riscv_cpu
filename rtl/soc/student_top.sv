@@ -52,7 +52,11 @@ module student_top#(
     // 16KB = 2^12 * 32bit
     assign inst_addr = pc[13:2];
 
+`ifdef CORE_NEW
+    myCPU_core_new Core_cpu (
+`else
     myCPU Core_cpu (
+`endif
         .cpu_rst            (w_clk_rst),
         .cpu_clk            (w_cpu_clk),
 
