@@ -36,6 +36,9 @@ struct Meta {
     uint32_t led_addr = 0;
     uint32_t pass_led = 0;
     uint32_t fail_led = 0;
+    uint32_t seg_addr = 0;
+    uint32_t cnt_addr = 0;
+    uint32_t pass_tests = 0;
     uint32_t virtual_sw_lo = 0;
     uint32_t virtual_sw_hi = 0;
     uint32_t virtual_key = 0;
@@ -56,7 +59,17 @@ struct TestStatus {
     bool passed = false;
     uint32_t tohost_value = 0;
     uint32_t led_value = 0;
+    uint32_t seg_value = 0;
+    uint32_t counter_ms = 0;
+    uint32_t counter_raw_ms = 0;
+    uint32_t counter_sub_ms = 0;
+    uint64_t virtual_seg = 0;
     bool saw_led = false;
+    bool saw_seg = false;
+    bool saw_led_pass = false;
+    bool seg_passed = false;
+    bool virtual_seg_passed = false;
+    uint64_t post_led_pass_cycles = 0;
     bool saw_write = false;
     uint32_t last_write_addr = 0;
     uint32_t last_write_data = 0;
@@ -107,6 +120,9 @@ Meta load_meta(const std::string& path) {
     meta.led_addr = parse_u32(json_string_value(text, "led_addr"), meta.led_addr);
     meta.pass_led = parse_u32(json_string_value(text, "pass_led"), meta.pass_led);
     meta.fail_led = parse_u32(json_string_value(text, "fail_led"), meta.fail_led);
+    meta.seg_addr = parse_u32(json_string_value(text, "seg_addr"), meta.seg_addr);
+    meta.cnt_addr = parse_u32(json_string_value(text, "cnt_addr"), meta.cnt_addr);
+    meta.pass_tests = parse_u32(json_string_value(text, "pass_tests"), meta.pass_tests);
     meta.virtual_sw_lo = parse_u32(json_string_value(text, "virtual_sw_lo"), meta.virtual_sw_lo);
     meta.virtual_sw_hi = parse_u32(json_string_value(text, "virtual_sw_hi"), meta.virtual_sw_hi);
     meta.virtual_key = parse_u32(json_string_value(text, "virtual_key"), meta.virtual_key);
@@ -217,6 +233,91 @@ uint32_t soc_perip_wdata(Vtb_rv32ui_top___024root* rootp) {
     return rootp->tb_rv32ui_top__DOT__u_dut__DOT__perip_wdata;
 }
 
+uint32_t soc_seg_wdata(Vtb_rv32ui_top___024root* rootp) {
+    return rootp->tb_rv32ui_top__DOT__u_dut__DOT__bridge_inst__DOT__seg_wdata;
+}
+
+uint32_t soc_counter_ms(Vtb_rv32ui_top___024root* rootp) {
+    return rootp->tb_rv32ui_top__DOT__u_dut__DOT__bridge_inst__DOT__cnt_rdata;
+}
+
+uint32_t soc_counter_raw_ms(Vtb_rv32ui_top___024root* rootp) {
+    return rootp->tb_rv32ui_top__DOT__u_dut__DOT__bridge_inst__DOT__counter_inst__DOT__cnt_ms_bin;
+}
+
+uint32_t soc_counter_sub_ms(Vtb_rv32ui_top___024root* rootp) {
+    return rootp->tb_rv32ui_top__DOT__u_dut__DOT__bridge_inst__DOT__counter_inst__DOT__cnt_1ms;
+}
+
+uint8_t seg7_encode(uint32_t digit) {
+    switch (digit & 0xfu) {
+        case 0x0: return 0x3f;
+        case 0x1: return 0x06;
+        case 0x2: return 0x5b;
+        case 0x3: return 0x4f;
+        case 0x4: return 0x66;
+        case 0x5: return 0x6d;
+        case 0x6: return 0x7d;
+        case 0x7: return 0x07;
+        case 0x8: return 0x7f;
+        case 0x9: return 0x6f;
+        case 0xa: return 0x77;
+        case 0xb: return 0x7c;
+        case 0xc: return 0x39;
+        case 0xd: return 0x5e;
+        case 0xe: return 0x79;
+        case 0xf: return 0x71;
+        default:  return 0x00;
+    }
+}
+
+uint64_t pack_virtual_seg(uint32_t seg_wdata, bool high_phase) {
+    uint8_t ans = high_phase ? 0xaa : 0x55;
+    uint32_t d1 = high_phase ? ((seg_wdata >> 4) & 0xfu) : (seg_wdata & 0xfu);
+    uint32_t d2 = high_phase ? ((seg_wdata >> 12) & 0xfu) : ((seg_wdata >> 8) & 0xfu);
+    uint32_t d3 = high_phase ? ((seg_wdata >> 20) & 0xfu) : ((seg_wdata >> 16) & 0xfu);
+    uint32_t d4 = high_phase ? ((seg_wdata >> 28) & 0xfu) : ((seg_wdata >> 24) & 0xfu);
+    uint64_t out = 0;
+    out |= static_cast<uint64_t>(seg7_encode(d1));
+    out |= static_cast<uint64_t>(ans & 0x03u) << 8;
+    out |= static_cast<uint64_t>(seg7_encode(d2)) << 10;
+    out |= static_cast<uint64_t>((ans >> 2) & 0x03u) << 18;
+    out |= static_cast<uint64_t>(seg7_encode(d3)) << 20;
+    out |= static_cast<uint64_t>((ans >> 4) & 0x03u) << 28;
+    out |= static_cast<uint64_t>(seg7_encode(d4)) << 30;
+    out |= static_cast<uint64_t>((ans >> 6) & 0x03u) << 38;
+    return out;
+}
+
+uint32_t bcd6(uint32_t value) {
+    value %= 1000000u;
+    uint32_t out = 0;
+    for (int idx = 0; idx < 6; ++idx) {
+        out |= (value % 10u) << (idx * 4);
+        value /= 10u;
+    }
+    return out;
+}
+
+bool virtual_seg_matches(uint32_t seg_wdata, uint64_t virtual_seg) {
+    uint64_t masked = virtual_seg & ((1ull << 40) - 1ull);
+    return masked == pack_virtual_seg(seg_wdata, true) ||
+           masked == pack_virtual_seg(seg_wdata, false);
+}
+
+bool src_test_seg_matches(const Meta& meta, uint32_t seg_wdata, uint32_t counter_ms) {
+    if (meta.pass_tests == 0) return true;
+    uint32_t expected_prefix = ((meta.pass_tests / 10u) << 28) | ((meta.pass_tests % 10u) << 24);
+    uint32_t prefix_mask = 0xff000000u;
+    uint32_t runtime_bcd = bcd6(counter_ms);
+    return (seg_wdata & prefix_mask) == expected_prefix &&
+           ((seg_wdata & 0x00ffffffu) == runtime_bcd);
+}
+
+bool has_src_test_seg_oracle(const Meta& meta) {
+    return meta.suite == "src_test" && meta.seg_addr != 0 && meta.pass_tests != 0;
+}
+
 void observe_pc(const Meta& meta, TestStatus& status, uint32_t pc) {
     if (status.finished) return;
     if (meta.fail_pc != 0 && pc == meta.fail_pc) {
@@ -250,9 +351,18 @@ void observe_led_write(const Meta& meta, TestStatus& status, bool wen, uint32_t 
         return;
     }
     if (meta.pass_led != 0 && wdata == meta.pass_led) {
-        status.finished = true;
-        status.passed = true;
+        status.saw_led_pass = true;
+        if (!has_src_test_seg_oracle(meta)) {
+            status.finished = true;
+            status.passed = true;
+        }
     }
+}
+
+void observe_seg_write(const Meta& meta, TestStatus& status, bool wen, uint32_t addr, uint32_t wdata) {
+    if (meta.seg_addr == 0 || !wen || addr != meta.seg_addr) return;
+    status.seg_value = wdata;
+    status.saw_seg = true;
 }
 
 void observe_perip_write(TestStatus& status, bool wen, uint32_t addr, uint32_t wdata) {
@@ -260,6 +370,26 @@ void observe_perip_write(TestStatus& status, bool wen, uint32_t addr, uint32_t w
     status.saw_write = true;
     status.last_write_addr = addr;
     status.last_write_data = wdata;
+}
+
+void update_src_test_status(const Meta& meta, TestStatus& status, Vtb_rv32ui_top* top) {
+    if (status.finished || !has_src_test_seg_oracle(meta)) return;
+    status.seg_value = soc_seg_wdata(top->rootp);
+    status.counter_ms = soc_counter_ms(top->rootp);
+    status.counter_raw_ms = soc_counter_raw_ms(top->rootp);
+    status.counter_sub_ms = soc_counter_sub_ms(top->rootp);
+    status.virtual_seg = top->o_virtual_seg;
+    status.seg_passed = src_test_seg_matches(meta, status.seg_value, status.counter_ms);
+    status.virtual_seg_passed = virtual_seg_matches(status.seg_value, status.virtual_seg);
+    if (!status.saw_led_pass) return;
+    ++status.post_led_pass_cycles;
+    if (status.seg_passed && status.virtual_seg_passed) {
+        status.finished = true;
+        status.passed = true;
+    } else if (status.post_led_pass_cycles > 512) {
+        status.finished = true;
+        status.passed = false;
+    }
 }
 
 }  // namespace
@@ -316,7 +446,9 @@ int main(int argc, char** argv) {
 
         observe_perip_write(status, sampled_perip_wen, sampled_perip_addr, sampled_perip_wdata);
         observe_tohost_write(meta, status, sampled_perip_wen, sampled_perip_addr, sampled_perip_wdata);
+        observe_seg_write(meta, status, sampled_perip_wen, sampled_perip_addr, sampled_perip_wdata);
         observe_led_write(meta, status, sampled_perip_wen, sampled_perip_addr, sampled_perip_wdata);
+        update_src_test_status(meta, status, top);
         if (!top->rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__flush_e_m) {
             uint32_t pc_e = core_pc_e(top->rootp);
             status.last_pc = pc_e;
@@ -365,6 +497,21 @@ int main(int argc, char** argv) {
         } else {
             std::cout << "  led: no write observed\n";
         }
+    }
+    if (has_src_test_seg_oracle(meta)) {
+        std::cout << "  oracle: seg addr=0x" << std::hex << std::setw(8) << std::setfill('0') << meta.seg_addr
+                  << " tests=" << std::dec << meta.pass_tests
+                  << " counter_addr=0x" << std::hex << std::setw(8) << meta.cnt_addr << std::dec << std::setfill(' ') << "\n";
+        std::cout << "  seg: wdata=0x" << std::hex << std::setw(8) << std::setfill('0') << status.seg_value
+                  << " virtual=0x" << std::setw(10) << status.virtual_seg
+                  << std::dec << std::setfill(' ')
+                  << " counter_ms=" << status.counter_ms
+                  << " raw_ms=" << status.counter_raw_ms
+                  << " sub_ms_ticks=" << status.counter_sub_ms
+                  << " core_ms_floor=" << (stats.cycles / 50000)
+                  << " instret_ms_floor=" << (stats.instret / 50000)
+                  << " seg_ok=" << (status.seg_passed ? "yes" : "no")
+                  << " virtual_ok=" << (status.virtual_seg_passed ? "yes" : "no") << "\n";
     }
     if (!pass && !done_without_oracle) {
         std::cout << "  debug: last_pc=0x" << std::hex << std::setw(8) << std::setfill('0') << status.last_pc;

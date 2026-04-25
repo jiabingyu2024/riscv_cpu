@@ -3,6 +3,8 @@
 module core_new_redirect_ctrl (
     input  logic           i_redirect_valid,
     input  logic [`PC_BUS] i_redirect_pc,
+    input  logic           i_if_redirect_valid,
+    input  logic [`PC_BUS] i_if_redirect_pc,
     input  logic           i_frontend_stall,
     input  logic           i_pred_valid,
     input  logic           i_pred_taken,
@@ -26,6 +28,8 @@ module core_new_redirect_ctrl (
             o_next_pc = i_redirect_pc;
         end else if (i_frontend_stall) begin
             o_next_pc = i_pc_cur;
+        end else if (i_if_redirect_valid) begin
+            o_next_pc = i_if_redirect_pc;
         end else if (i_pred_valid && i_pred_taken) begin
             o_next_pc = i_pred_target;
         end else begin

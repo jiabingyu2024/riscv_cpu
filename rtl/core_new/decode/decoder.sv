@@ -14,6 +14,8 @@ module core_new_decoder (
     output logic             o_is_lui,
     output logic             o_is_auipc,
     output logic             o_src2_is_imm,
+    output logic             o_use_rs1,
+    output logic             o_use_rs2,
     output logic [3:0]       o_mem_size,
     output logic             o_load_unsigned
 );
@@ -38,12 +40,16 @@ module core_new_decoder (
         o_is_lui        = 1'b0;
         o_is_auipc      = 1'b0;
         o_src2_is_imm   = 1'b0;
+        o_use_rs1       = 1'b0;
+        o_use_rs2       = 1'b0;
         o_mem_size      = `MASK_WORD;
         o_load_unsigned = 1'b0;
 
         unique case (opcode)
             `OP_R_TYPE: begin
                 o_reg_write = 1'b1;
+                o_use_rs1   = 1'b1;
+                o_use_rs2   = 1'b1;
                 unique case (func3)
                     `FUNC3_ADD_SUB: o_alu_op = (func7 == `FUNC7_SUB) ? `ALU_SUB : `ALU_ADD;
                     `FUNC3_SLT:     o_alu_op = `ALU_LT;
@@ -59,6 +65,7 @@ module core_new_decoder (
             `OP_I_TYPE: begin
                 o_reg_write   = 1'b1;
                 o_src2_is_imm = 1'b1;
+                o_use_rs1     = 1'b1;
                 unique case (func3)
                     `FUNC3_ADD_SUB: o_alu_op = `ALU_ADD;
                     `FUNC3_SLT:     o_alu_op = `ALU_LT;
@@ -76,6 +83,7 @@ module core_new_decoder (
                 o_reg_write     = 1'b1;
                 o_wb_sel        = `WB_SRC_MEM;
                 o_src2_is_imm   = 1'b1;
+                o_use_rs1       = 1'b1;
                 o_load_unsigned = func3[2];
                 unique case (func3)
                     `FUNC3_LB, `FUNC3_LBU: o_mem_size = `MASK_BYTE;
@@ -86,6 +94,8 @@ module core_new_decoder (
             `OP_S_TYPE: begin
                 o_mem_write   = 1'b1;
                 o_src2_is_imm = 1'b1;
+                o_use_rs1     = 1'b1;
+                o_use_rs2     = 1'b1;
                 unique case (func3)
                     `FUNC3_SB: o_mem_size = `MASK_BYTE;
                     `FUNC3_SH: o_mem_size = `MASK_HALF;
@@ -94,6 +104,8 @@ module core_new_decoder (
             end
             `OP_B_TYPE: begin
                 o_is_branch = 1'b1;
+                o_use_rs1   = 1'b1;
+                o_use_rs2   = 1'b1;
             end
             `OP_JAL: begin
                 o_reg_write = 1'b1;
@@ -103,6 +115,7 @@ module core_new_decoder (
                 o_reg_write   = 1'b1;
                 o_is_jalr     = 1'b1;
                 o_src2_is_imm = 1'b1;
+                o_use_rs1     = 1'b1;
             end
             `OP_LUI: begin
                 o_reg_write   = 1'b1;

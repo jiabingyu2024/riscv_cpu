@@ -7,6 +7,7 @@ module core_new_pipe_pc_if (
     input  logic           i_stall,
     input  logic [`PC_BUS] i_pc,
     input  logic           i_pred_valid,
+    input  logic           i_pred_is_static,
     input  logic           i_pred_taken,
     input  logic [`PC_BUS] i_pred_target,
     input  logic           i_valid,
@@ -35,7 +36,7 @@ module core_new_pipe_pc_if (
         end else if (!i_stall) begin
             o_pc <= i_pc;
             o_pred_valid <= i_pred_valid;
-            o_pred_is_static <= 1'b0;
+            o_pred_is_static <= i_pred_is_static;
             o_pred_taken <= i_pred_taken;
             o_pred_target <= i_pred_target;
             o_valid <= i_valid;

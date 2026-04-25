@@ -47,6 +47,8 @@ module core_new (
 
     logic [`PC_BUS] pc_f;
     logic [`INST_BUS] inst_f;
+    logic           static_redirect_valid_f;
+    logic [`PC_BUS] static_redirect_pc_f;
     logic           pred_valid_f;
     logic           pred_is_static_f;
     logic           pred_taken_f;
@@ -73,6 +75,8 @@ module core_new (
     logic           is_lui_d;
     logic           is_auipc_d;
     logic           src2_is_imm_d;
+    logic           use_rs1_d;
+    logic           use_rs2_d;
     logic [3:0]     mem_size_d;
     logic           load_unsigned_d;
     logic [`DATA_BUS] imm_d;
@@ -209,6 +213,8 @@ module core_new (
     core_new_redirect_ctrl u_redirect_ctrl (
         .i_redirect_valid   (redirect_valid_p),
         .i_redirect_pc      (redirect_pc_p),
+        .i_if_redirect_valid(static_redirect_valid_f),
+        .i_if_redirect_pc   (static_redirect_pc_f),
         .i_frontend_stall   (stall_pc_if),
         .i_pred_valid       (pred_valid_p),
         .i_pred_taken       (pred_taken_p),
@@ -222,6 +228,7 @@ module core_new (
 
     core_new_pipeline_ctrl u_pipeline_ctrl (
         .i_load_use_stall (load_use_stall),
+        .i_redirect_valid_f(static_redirect_valid_f),
         .i_redirect_valid_d(redirect_valid_d),
         .i_redirect_valid_x(redirect_valid_x && valid_e),
         .o_stall_pc_if    (stall_pc_if),
@@ -248,6 +255,7 @@ module core_new (
         .i_stall       (stall_pc_if),
         .i_pc          (pc_cur_p),
         .i_pred_valid  (fetch_pred_valid_p),
+        .i_pred_is_static(1'b0),
         .i_pred_taken  (fetch_pred_taken_p),
         .i_pred_target (fetch_pred_target_p),
         .i_valid       (1'b1),
@@ -267,6 +275,8 @@ module core_new (
         .i_pred_taken  (pred_taken_pf),
         .i_pred_target (pred_target_pf),
         .i_valid       (valid_pf),
+        .o_static_redirect_valid(static_redirect_valid_f),
+        .o_static_redirect_pc(static_redirect_pc_f),
         .o_pc          (pc_f),
         .o_inst        (inst_f),
         .o_pred_valid  (pred_valid_f),
@@ -319,6 +329,8 @@ module core_new (
         .o_is_lui        (is_lui_d),
         .o_is_auipc      (is_auipc_d),
         .o_src2_is_imm   (src2_is_imm_d),
+        .o_use_rs1       (use_rs1_d),
+        .o_use_rs2       (use_rs2_d),
         .o_mem_size      (mem_size_d),
         .o_load_unsigned (load_unsigned_d),
         .o_rs1_addr      (rs1_addr_d),
@@ -332,6 +344,8 @@ module core_new (
     core_new_hazard_ctrl u_hazard_ctrl (
         .i_id_rs1       (rs1_addr_d),
         .i_id_rs2       (rs2_addr_d),
+        .i_id_use_rs1   (use_rs1_d),
+        .i_id_use_rs2   (use_rs2_d),
         .i_ex_rd        (rd_addr_e),
         .i_ex_mem_read  (mem_read_e && valid_e),
         .i_m1_rd        (rd_addr_m1),

@@ -155,6 +155,8 @@ make run SUITE=src_test SRC_TEST_MAX_CYCLES=5000000
 
 ```bash
 make run SUITE=src_test WAVE=1
+make run CORE_VARIANT=new SUITE=src_test WAVE=0
+
 ```
 
 输出示例：

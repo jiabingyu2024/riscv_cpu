@@ -22,6 +22,8 @@ module core_new_decode_stage (
     output logic             o_is_lui,
     output logic             o_is_auipc,
     output logic             o_src2_is_imm,
+    output logic             o_use_rs1,
+    output logic             o_use_rs2,
     output logic [3:0]       o_mem_size,
     output logic             o_load_unsigned,
     output logic [`RF_BUS]   o_rs1_addr,
@@ -57,6 +59,8 @@ module core_new_decode_stage (
         .o_is_lui        (o_is_lui),
         .o_is_auipc      (o_is_auipc),
         .o_src2_is_imm   (o_src2_is_imm),
+        .o_use_rs1       (o_use_rs1),
+        .o_use_rs2       (o_use_rs2),
         .o_mem_size      (o_mem_size),
         .o_load_unsigned (o_load_unsigned)
     );
