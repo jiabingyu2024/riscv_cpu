@@ -24,6 +24,8 @@ struct Options {
     std::string meta_path;
     std::string wave_path;
     uint64_t max_cycles = 100000;
+    uint32_t cpu_mhz = 200;
+    uint32_t cnt_mhz = 50;
     bool wave = false;
 };
 
@@ -144,6 +146,10 @@ Options parse_args(int argc, char** argv) {
             opt.meta_path = arg.substr(6);
         } else if (starts_with(arg, "+max-cycles=")) {
             opt.max_cycles = std::strtoull(arg.substr(12).c_str(), nullptr, 0);
+        } else if (starts_with(arg, "+cpu-mhz=")) {
+            opt.cpu_mhz = parse_u32(arg.substr(9), opt.cpu_mhz);
+        } else if (starts_with(arg, "+cnt-mhz=")) {
+            opt.cnt_mhz = parse_u32(arg.substr(9), opt.cnt_mhz);
         } else if (starts_with(arg, "+wave=")) {
             opt.wave = parse_u32(arg.substr(6)) != 0;
         } else if (starts_with(arg, "+wave-file=")) {
@@ -152,6 +158,10 @@ Options parse_args(int argc, char** argv) {
     }
     if (opt.irom_path.empty()) {
         std::cerr << "error: missing +irom=<path>\n";
+        std::exit(2);
+    }
+    if (opt.cpu_mhz == 0 || opt.cnt_mhz == 0) {
+        std::cerr << "error: +cpu-mhz and +cnt-mhz must be nonzero\n";
         std::exit(2);
     }
     if (opt.wave && opt.wave_path.empty()) {
@@ -424,45 +434,72 @@ int main(int argc, char** argv) {
     top->i_virtual_sw = (static_cast<uint64_t>(meta.virtual_sw_hi) << 32) | meta.virtual_sw_lo;
     eval_dump();
 
+    uint64_t cpu_half_ps = 1000000ull / (2ull * opt.cpu_mhz);
+    uint64_t cnt_half_ps = 1000000ull / (2ull * opt.cnt_mhz);
+    if (cpu_half_ps == 0) cpu_half_ps = 1;
+    if (cnt_half_ps == 0) cnt_half_ps = 1;
+    uint64_t next_cpu_edge = cpu_half_ps;
+    uint64_t next_cnt_edge = cnt_half_ps;
+
     for (int idx = 0; idx < 16; ++idx) {
-        top->i_clk_50mhz = !top->i_clk_50mhz;
-        top->i_cpu_clk = !top->i_cpu_clk;
+        sim_time = next_cpu_edge < next_cnt_edge ? next_cpu_edge : next_cnt_edge;
+        if (sim_time == next_cpu_edge) {
+            top->i_cpu_clk = !top->i_cpu_clk;
+            next_cpu_edge += cpu_half_ps;
+        }
+        if (sim_time == next_cnt_edge) {
+            top->i_clk_50mhz = !top->i_clk_50mhz;
+            next_cnt_edge += cnt_half_ps;
+        }
         eval_dump();
     }
     top->i_rst = 0;
 
     while (!Verilated::gotFinish() && stats.cycles < opt.max_cycles && !status.finished) {
-        top->i_cpu_clk = 0;
-        top->i_clk_50mhz = !top->i_clk_50mhz;
+        sim_time = next_cpu_edge < next_cnt_edge ? next_cpu_edge : next_cnt_edge;
+        bool cpu_edge = (sim_time == next_cpu_edge);
+        bool cnt_edge = (sim_time == next_cnt_edge);
+        bool cpu_rise = cpu_edge && !top->i_cpu_clk;
+        bool sampled_perip_wen = false;
+        uint32_t sampled_perip_addr = 0;
+        uint32_t sampled_perip_wdata = 0;
+
+        if (cpu_rise) {
+            sampled_perip_wen = soc_perip_wen(top->rootp);
+            sampled_perip_addr = soc_perip_addr(top->rootp);
+            sampled_perip_wdata = soc_perip_wdata(top->rootp);
+        }
+        if (cpu_edge) {
+            top->i_cpu_clk = !top->i_cpu_clk;
+            next_cpu_edge += cpu_half_ps;
+        }
+        if (cnt_edge) {
+            top->i_clk_50mhz = !top->i_clk_50mhz;
+            next_cnt_edge += cnt_half_ps;
+        }
         eval_dump();
 
-        bool sampled_perip_wen = soc_perip_wen(top->rootp);
-        uint32_t sampled_perip_addr = soc_perip_addr(top->rootp);
-        uint32_t sampled_perip_wdata = soc_perip_wdata(top->rootp);
+        if (cpu_rise) {
+            observe_perip_write(status, sampled_perip_wen, sampled_perip_addr, sampled_perip_wdata);
+            observe_tohost_write(meta, status, sampled_perip_wen, sampled_perip_addr, sampled_perip_wdata);
+            observe_seg_write(meta, status, sampled_perip_wen, sampled_perip_addr, sampled_perip_wdata);
+            observe_led_write(meta, status, sampled_perip_wen, sampled_perip_addr, sampled_perip_wdata);
+            update_src_test_status(meta, status, top);
+            if (!top->rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__flush_e_m) {
+                uint32_t pc_e = core_pc_e(top->rootp);
+                status.last_pc = pc_e;
+                observe_pc(meta, status, pc_e);
+            }
 
-        top->i_cpu_clk = 1;
-        top->i_clk_50mhz = !top->i_clk_50mhz;
-        eval_dump();
-
-        observe_perip_write(status, sampled_perip_wen, sampled_perip_addr, sampled_perip_wdata);
-        observe_tohost_write(meta, status, sampled_perip_wen, sampled_perip_addr, sampled_perip_wdata);
-        observe_seg_write(meta, status, sampled_perip_wen, sampled_perip_addr, sampled_perip_wdata);
-        observe_led_write(meta, status, sampled_perip_wen, sampled_perip_addr, sampled_perip_wdata);
-        update_src_test_status(meta, status, top);
-        if (!top->rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__flush_e_m) {
-            uint32_t pc_e = core_pc_e(top->rootp);
-            status.last_pc = pc_e;
-            observe_pc(meta, status, pc_e);
+            if (core_inst_valid(top->rootp)) {
+                ++stats.instret;
+            }
+            if (core_branch_update(top->rootp)) {
+                ++stats.branches;
+                if (core_branch_miss(top->rootp)) ++stats.branch_miss;
+            }
+            ++stats.cycles;
         }
-
-        if (core_inst_valid(top->rootp)) {
-            ++stats.instret;
-        }
-        if (core_branch_update(top->rootp)) {
-            ++stats.branches;
-            if (core_branch_miss(top->rootp)) ++stats.branch_miss;
-        }
-        ++stats.cycles;
     }
 
     top->final();
@@ -484,6 +521,7 @@ int main(int argc, char** argv) {
     if (!meta.test_case.empty()) std::cout << "/" << meta.test_case;
     std::cout << "\n";
     print_stats_line(std::cout, stats, "core");
+    std::cout << "  clocks: cpu=" << opt.cpu_mhz << "MHz cnt=" << opt.cnt_mhz << "MHz\n";
     print_branch_line(std::cout, stats);
     if (meta.tohost != 0) {
         std::cout << "  tohost: 0x" << std::hex << std::setw(8) << std::setfill('0') << status.tohost_value << std::dec << std::setfill(' ') << "\n";
@@ -508,8 +546,8 @@ int main(int argc, char** argv) {
                   << " counter_ms=" << status.counter_ms
                   << " raw_ms=" << status.counter_raw_ms
                   << " sub_ms_ticks=" << status.counter_sub_ms
-                  << " core_ms_floor=" << (stats.cycles / 50000)
-                  << " instret_ms_floor=" << (stats.instret / 50000)
+                  << " core_ms_floor=" << ((stats.cycles * 1000ull) / (opt.cpu_mhz * 1000000ull))
+                  << " instret_ideal_ms_floor=" << ((stats.instret * 1000ull) / (opt.cpu_mhz * 1000000ull))
                   << " seg_ok=" << (status.seg_passed ? "yes" : "no")
                   << " virtual_ok=" << (status.virtual_seg_passed ? "yes" : "no") << "\n";
     }

@@ -6,6 +6,8 @@ WAVE ?= 0
 MAX_CYCLES ?= 100000
 SRC_TEST_MAX_CYCLES ?= 615000000
 SRC_MAX_CYCLES ?= 8000000000
+CPU_MHZ ?= 200
+CNT_MHZ ?= 50
 FAST_COUNTER ?= 0
 RUN_MS ?= 0
 STRICT_SIM_LIMIT ?= 0
@@ -166,7 +168,7 @@ run-one:
 	else \
 		CASE_DIR="$(BUILD_DIR)/$(SUITE)"; \
 	fi; \
-	ARGS="+irom=$$CASE_DIR/irom.hex +meta=$$CASE_DIR/meta.json +max-cycles=$(MAX_CYCLES) +wave=$(WAVE) +wave-file=$$CASE_DIR/wave.vcd"; \
+	ARGS="+irom=$$CASE_DIR/irom.hex +meta=$$CASE_DIR/meta.json +max-cycles=$(MAX_CYCLES) +cpu-mhz=$(CPU_MHZ) +cnt-mhz=$(CNT_MHZ) +wave=$(WAVE) +wave-file=$$CASE_DIR/wave.vcd"; \
 	if [[ -f "$$CASE_DIR/dram.hex" ]]; then ARGS="$$ARGS +dram=$$CASE_DIR/dram.hex"; fi; \
 	mkdir -p "$$CASE_DIR"; \
 	if [[ "$(SUITE)" == "src_test" ]]; then BIN="$(SRC_TEST_SIM_BIN)"; else BIN="$(SIM_BIN)"; fi; \
@@ -184,7 +186,7 @@ run-correctness:
 	@set -e -o pipefail; \
 	CASE_DIR="$(BUILD_DIR)/$(SUITE)"; \
 	if [[ ! -f "$$CASE_DIR/irom.hex" ]]; then echo "missing $$CASE_DIR/irom.hex; run make build SUITE=$(SUITE) first"; exit 2; fi; \
-	ARGS="+irom=$$CASE_DIR/irom.hex +meta=$$CASE_DIR/meta.json +max-cycles=$(MAX_CYCLES) +wave=$(WAVE) +wave-file=$$CASE_DIR/wave.vcd"; \
+	ARGS="+irom=$$CASE_DIR/irom.hex +meta=$$CASE_DIR/meta.json +max-cycles=$(MAX_CYCLES) +cpu-mhz=$(CPU_MHZ) +cnt-mhz=$(CNT_MHZ) +wave=$(WAVE) +wave-file=$$CASE_DIR/wave.vcd"; \
 	if [[ -f "$$CASE_DIR/dram.hex" ]]; then ARGS="$$ARGS +dram=$$CASE_DIR/dram.hex"; fi; \
 	mkdir -p "$$CASE_DIR"; \
 	if [[ "$(SUITE)" == "src_test" ]]; then BIN="$(SRC_TEST_SIM_BIN)"; else BIN="$(SIM_BIN)"; fi; \
@@ -197,7 +199,7 @@ run-all:
 		case_dir=$$(dirname "$$meta"); \
 		case_name=$$(basename "$$case_dir"); \
 		echo "==> rv32ui/$$case_name"; \
-		if ! $(SIM_BIN) +irom=$$case_dir/irom.hex +meta=$$meta +max-cycles=$(MAX_CYCLES) +wave=0 | tee "$$case_dir/run.log"; then \
+		if ! $(SIM_BIN) +irom=$$case_dir/irom.hex +meta=$$meta +max-cycles=$(MAX_CYCLES) +cpu-mhz=$(CPU_MHZ) +cnt-mhz=$(CNT_MHZ) +wave=0 | tee "$$case_dir/run.log"; then \
 			status=1; \
 		fi; \
 	done; \

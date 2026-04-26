@@ -113,10 +113,13 @@ make run SUITE=rv32ui
 ```bash
 make run SUITE=rv32ui ISA=addi MAX_CYCLES=50000
 make run SUITE=rv32ui ISA=addi WAVE=1
+make run SUITE=rv32ui ISA=addi CPU_MHZ=50 CNT_MHZ=50
 ```
 
 - `ISA`：单条测试名，不带 `rv32ui-p-` 前缀。
 - `MAX_CYCLES`：单元测试保护上限，默认 `100000`。
+- `CPU_MHZ`：正确性 runner 的 CPU 时钟频率，默认 `200`。
+- `CNT_MHZ`：正确性 runner 的 counter 时钟频率，默认 `50`。
 - `WAVE=1`：生成 VCD 波形。波形位于 `build/rv32ui/<case>/wave.vcd`。
 
 ## src_test 正确性测试
@@ -143,6 +146,19 @@ build/src_test/meta.json
 make run SUITE=src_test
 ```
 
+`src_test` 默认按高频场景运行：
+
+```text
+cpu_clk = 200MHz
+cnt_clk = 50MHz
+```
+
+这是为了覆盖 CPU 和 counter 不同频率时的 CDC 行为。需要回到同频 50MHz 场景时：
+
+```bash
+make run SUITE=src_test CPU_MHZ=50 CNT_MHZ=50
+```
+
 `src_test` 默认保护上限为 `SRC_TEST_MAX_CYCLES=615000000`。这是因为该程序包含较长的软件除法/取模循环，不能使用 `rv32ui` 的 `MAX_CYCLES=100000` 默认值。
 
 短跑调试：
@@ -163,19 +179,28 @@ make run CORE_VARIANT=new SUITE=src_test WAVE=0
 
 ```text
 PASS src_test/src_test
-  core: cycles=... instret=... cpi=... ipc=...
-  branch: total=... hit=... miss=... hit_rate=... mpki=...
+  core: cycles=39879457 instret=30758527 cpi=1.30 ipc=0.77
+  clocks: cpu=200MHz cnt=50MHz
+  branch: total=12855085 hit=10148232 miss=2706853 hit_rate=78.94% mpki=88.00
   oracle: led addr=0x80200040 pass=0x01221c08 fail=0x24181824
   led: 0x01221c08
+  oracle: seg addr=0x80200020 tests=37 counter_addr=0x80200050
+  seg: wdata=0x37000199 virtual=0x93e3f8fe6f counter_ms=199 raw_ms=199 sub_ms_ticks=0 core_ms_floor=199 instret_ideal_ms_floor=153 seg_ok=yes virtual_ok=yes
 ```
 
 说明：
 
-- `src_test` 没有 ELF 符号、`tohost` 或 dump oracle。当前通过 LED MMIO 写入判断结果。
-- 写 `0x8020_0040 = 0x01221c08` 判定为 `PASS`。
+- `src_test` 没有 ELF 符号、`tohost` 或 dump oracle。当前通过 LED、SEG 和 counter 的组合 oracle 判断结果。
+- 写 `0x8020_0040 = 0x01221c08` 是通过条件之一，但不会单独判定为最终 `PASS`。
 - 写 `0x8020_0040 = 0x24181824` 判定为 `FAIL`。
+- `SEG` 地址为 `0x8020_0020`，最终显示格式为 `37 + counter_ms`。`37` 表示 `src_test` 内部 37 条检查通过，低 6 位为 counter 毫秒值的 BCD 显示。
+- `counter` 地址为 `0x8020_0050`。程序写 `0x8000_0000` 启动计数，写 `0xffff_ffff` 停止计数，再读取 counter 并写入 SEG。
+- `seg_ok=yes` 表示 `seg_wdata` 高两位是 `37`，低六位与 CPU 读到的 counter ms 的 BCD 值一致。
+- `virtual_ok=yes` 表示 40bit `virtual_seg` 段码与 `display_seg/seg7` 当前扫描相位一致。
 - 达到 `SRC_TEST_MAX_CYCLES` 仍未观察到 LED oracle 时输出 `TIMEOUT`，并打印最后 PC 和最后一次外设写入，便于定位卡住位置。
-- 本机短样本测速：`5,000,000` CPU cycles 约 `6.5s`，完整 `615,000,000` cycles 线性估算约 `13.4min`。实际耗时会随机器负载变化。
+- `core_ms_floor` 是 `cycles / CPU_MHZ / 1000` 的真实运行时间下取整。默认 `200MHz/50MHz` 下，约 `39,879,457` 个 CPU 周期对应 `199ms`。
+- `instret_ideal_ms_floor` 是假设 `IPC=1` 时的理想指令时间，只用于辅助判断，不代表 counter 应显示的真实时间。
+- 本机短样本测速会随 `CPU_MHZ/CNT_MHZ` 调度事件数变化。默认 `200MHz/50MHz` 会比同频 50MHz 场景产生更多仿真事件。
 
 ## src0/src1/src2 性能压力测试
 
