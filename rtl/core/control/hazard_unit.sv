@@ -82,10 +82,9 @@ module hazard_unit(
         o_flush_p_f = i_error;
         o_flush_f_d = i_error;
         o_flush_d_e = i_error || load_use_hazard;
-        // On redirect, only younger wrong-path instructions should be squashed.
-        // The current EX instruction (especially JAL/JALR) must continue so its
-        // architectural effects, such as link-register writeback, are preserved.
-        o_flush_e_m = 1'b0;
+        // Redirect is reported from EX/M1, so the current EX instruction is
+        // already a younger wrong-path instruction and must be squashed.
+        o_flush_e_m = i_error;
         o_flush_m_w = 1'b0;
 
         o_pc_predict = i_predict_taken ? i_predict_target : (i_pc_cur + 32'd4);
