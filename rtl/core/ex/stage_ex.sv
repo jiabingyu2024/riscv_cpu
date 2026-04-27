@@ -23,11 +23,8 @@ module stage_ex(
     input  logic  [`PC_BUS]                 i_pc_target,
     input  logic  [`PC_BUS]                 i_pc_predict,
 
-    input  logic  [2:0]                     i_b1_sel,   //均增加一个i_fwd_m_m,同时修改 cpu_defines.svh
-    input  logic  [2:0]                     i_b2_sel,
-    input  logic  [2:0]                     i_t1_sel,
-    input  logic  [2:0]                     i_a1_sel,
-    input  logic  [2:0]                     i_a2_sel,
+    input  logic  [1:0]                     i_rs1_fwd_sel,
+    input  logic  [1:0]                     i_rs2_fwd_sel,
 
     input  logic  [3:0]                     i_alu_ctrl,
     input  logic  [2:0]                     i_func3,
@@ -35,6 +32,7 @@ module stage_ex(
     input  logic                            i_is_branch,
     // input  logic                            i_is_jtype,
     // input  logic                            i_is_lui,
+    input  logic                            i_is_rs2_imm,
     input  logic  [3:0]                     i_inst_spec,
 
     output logic  [`DATA_BUS]               o_alu_res,
@@ -49,43 +47,31 @@ module stage_ex(
     
 );
 
-    logic [`DATA_BUS] b1_data;
-    logic [`DATA_BUS] b2_data;
     logic [`DATA_BUS] a1_data;
     logic [`DATA_BUS] a2_data;
-    logic [`DATA_BUS] rs1_fwd_data;
-    logic [`DATA_BUS] rs2_fwd_data;
+    logic [`DATA_BUS] rs1_exec_data;
+    logic [`DATA_BUS] rs2_exec_data;
     logic [`PC_BUS]   t1_data;
     logic [`DATA_BUS] alu_res_raw;
 
     always_comb begin
-        unique case (i_b1_sel)
-            `B1_E_M:   rs1_fwd_data = i_fwd_e_m;
-            `B1_M_W:   rs1_fwd_data = i_fwd_m_w;
-            `B1_M_M:   rs1_fwd_data = i_fwd_m_m;
-            default:   rs1_fwd_data = i_rs1_data;
+        unique case (i_rs1_fwd_sel)
+            `FWD_E_M:  rs1_exec_data = i_fwd_e_m;
+            `FWD_M_M:  rs1_exec_data = i_fwd_m_m;
+            `FWD_M_W:  rs1_exec_data = i_fwd_m_w;
+            default:   rs1_exec_data = i_rs1_data;
         endcase
 
-        unique case (i_b2_sel)
-            `B2_E_M:   rs2_fwd_data = i_fwd_e_m;
-            `B2_M_W:   rs2_fwd_data = i_fwd_m_w;
-            `B2_M_M:   rs2_fwd_data = i_fwd_m_m;
-            default:   rs2_fwd_data = i_rs2_data;
+        unique case (i_rs2_fwd_sel)
+            `FWD_E_M:  rs2_exec_data = i_fwd_e_m;
+            `FWD_M_M:  rs2_exec_data = i_fwd_m_m;
+            `FWD_M_W:  rs2_exec_data = i_fwd_m_w;
+            default:   rs2_exec_data = i_rs2_data;
         endcase
 
-        b1_data = rs1_fwd_data;
-        b2_data = rs2_fwd_data;
-        t1_data = (i_t1_sel == `T1_PC) ? i_pc_d_e : rs1_fwd_data;
-
-        unique case (i_a1_sel)
-            `A1_PC:    a1_data = i_pc;
-            default:   a1_data = rs1_fwd_data;
-        endcase
-
-        unique case (i_a2_sel)
-            `A2_imm:   a2_data = i_imm;
-            default:   a2_data = rs2_fwd_data;
-        endcase
+        t1_data = (i_inst_spec == `EX_JALR) ? rs1_exec_data : i_pc_d_e;
+        a1_data = (i_inst_spec == `EX_AUIPC) ? i_pc : rs1_exec_data;
+        a2_data = (i_is_rs2_imm || (i_inst_spec == `EX_AUIPC)) ? i_imm : rs2_exec_data;
     end
 
     alu u_alu (
@@ -96,8 +82,8 @@ module stage_ex(
     );
 
     branch_cmp u_branch_cmp (
-        .i_b1_data       (b1_data),
-        .i_b2_data       (b2_data),
+        .i_b1_data       (rs1_exec_data),
+        .i_b2_data       (rs2_exec_data),
         .i_func3         (i_func3),
         .i_pc_d_e        (i_pc_d_e),
         .i_pc_target     (i_pc_target),
@@ -115,7 +101,7 @@ module stage_ex(
     );
 
     always_comb begin
-        o_a2_data = b2_data;
+        o_a2_data = rs2_exec_data;
 
         unique case (i_inst_spec)
             `EX_LUI:   o_alu_res = i_imm;

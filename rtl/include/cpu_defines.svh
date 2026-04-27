@@ -91,6 +91,11 @@
 
 // used in fwd
 
+`define FWD_RF          2'b00
+`define FWD_E_M         2'b01
+`define FWD_M_M         2'b10
+`define FWD_M_W         2'b11
+
 `define B1_RS1          3'b000
 `define B1_E_M          3'b001
 `define B1_M_W          3'b010
