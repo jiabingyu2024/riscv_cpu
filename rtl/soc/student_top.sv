@@ -52,6 +52,26 @@ module student_top#(
     // 16KB = 2^12 * 32bit
     assign inst_addr = pc[13:2];
 
+    logic [P_SW_CNT-1:0]  virtual_sw_cpu_d1;
+    logic [P_SW_CNT-1:0]  virtual_sw_cpu_d2;
+    logic [P_KEY_CNT-1:0] virtual_key_cpu_d1;
+    logic [P_KEY_CNT-1:0] virtual_key_cpu_d2;
+
+    always_ff @(posedge w_cpu_clk) begin
+        if (w_clk_rst) begin
+            virtual_sw_cpu_d1  <= '0;
+            virtual_sw_cpu_d2  <= '0;
+            virtual_key_cpu_d1 <= '0;
+            virtual_key_cpu_d2 <= '0;
+        end else begin
+            virtual_sw_cpu_d1  <= virtual_sw;
+            virtual_sw_cpu_d2  <= virtual_sw_cpu_d1;
+            virtual_key_cpu_d1 <= virtual_key;
+            virtual_key_cpu_d2 <= virtual_key_cpu_d1;
+        end
+    end
+
+
 `ifdef CORE_NEW
     myCPU_core_new Core_cpu (
 `else
@@ -92,8 +112,8 @@ module student_top#(
         .perip_wen			(perip_wen),
         .perip_mask			(perip_mask),
         .perip_rdata		(perip_rdata),
-        .virtual_sw_input	(virtual_sw),
-        .virtual_key_input	(virtual_key),	
+        .virtual_sw_input   (virtual_sw_cpu_d2),
+        .virtual_key_input  (virtual_key_cpu_d2),
         .virtual_seg_output	(virtual_seg),
         .virtual_led_output (virtual_led)
     );
