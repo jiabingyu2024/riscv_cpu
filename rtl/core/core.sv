@@ -57,6 +57,7 @@ module core(
     logic [`DATA_BUS] rs2_data_d;
     logic [`RF_BUS]   rs2_addr_d;
     logic [`RF_BUS]   rd_addr_d;
+    logic [`PC_BUS]   pc_target_d;
 
     logic [`DATA_BUS] rs1_data_e;
     logic [`DATA_BUS] rs2_data_e;
@@ -76,6 +77,7 @@ module core(
     logic             load_unsigned_e;
     logic             is_branch_e;
     logic [`PC_BUS]   pc_e;
+    logic [`PC_BUS]   pc_target_e;
     logic [`PC_BUS]   pc_predict_e;
 
     logic [2:0]       b1_sel_e;
@@ -138,6 +140,7 @@ module core(
 
     assign irom_addr = pc_p;
     assign irom_ena  = !stall_p_f;
+    assign pc_target_d = pc_d + imm_d;
 
     stage_pc u_stage_pc (
         .i_clk       (clk),
@@ -274,6 +277,7 @@ module core(
         .i_load_unsigned (load_unsigned_d),
         .i_is_branch     (is_branch_d),
         .i_pc_d_e        (pc_d),
+        .i_pc_target     (pc_target_d),
         .i_pc_predict    (pc_predict_d),
         .o_rs1_data      (rs1_data_e),
         .o_rs2_data      (rs2_data_e),
@@ -293,6 +297,7 @@ module core(
         .o_load_unsigned (load_unsigned_e),
         .o_is_branch     (is_branch_e),
         .o_pc_d_e        (pc_e),
+        .o_pc_target     (pc_target_e),
         .o_pc_predict    (pc_predict_e)
     );
 
@@ -323,6 +328,7 @@ module core(
         .i_fwd_m_w       (wb_data_w),
         .i_fwd_m_m       (m1_m2_data),
         .i_pc_d_e        (pc_e),
+        .i_pc_target     (pc_target_e),
         .i_pc_predict    (pc_predict_e),
         .i_b1_sel        (b1_sel_e),
         .i_b2_sel        (b2_sel_e),

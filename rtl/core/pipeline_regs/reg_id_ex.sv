@@ -42,6 +42,7 @@ module reg_id_ex(
     // input logic                     i_is_jtype,
     // input logic                     i_is_lui,
     input logic [`PC_BUS]           i_pc_d_e,
+    input logic [`PC_BUS]           i_pc_target,
     input logic [`PC_BUS]           i_pc_predict,
 
 
@@ -71,6 +72,7 @@ module reg_id_ex(
     // output logic                    o_is_jtype,
     // output logic                    o_bcmp1_src,
     output logic [`PC_BUS]          o_pc_d_e,
+    output logic [`PC_BUS]          o_pc_target,
     output logic [`PC_BUS]          o_pc_predict
 );
 
@@ -94,6 +96,7 @@ module reg_id_ex(
             o_load_unsigned  <= 1'b0;
             o_is_branch      <= 1'b0;
             o_pc_d_e         <= '0;
+            o_pc_target      <= '0;
             o_pc_predict     <= '0;
         end else if (i_flush) begin
             o_rs1_data       <= '0;
@@ -114,6 +117,7 @@ module reg_id_ex(
             o_load_unsigned  <= 1'b0;
             o_is_branch      <= 1'b0;
             o_pc_d_e         <= '0;
+            o_pc_target      <= '0;
             o_pc_predict     <= '0;
         end else if (!i_stall) begin
             o_rs1_data       <= i_rs1_data;
@@ -134,6 +138,7 @@ module reg_id_ex(
             o_load_unsigned  <= i_load_unsigned;
             o_is_branch      <= i_is_branch;
             o_pc_d_e         <= i_pc_d_e;
+            o_pc_target      <= i_pc_target;
             o_pc_predict     <= i_pc_predict;
         end
     end

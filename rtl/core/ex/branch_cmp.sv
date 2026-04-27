@@ -16,6 +16,7 @@ module branch_cmp(
     input  logic  [2:0]                     i_func3,
 
     input  logic  [`PC_BUS]                 i_pc_d_e,
+    input  logic  [`PC_BUS]                 i_pc_target,
     input  logic  [`PC_BUS]                 i_pc_predict,
 
     input  logic  [`PC_BUS]                 i_t1_data,
@@ -36,10 +37,13 @@ module branch_cmp(
 
     logic        branch_taken;
     logic [`PC_BUS] branch_target;
+    logic [`PC_BUS] pc_plus4;
+    logic [`PC_BUS] right_pc;
 
     always_comb begin
         branch_taken  = 1'b0;
-        branch_target = i_t1_data + i_t2_data;
+        branch_target = i_pc_target;
+        pc_plus4      = i_pc_d_e + 32'd4;
 
         if (i_is_branch) begin
             unique case (i_func3)
@@ -58,11 +62,12 @@ module branch_cmp(
             branch_target = (i_t1_data + i_t2_data) & ~32'd1;
         end
 
+        right_pc        = branch_taken ? branch_target : pc_plus4;
         o_update_en     = i_is_branch || (i_inst_spec == `EX_JAL) || (i_inst_spec == `EX_JALR);
         o_update_taken  = branch_taken;
         o_update_pc     = i_pc_d_e;
-        o_update_target = branch_taken ? branch_target : (i_pc_d_e + 32'd4);
-        o_right_pc      = branch_taken ? branch_target : (i_pc_d_e + 32'd4);
-        o_error         = o_update_en && (o_right_pc != i_pc_predict);
+        o_update_target = right_pc;
+        o_right_pc      = right_pc;
+        o_error         = o_update_en && (right_pc != i_pc_predict);
     end
 endmodule
