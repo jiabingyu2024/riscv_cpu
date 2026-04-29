@@ -136,14 +136,17 @@ module core(
     logic             flush_d_e;
     logic             flush_e_m;
     logic             flush_m_w;
+    logic             pc_en;
 
     assign irom_addr = pc_p;
     assign irom_ena  = !stall_p_f;
+    assign pc_en     = !stall_p_f || flush_p_f;
     assign pc_target_d = pc_d + imm_d;
 
     stage_pc u_stage_pc (
         .i_clk       (clk),
         .i_rst_n     (rst_n),
+        .i_pc_en     (pc_en),
         .i_pc_next   (pc_next_hz),
         .o_pc_cur    (pc_p)
     );

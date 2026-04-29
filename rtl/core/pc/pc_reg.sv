@@ -11,6 +11,7 @@
 module pc_reg(
     input  logic                     i_clk,
     input  logic                     i_rst_n,
+    input  logic                     i_en,
     input  logic   [`PC_BUS]         i_pc_next,    
     output logic   [`PC_BUS]         o_pc_cur         // 输出当前指令地址
 );
@@ -18,7 +19,7 @@ module pc_reg(
     always_ff @(posedge i_clk or negedge i_rst_n) begin
         if (!i_rst_n) begin
             o_pc_cur <= 32'h8000_0000;
-        end else begin
+        end else if (i_en) begin
             o_pc_cur <= i_pc_next;
         end
     end

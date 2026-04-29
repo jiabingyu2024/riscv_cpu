@@ -11,6 +11,7 @@
 module stage_pc(
     input  logic                    i_clk,
     input  logic                    i_rst_n,
+    input  logic                    i_pc_en,
     input  logic  [`PC_BUS]         i_pc_next,
 
 
@@ -20,6 +21,7 @@ module stage_pc(
     pc_reg u_pc_reg (
         .i_clk     (i_clk),
         .i_rst_n   (i_rst_n),
+        .i_en      (i_pc_en),
         .i_pc_next (i_pc_next),
         .o_pc_cur  (o_pc_cur)
     );

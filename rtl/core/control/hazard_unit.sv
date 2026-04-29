@@ -91,8 +91,6 @@ module hazard_unit(
 
         if (i_error) begin
             o_pc_next = i_right_pc;
-        end else if (load_use_hazard) begin
-            o_pc_next = i_pc_cur;
         end else begin
             o_pc_next = o_pc_predict;
         end

@@ -66,7 +66,7 @@ module branch_cmp(
         o_update_en     = i_is_branch || (i_inst_spec == `EX_JAL) || (i_inst_spec == `EX_JALR);
         o_update_taken  = branch_taken;
         o_update_pc     = i_pc_d_e;
-        o_update_target = right_pc;
+        o_update_target = branch_target;
         o_right_pc      = right_pc;
         o_error         = o_update_en && (right_pc != i_pc_predict);
     end
