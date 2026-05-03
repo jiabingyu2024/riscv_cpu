@@ -3,10 +3,9 @@
 
 #include "Vtb_src_top.h"
 #include "Vtb_src_top___024root.h"
+#include "sim_common.hpp"
 
-#include <cctype>
 #include <cstdint>
-#include <cstdlib>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -20,6 +19,8 @@ struct Options {
     std::string wave_path;
     uint64_t max_cpu_cycles = 1000000;
     uint64_t stable_cpu_cycles = 64;
+    uint32_t cpu_mhz = 200;
+    uint32_t cnt_mhz = 50;
     uint32_t run_ms = 0;
     bool wave = false;
     bool fast_counter = false;
@@ -31,38 +32,6 @@ struct Meta {
     std::string test_case;
 };
 
-struct PerfStats {
-    uint64_t cycles = 0;
-    uint64_t instret = 0;
-    uint64_t branches = 0;
-    uint64_t branch_miss = 0;
-};
-
-bool starts_with(const std::string& text, const std::string& prefix) {
-    return text.rfind(prefix, 0) == 0;
-}
-
-uint64_t parse_u64(const std::string& text, uint64_t fallback = 0) {
-    if (text.empty()) return fallback;
-    char* end = nullptr;
-    unsigned long long value = std::strtoull(text.c_str(), &end, 0);
-    if (end == text.c_str()) return fallback;
-    return static_cast<uint64_t>(value);
-}
-
-std::string json_string_value(const std::string& text, const std::string& key) {
-    const std::string needle = "\"" + key + "\"";
-    size_t pos = text.find(needle);
-    if (pos == std::string::npos) return "";
-    pos = text.find(':', pos + needle.size());
-    if (pos == std::string::npos) return "";
-    pos = text.find('"', pos + 1);
-    if (pos == std::string::npos) return "";
-    size_t end = text.find('"', pos + 1);
-    if (end == std::string::npos) return "";
-    return text.substr(pos + 1, end - pos - 1);
-}
-
 Meta load_meta(const std::string& path) {
     Meta meta;
     if (path.empty()) return meta;
@@ -71,8 +40,8 @@ Meta load_meta(const std::string& path) {
     std::ostringstream ss;
     ss << in.rdbuf();
     std::string text = ss.str();
-    meta.suite = json_string_value(text, "suite");
-    meta.test_case = json_string_value(text, "case");
+    meta.suite = sim_common::json_string_value(text, "suite");
+    meta.test_case = sim_common::json_string_value(text, "case");
     return meta;
 }
 
@@ -80,53 +49,36 @@ Options parse_args(int argc, char** argv) {
     Options opt;
     for (int idx = 1; idx < argc; ++idx) {
         std::string arg = argv[idx];
-        if (starts_with(arg, "+meta=")) {
+        if (sim_common::starts_with(arg, "+meta=")) {
             opt.meta_path = arg.substr(6);
-        } else if (starts_with(arg, "+max-cycles=")) {
-            opt.max_cpu_cycles = parse_u64(arg.substr(12), opt.max_cpu_cycles);
-        } else if (starts_with(arg, "+stable-cycles=")) {
-            opt.stable_cpu_cycles = parse_u64(arg.substr(15), opt.stable_cpu_cycles);
-        } else if (starts_with(arg, "+run-ms=")) {
-            opt.run_ms = static_cast<uint32_t>(parse_u64(arg.substr(8), opt.run_ms));
-        } else if (starts_with(arg, "+wave=")) {
-            opt.wave = parse_u64(arg.substr(6), 0) != 0;
-        } else if (starts_with(arg, "+wave-file=")) {
+        } else if (sim_common::starts_with(arg, "+max-cycles=")) {
+            opt.max_cpu_cycles = sim_common::parse_u64(arg.substr(12), opt.max_cpu_cycles);
+        } else if (sim_common::starts_with(arg, "+stable-cycles=")) {
+            opt.stable_cpu_cycles = sim_common::parse_u64(arg.substr(15), opt.stable_cpu_cycles);
+        } else if (sim_common::starts_with(arg, "+cpu-mhz=")) {
+            opt.cpu_mhz = sim_common::parse_u32(arg.substr(9), opt.cpu_mhz);
+        } else if (sim_common::starts_with(arg, "+cnt-mhz=")) {
+            opt.cnt_mhz = sim_common::parse_u32(arg.substr(9), opt.cnt_mhz);
+        } else if (sim_common::starts_with(arg, "+run-ms=")) {
+            opt.run_ms = static_cast<uint32_t>(sim_common::parse_u64(arg.substr(8), opt.run_ms));
+        } else if (sim_common::starts_with(arg, "+wave=")) {
+            opt.wave = sim_common::parse_u64(arg.substr(6), 0) != 0;
+        } else if (sim_common::starts_with(arg, "+wave-file=")) {
             opt.wave_path = arg.substr(11);
-        } else if (starts_with(arg, "+fast-counter=")) {
-            opt.fast_counter = parse_u64(arg.substr(14), 0) != 0;
-        } else if (starts_with(arg, "+strict-sim-limit=")) {
-            opt.strict_sim_limit = parse_u64(arg.substr(18), 0) != 0;
+        } else if (sim_common::starts_with(arg, "+fast-counter=")) {
+            opt.fast_counter = sim_common::parse_u64(arg.substr(14), 0) != 0;
+        } else if (sim_common::starts_with(arg, "+strict-sim-limit=")) {
+            opt.strict_sim_limit = sim_common::parse_u64(arg.substr(18), 0) != 0;
         }
+    }
+    if (opt.cpu_mhz == 0 || opt.cnt_mhz == 0) {
+        std::cerr << "error: +cpu-mhz and +cnt-mhz must be nonzero\n";
+        std::exit(2);
     }
     if (opt.wave && opt.wave_path.empty()) {
         opt.wave_path = "src_wave.vcd";
     }
     return opt;
-}
-
-double ratio(uint64_t numerator, uint64_t denominator) {
-    if (denominator == 0) return 0.0;
-    return static_cast<double>(numerator) / static_cast<double>(denominator);
-}
-
-uint64_t branch_hit(const PerfStats& stats) {
-    return stats.branches >= stats.branch_miss ? stats.branches - stats.branch_miss : 0;
-}
-
-double branch_hit_rate(const PerfStats& stats) {
-    return stats.branches ? 100.0 * ratio(branch_hit(stats), stats.branches) : 0.0;
-}
-
-double cpi(const PerfStats& stats) {
-    return ratio(stats.cycles, stats.instret);
-}
-
-double ipc(const PerfStats& stats) {
-    return ratio(stats.instret, stats.cycles);
-}
-
-double branch_mpki(const PerfStats& stats) {
-    return stats.instret ? 1000.0 * ratio(stats.branch_miss, stats.instret) : 0.0;
 }
 
 bool core_inst_valid(Vtb_src_top___024root* rootp) {
@@ -155,28 +107,6 @@ uint32_t counter_ms(Vtb_src_top___024root* rootp) {
     return rootp->tb_src_top__DOT__u_dut__DOT__bridge_inst__DOT__cnt_rdata;
 }
 
-void print_perf_block(std::ostream& out, const PerfStats& stats, const std::string& label) {
-    out << "  " << label
-        << ": cycles=" << stats.cycles
-        << " instret=" << stats.instret
-        << " cpi=" << cpi(stats)
-        << " ipc=" << ipc(stats) << "\n"
-        << "    branch: total=" << stats.branches
-        << " hit=" << branch_hit(stats)
-        << " miss=" << stats.branch_miss
-        << " hit_rate=" << branch_hit_rate(stats) << "%"
-        << " mpki=" << branch_mpki(stats) << "\n";
-}
-
-void print_perf_summary(std::ostream& out, const PerfStats& stats, const std::string& label) {
-    out << "  " << label
-        << ": cycles=" << stats.cycles
-        << " instret=" << stats.instret
-        << " cpi=" << cpi(stats)
-        << " ipc=" << ipc(stats)
-        << " branch_hit=" << branch_hit_rate(stats) << "%\n";
-}
-
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -193,9 +123,9 @@ int main(int argc, char** argv) {
         trace->open(opt.wave_path.c_str());
     }
 
-    uint64_t sim_ticks = 0;
-    PerfStats total_stats;
-    PerfStats work_stats;
+    uint64_t sim_time = 0;
+    sim_common::PerfStats total_stats;
+    sim_common::PerfStats work_stats;
     uint64_t stable_loops = 0;
     uint64_t counter_stop_cpu_cycle = 0;
     uint32_t last_pc = 0;
@@ -206,8 +136,7 @@ int main(int argc, char** argv) {
 
     auto eval_dump = [&]() {
         top->eval();
-        if (trace) trace->dump(sim_ticks);
-        ++sim_ticks;
+        if (trace) trace->dump(sim_time);
     };
 
     auto accelerate_counter = [&]() {
@@ -224,77 +153,96 @@ int main(int argc, char** argv) {
     top->i_virtual_sw = 0;
     eval_dump();
 
-    for (int idx = 0; idx < 32; ++idx) {
-        if ((idx % 2) == 0) {
-            top->i_clk_50mhz = !top->i_clk_50mhz;
+    uint64_t cpu_half_ps = 1000000ull / (2ull * opt.cpu_mhz);
+    uint64_t cnt_half_ps = 1000000ull / (2ull * opt.cnt_mhz);
+    if (cpu_half_ps == 0) cpu_half_ps = 1;
+    if (cnt_half_ps == 0) cnt_half_ps = 1;
+    uint64_t next_cpu_edge = cpu_half_ps;
+    uint64_t next_cnt_edge = cnt_half_ps;
+
+    for (int idx = 0; idx < 16; ++idx) {
+        sim_time = next_cpu_edge < next_cnt_edge ? next_cpu_edge : next_cnt_edge;
+        if (sim_time == next_cpu_edge) {
+            top->i_cpu_clk = !top->i_cpu_clk;
+            next_cpu_edge += cpu_half_ps;
         }
-        top->i_cpu_clk = !top->i_cpu_clk;
+        if (sim_time == next_cnt_edge) {
+            top->i_clk_50mhz = !top->i_clk_50mhz;
+            next_cnt_edge += cnt_half_ps;
+        }
         eval_dump();
     }
     top->i_rst = 0;
 
     while (!Verilated::gotFinish() && total_stats.cycles < opt.max_cpu_cycles) {
-        for (int substep = 0; substep < 4; ++substep) {
-            if ((substep == 0 || substep == 2) && top->i_clk_50mhz == 0) {
-                accelerate_counter();
-            }
-            if (substep == 0 || substep == 2) {
-                top->i_clk_50mhz = !top->i_clk_50mhz;
-            }
+        sim_time = next_cpu_edge < next_cnt_edge ? next_cpu_edge : next_cnt_edge;
+        bool cpu_edge = (sim_time == next_cpu_edge);
+        bool cnt_edge = (sim_time == next_cnt_edge);
+        bool cpu_rise = cpu_edge && !top->i_cpu_clk;
+        bool cnt_rise = cnt_edge && !top->i_clk_50mhz;
+
+        if (cnt_rise) {
+            accelerate_counter();
+        }
+        if (cpu_edge) {
             top->i_cpu_clk = !top->i_cpu_clk;
-            eval_dump();
+            next_cpu_edge += cpu_half_ps;
+        }
+        if (cnt_edge) {
+            top->i_clk_50mhz = !top->i_clk_50mhz;
+            next_cnt_edge += cnt_half_ps;
+        }
+        eval_dump();
 
-            if (substep == 0 || substep == 2) {
-                bool counter_active = counter_start(top->rootp);
-                uint32_t pc = core_pc_e(top->rootp);
-                bool inst_valid = core_inst_valid(top->rootp);
+        if (cpu_rise) {
+            bool counter_active = counter_start(top->rootp);
+            uint32_t pc = core_pc_e(top->rootp);
+            bool inst_valid = core_inst_valid(top->rootp);
 
-                ++total_stats.cycles;
+            ++total_stats.cycles;
+            if (inst_valid) {
+                ++total_stats.instret;
+            }
+            if (core_branch_update(top->rootp)) {
+                ++total_stats.branches;
+                if (core_branch_miss(top->rootp)) ++total_stats.branch_miss;
+            }
+
+            if (counter_active) {
+                ++work_stats.cycles;
                 if (inst_valid) {
-                    ++total_stats.instret;
+                    ++work_stats.instret;
                 }
                 if (core_branch_update(top->rootp)) {
-                    ++total_stats.branches;
-                    if (core_branch_miss(top->rootp)) ++total_stats.branch_miss;
+                    ++work_stats.branches;
+                    if (core_branch_miss(top->rootp)) ++work_stats.branch_miss;
                 }
-
-                if (counter_active) {
-                    ++work_stats.cycles;
-                    if (inst_valid) {
-                        ++work_stats.instret;
-                    }
-                    if (core_branch_update(top->rootp)) {
-                        ++work_stats.branches;
-                        if (core_branch_miss(top->rootp)) ++work_stats.branch_miss;
-                    }
-                }
-
-                if (counter_active) {
-                    counter_started = true;
-                }
-                if (last_counter_start && !counter_active) {
-                    counter_stopped = true;
-                    counter_stop_cpu_cycle = total_stats.cycles;
-                }
-                last_counter_start = counter_active;
-
-                uint32_t cnt_ms = counter_ms(top->rootp);
-                if (counter_started && opt.run_ms != 0 && cnt_ms >= opt.run_ms) {
-                    run_ms_reached = true;
-                }
-
-                if (pc == last_pc) {
-                    ++stable_loops;
-                } else {
-                    stable_loops = 0;
-                    last_pc = pc;
-                }
-
             }
-        }
 
-        if (run_ms_reached || (counter_stopped && stable_loops >= opt.stable_cpu_cycles)) {
-            break;
+            if (counter_active) {
+                counter_started = true;
+            }
+            if (last_counter_start && !counter_active) {
+                counter_stopped = true;
+                counter_stop_cpu_cycle = total_stats.cycles;
+            }
+            last_counter_start = counter_active;
+
+            uint32_t cnt_ms = counter_ms(top->rootp);
+            if (counter_started && opt.run_ms != 0 && cnt_ms >= opt.run_ms) {
+                run_ms_reached = true;
+            }
+
+            if (pc == last_pc) {
+                ++stable_loops;
+            } else {
+                stable_loops = 0;
+                last_pc = pc;
+            }
+
+            if (run_ms_reached || (counter_stopped && stable_loops >= opt.stable_cpu_cycles)) {
+                break;
+            }
         }
     }
 
@@ -328,14 +276,15 @@ int main(int argc, char** argv) {
               << " target_ms=" << opt.run_ms
               << " scale=" << (opt.fast_counter ? "fast" : "real")
               << " strict_limit=" << (opt.strict_sim_limit ? "yes" : "no") << "\n";
+    std::cout << "  clocks: cpu=" << opt.cpu_mhz << "MHz cnt=" << opt.cnt_mhz << "MHz\n";
     if (counter_stopped) {
         std::cout << "  stop: cycle=" << counter_stop_cpu_cycle << "\n";
     }
     if (work_stats.instret != 0) {
-        print_perf_block(std::cout, work_stats, "work");
-        print_perf_summary(std::cout, total_stats, "total");
+        sim_common::print_perf_block(std::cout, work_stats, "work");
+        sim_common::print_perf_summary(std::cout, total_stats, "total");
     } else {
-        print_perf_block(std::cout, total_stats, "total");
+        sim_common::print_perf_block(std::cout, total_stats, "total");
         std::cout << "  work: no valid sample\n";
     }
 

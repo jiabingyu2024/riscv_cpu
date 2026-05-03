@@ -1,7 +1,6 @@
 SHELL := /bin/bash
 
-SUITE ?= rv32ui
-ISA ?=
+TEST ?= rv32ui
 WAVE ?= 0
 MAX_CYCLES ?= 100000
 SRC_TEST_MAX_CYCLES ?= 615000000
@@ -11,16 +10,16 @@ CNT_MHZ ?= 50
 FAST_COUNTER ?= 0
 RUN_MS ?= 0
 STRICT_SIM_LIMIT ?= 0
-CORE_VARIANT ?= old
 
 BUILD_DIR := build
 SCRIPT := scripts/build_tests.py
-SIM_DIR := $(BUILD_DIR)/verilator
-SIM_BIN := $(SIM_DIR)/Vtb_rv32ui_top
-SRC_TEST_SIM_DIR := $(BUILD_DIR)/verilator_src_test
-SRC_TEST_SIM_BIN := $(SRC_TEST_SIM_DIR)/Vtb_rv32ui_top
-SRC_SIM_DIR := $(BUILD_DIR)/verilator_src
-SRC_SIM_BIN := $(SRC_SIM_DIR)/Vtb_src_top
+
+ISA_SIM_DIR := $(BUILD_DIR)/verilator/isa
+ISA_SIM_BIN := $(ISA_SIM_DIR)/Vtb_rv32ui_top
+COE_CORRECT_SIM_DIR := $(BUILD_DIR)/verilator/coe_correct
+COE_CORRECT_SIM_BIN := $(COE_CORRECT_SIM_DIR)/Vtb_rv32ui_top
+COE_PERF_SIM_DIR := $(BUILD_DIR)/verilator/coe_perf
+COE_PERF_SIM_BIN := $(COE_PERF_SIM_DIR)/Vtb_src_top
 
 RTL_INC := rtl/include
 SOC_SRCS := \
@@ -33,7 +32,7 @@ SOC_SRCS := \
 	rtl/soc/display_seg.sv \
 	rtl/soc/seg7.sv
 
-CORE_OLD_SRCS := \
+CORE_SRCS := \
 	rtl/core/myCPU.sv \
 	rtl/core/core.sv \
 	rtl/core/pc/stage_pc.sv \
@@ -58,148 +57,153 @@ CORE_OLD_SRCS := \
 	rtl/core/pipeline_regs/reg_m1_m2.sv \
 	rtl/core/pipeline_regs/reg_m2_wb.sv
 
-CORE_NEW_SRCS := \
-	rtl/core_new/myCPU_core_new.sv \
-	rtl/core_new/core_new.sv \
-	rtl/core_new/frontend/pc_stage.sv \
-	rtl/core_new/frontend/fetch_stage.sv \
-	rtl/core_new/frontend/bpu_top.sv \
-	rtl/core_new/frontend/redirect_ctrl.sv \
-	rtl/core_new/decode/decode_stage.sv \
-	rtl/core_new/decode/decoder.sv \
-	rtl/core_new/decode/imm_gen.sv \
-	rtl/core_new/decode/regfile.sv \
-	rtl/core_new/execute/alu.sv \
-	rtl/core_new/execute/branch_unit.sv \
-	rtl/core_new/execute/forward_ctrl.sv \
-	rtl/core_new/execute/execute_stage.sv \
-	rtl/core_new/mem/mem1_stage.sv \
-	rtl/core_new/mem/mem2_stage.sv \
-	rtl/core_new/mem/load_data_align.sv \
-	rtl/core_new/wb/wb_stage.sv \
-	rtl/core_new/control/hazard_ctrl.sv \
-	rtl/core_new/control/pipeline_ctrl.sv \
-	rtl/core_new/pipe/pipe_pc_if.sv \
-	rtl/core_new/pipe/pipe_if_id.sv \
-	rtl/core_new/pipe/pipe_id_ex.sv \
-	rtl/core_new/pipe/pipe_ex_m1.sv \
-	rtl/core_new/pipe/pipe_m1_m2.sv \
-	rtl/core_new/pipe/pipe_m2_wb.sv
-
-ifeq ($(CORE_VARIANT),new)
-CORE_DEFINES := -DCORE_NEW
-CORE_SRCS := $(CORE_NEW_SRCS)
-else
-CORE_DEFINES :=
-CORE_SRCS := $(CORE_OLD_SRCS)
-endif
-
-RTL_SRCS := \
+ISA_RTL_SRCS := \
 	tb/tb_rv32ui_top.sv \
 	$(CORE_SRCS) \
 	$(SOC_SRCS)
 
-SRC_RTL_SRCS := \
-	tb/tb_src_top.sv \
-	$(CORE_SRCS) \
-	$(SOC_SRCS)
-
-SRC_TEST_RTL_SRCS := \
+COE_CORRECT_RTL_SRCS := \
 	tb/tb_src_test_top.sv \
 	$(CORE_SRCS) \
 	$(SOC_SRCS)
 
-.PHONY: build sim sim-src sim-src-test run run-one run-all run-src run-correctness clean list list-src
+COE_PERF_RTL_SRCS := \
+	tb/tb_src_top.sv \
+	$(CORE_SRCS) \
+	$(SOC_SRCS)
+
+.PHONY: build sim sim-isa sim-coe-correct sim-coe-perf run run-isa-one run-isa-all run-coe-correct run-coe-perf run-perf-all clean list list-src help
+
+help:
+	@echo "Examples:"
+	@echo "  make build TEST=rv32ui"
+	@echo "  make build TEST=rv32ui/addi"
+	@echo "  make run TEST=rv32ui/addi"
+	@echo "  make run TEST=rv32ui"
+	@echo "  make run TEST=src_test"
+	@echo "  make run TEST=src0"
+	@echo "  make run TEST=perf"
 
 build:
-	python3 $(SCRIPT) --suite $(SUITE) $(if $(ISA),--isa $(ISA),)
+	@set -e; \
+	if [[ "$(TEST)" == "rv32ui" ]]; then \
+		python3 $(SCRIPT) --suite rv32ui; \
+	elif [[ "$(TEST)" == rv32ui/* ]]; then \
+		test_name="$(TEST)"; \
+		isa="$${test_name#rv32ui/}"; \
+		python3 $(SCRIPT) --suite rv32ui --isa "$$isa"; \
+	elif [[ "$(TEST)" == "src_test" || "$(TEST)" == "src0" || "$(TEST)" == "src1" || "$(TEST)" == "src2" ]]; then \
+		python3 $(SCRIPT) --suite "$(TEST)"; \
+	elif [[ "$(TEST)" == "perf" ]]; then \
+		python3 $(SCRIPT) --suite src0; \
+		python3 $(SCRIPT) --suite src1; \
+		python3 $(SCRIPT) --suite src2; \
+	else \
+		echo "unknown TEST=$(TEST)"; exit 2; \
+	fi
 
 sim:
+	@set -e; \
+	if [[ "$(TEST)" == "rv32ui" || "$(TEST)" == rv32ui/* ]]; then \
+		$(MAKE) sim-isa; \
+	elif [[ "$(TEST)" == "src_test" ]]; then \
+		$(MAKE) sim-coe-correct; \
+	elif [[ "$(TEST)" == "src0" || "$(TEST)" == "src1" || "$(TEST)" == "src2" || "$(TEST)" == "perf" ]]; then \
+		$(MAKE) sim-coe-perf; \
+	else \
+		echo "unknown TEST=$(TEST)"; exit 2; \
+	fi
+
+sim-isa:
 	OBJCACHE= verilator -Wall -Wno-fatal --timing --trace --public-flat-rw \
 		--top-module tb_rv32ui_top \
-		$(CORE_DEFINES) \
 		-I$(RTL_INC) \
-		--Mdir $(SIM_DIR) \
-		--cc $(RTL_SRCS) \
+		-Itb \
+		--Mdir $(ISA_SIM_DIR) \
+		--cc $(ISA_RTL_SRCS) \
 		--exe tb/sim_main.cpp \
 		--build
 
-sim-src:
+sim-coe-correct:
+	OBJCACHE= verilator -Wall -Wno-fatal --timing --trace --public-flat-rw \
+		--top-module tb_rv32ui_top \
+		-I$(RTL_INC) \
+		-Itb \
+		--Mdir $(COE_CORRECT_SIM_DIR) \
+		--cc $(COE_CORRECT_RTL_SRCS) \
+		--exe tb/sim_main.cpp \
+		--build
+
+sim-coe-perf:
 	OBJCACHE= verilator -Wall -Wno-fatal --timing --trace --public-flat-rw \
 		--top-module tb_src_top \
-		$(CORE_DEFINES) \
 		-I$(RTL_INC) \
-		--Mdir $(SRC_SIM_DIR) \
-		--cc $(SRC_RTL_SRCS) \
+		-Itb \
+		--Mdir $(COE_PERF_SIM_DIR) \
+		--cc $(COE_PERF_RTL_SRCS) \
 		--exe tb/sim_src.cpp \
 		--build
 
-sim-src-test:
-	OBJCACHE= verilator -Wall -Wno-fatal --timing --trace --public-flat-rw \
-		--top-module tb_rv32ui_top \
-		$(CORE_DEFINES) \
-		-I$(RTL_INC) \
-		--Mdir $(SRC_TEST_SIM_DIR) \
-		--cc $(SRC_TEST_RTL_SRCS) \
-		--exe tb/sim_main.cpp \
-		--build
-
-run: build
+run: build sim
 	@set -e; \
-	if [[ "$(SUITE)" == "rv32ui" && -z "$(ISA)" ]]; then \
-		$(MAKE) sim; \
-		$(MAKE) run-all SUITE=$(SUITE) WAVE=$(WAVE) MAX_CYCLES=$(MAX_CYCLES); \
-	elif [[ "$(SUITE)" == "rv32ui" ]]; then \
-		$(MAKE) sim; \
-		$(MAKE) run-one SUITE=$(SUITE) ISA=$(ISA) WAVE=$(WAVE) MAX_CYCLES=$(MAX_CYCLES); \
-	elif [[ "$(SUITE)" == "src_test" ]]; then \
-		$(MAKE) sim-src-test; \
-		$(MAKE) run-correctness SUITE=$(SUITE) WAVE=$(WAVE) MAX_CYCLES=$(SRC_TEST_MAX_CYCLES); \
+	if [[ "$(TEST)" == "rv32ui" ]]; then \
+		$(MAKE) run-isa-all; \
+	elif [[ "$(TEST)" == rv32ui/* ]]; then \
+		$(MAKE) run-isa-one TEST="$(TEST)"; \
+	elif [[ "$(TEST)" == "src_test" ]]; then \
+		$(MAKE) run-coe-correct; \
+	elif [[ "$(TEST)" == "src0" || "$(TEST)" == "src1" || "$(TEST)" == "src2" ]]; then \
+		$(MAKE) run-coe-perf TEST="$(TEST)"; \
+	elif [[ "$(TEST)" == "perf" ]]; then \
+		$(MAKE) run-perf-all; \
 	else \
-		$(MAKE) sim-src; \
-		$(MAKE) run-src SUITE=$(SUITE) WAVE=$(WAVE) SRC_MAX_CYCLES=$(SRC_MAX_CYCLES) FAST_COUNTER=$(FAST_COUNTER) RUN_MS=$(RUN_MS) STRICT_SIM_LIMIT=$(STRICT_SIM_LIMIT); \
+		echo "unknown TEST=$(TEST)"; exit 2; \
 	fi
 
-run-one:
+run-isa-one:
 	@set -e -o pipefail; \
-	if [[ "$(SUITE)" == "rv32ui" ]]; then \
-		if [[ -z "$(ISA)" ]]; then echo "ISA is required for run-one with SUITE=rv32ui"; exit 2; fi; \
-		CASE_DIR="$(BUILD_DIR)/rv32ui/$(ISA)"; \
-	else \
-		CASE_DIR="$(BUILD_DIR)/$(SUITE)"; \
-	fi; \
+	test_name="$(TEST)"; \
+	isa="$${test_name#rv32ui/}"; \
+	CASE_DIR="$(BUILD_DIR)/rv32ui/$$isa"; \
+	if [[ ! -f "$$CASE_DIR/irom.hex" ]]; then echo "missing $$CASE_DIR/irom.hex; run make build TEST=$(TEST) first"; exit 2; fi; \
 	ARGS="+irom=$$CASE_DIR/irom.hex +meta=$$CASE_DIR/meta.json +max-cycles=$(MAX_CYCLES) +cpu-mhz=$(CPU_MHZ) +cnt-mhz=$(CNT_MHZ) +wave=$(WAVE) +wave-file=$$CASE_DIR/wave.vcd"; \
-	if [[ -f "$$CASE_DIR/dram.hex" ]]; then ARGS="$$ARGS +dram=$$CASE_DIR/dram.hex"; fi; \
 	mkdir -p "$$CASE_DIR"; \
-	if [[ "$(SUITE)" == "src_test" ]]; then BIN="$(SRC_TEST_SIM_BIN)"; else BIN="$(SIM_BIN)"; fi; \
-	$$BIN $$ARGS | tee "$$CASE_DIR/run.log"
+	$(ISA_SIM_BIN) $$ARGS | tee "$$CASE_DIR/run.log"
 
-run-src:
-	@set -e -o pipefail; \
-	CASE_DIR="$(BUILD_DIR)/perf/$(SUITE)"; \
-	if [[ ! -f "$$CASE_DIR/irom.hex" ]]; then echo "missing $$CASE_DIR/irom.hex; run make build SUITE=$(SUITE) first"; exit 2; fi; \
-	ARGS="+irom=$$CASE_DIR/irom.hex +dram=$$CASE_DIR/dram.hex +meta=$$CASE_DIR/meta.json +max-cycles=$(SRC_MAX_CYCLES) +run-ms=$(RUN_MS) +fast-counter=$(FAST_COUNTER) +strict-sim-limit=$(STRICT_SIM_LIMIT) +wave=$(WAVE) +wave-file=$$CASE_DIR/wave.vcd"; \
-	mkdir -p "$$CASE_DIR"; \
-	$(SRC_SIM_BIN) $$ARGS | tee "$$CASE_DIR/run.log"
-
-run-correctness:
-	@set -e -o pipefail; \
-	CASE_DIR="$(BUILD_DIR)/$(SUITE)"; \
-	if [[ ! -f "$$CASE_DIR/irom.hex" ]]; then echo "missing $$CASE_DIR/irom.hex; run make build SUITE=$(SUITE) first"; exit 2; fi; \
-	ARGS="+irom=$$CASE_DIR/irom.hex +meta=$$CASE_DIR/meta.json +max-cycles=$(MAX_CYCLES) +cpu-mhz=$(CPU_MHZ) +cnt-mhz=$(CNT_MHZ) +wave=$(WAVE) +wave-file=$$CASE_DIR/wave.vcd"; \
-	if [[ -f "$$CASE_DIR/dram.hex" ]]; then ARGS="$$ARGS +dram=$$CASE_DIR/dram.hex"; fi; \
-	mkdir -p "$$CASE_DIR"; \
-	if [[ "$(SUITE)" == "src_test" ]]; then BIN="$(SRC_TEST_SIM_BIN)"; else BIN="$(SIM_BIN)"; fi; \
-	$$BIN $$ARGS | tee "$$CASE_DIR/run.log"
-
-run-all:
+run-isa-all:
 	@set -e -o pipefail; \
 	status=0; \
 	for meta in $(BUILD_DIR)/rv32ui/*/meta.json; do \
 		case_dir=$$(dirname "$$meta"); \
 		case_name=$$(basename "$$case_dir"); \
 		echo "==> rv32ui/$$case_name"; \
-		if ! $(SIM_BIN) +irom=$$case_dir/irom.hex +meta=$$meta +max-cycles=$(MAX_CYCLES) +cpu-mhz=$(CPU_MHZ) +cnt-mhz=$(CNT_MHZ) +wave=0 | tee "$$case_dir/run.log"; then \
+		if ! $(ISA_SIM_BIN) +irom=$$case_dir/irom.hex +meta=$$meta +max-cycles=$(MAX_CYCLES) +cpu-mhz=$(CPU_MHZ) +cnt-mhz=$(CNT_MHZ) +wave=0 | tee "$$case_dir/run.log"; then \
+			status=1; \
+		fi; \
+	done; \
+	exit $$status
+
+run-coe-correct:
+	@set -e -o pipefail; \
+	CASE_DIR="$(BUILD_DIR)/src_test"; \
+	if [[ ! -f "$$CASE_DIR/irom.hex" ]]; then echo "missing $$CASE_DIR/irom.hex; run make build TEST=src_test first"; exit 2; fi; \
+	ARGS="+irom=$$CASE_DIR/irom.hex +dram=$$CASE_DIR/dram.hex +meta=$$CASE_DIR/meta.json +max-cycles=$(SRC_TEST_MAX_CYCLES) +cpu-mhz=$(CPU_MHZ) +cnt-mhz=$(CNT_MHZ) +wave=$(WAVE) +wave-file=$$CASE_DIR/wave.vcd"; \
+	mkdir -p "$$CASE_DIR"; \
+	$(COE_CORRECT_SIM_BIN) $$ARGS | tee "$$CASE_DIR/run.log"
+
+run-coe-perf:
+	@set -e -o pipefail; \
+	CASE_DIR="$(BUILD_DIR)/perf/$(TEST)"; \
+	if [[ ! -f "$$CASE_DIR/irom.hex" ]]; then echo "missing $$CASE_DIR/irom.hex; run make build TEST=$(TEST) first"; exit 2; fi; \
+	ARGS="+irom=$$CASE_DIR/irom.hex +dram=$$CASE_DIR/dram.hex +meta=$$CASE_DIR/meta.json +max-cycles=$(SRC_MAX_CYCLES) +cpu-mhz=$(CPU_MHZ) +cnt-mhz=$(CNT_MHZ) +run-ms=$(RUN_MS) +fast-counter=$(FAST_COUNTER) +strict-sim-limit=$(STRICT_SIM_LIMIT) +wave=$(WAVE) +wave-file=$$CASE_DIR/wave.vcd"; \
+	mkdir -p "$$CASE_DIR"; \
+	$(COE_PERF_SIM_BIN) $$ARGS | tee "$$CASE_DIR/run.log"
+
+run-perf-all:
+	@set -e; \
+	status=0; \
+	for suite in src0 src1 src2; do \
+		if ! $(MAKE) run-coe-perf TEST=$$suite; then \
 			status=1; \
 		fi; \
 	done; \
@@ -209,7 +213,7 @@ list:
 	@find tests/rv32ui -maxdepth 1 -type f -name 'rv32ui-p-*' ! -name '*.dump' -printf '%f\n' | sed 's/^rv32ui-p-//' | sort
 
 list-src:
-	@find tests -maxdepth 1 -type d -name 'src*' -printf '%f\n' | sort
+	@find tests -maxdepth 1 -type d \( -name 'src_test' -o -name 'src[0-9]*' \) -printf '%f\n' | sort
 
 clean:
 	rm -rf $(BUILD_DIR)

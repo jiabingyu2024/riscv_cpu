@@ -3,10 +3,9 @@
 
 #include "Vtb_rv32ui_top.h"
 #include "Vtb_rv32ui_top___024root.h"
+#include "sim_common.hpp"
 
-#include <cctype>
 #include <cstdint>
-#include <cstdlib>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -49,13 +48,6 @@ struct Meta {
     std::string test_case;
 };
 
-struct PerfStats {
-    uint64_t cycles = 0;
-    uint64_t instret = 0;
-    uint64_t branches = 0;
-    uint64_t branch_miss = 0;
-};
-
 struct TestStatus {
     bool finished = false;
     bool passed = false;
@@ -78,31 +70,6 @@ struct TestStatus {
     uint32_t last_pc = 0;
 };
 
-bool starts_with(const std::string& text, const std::string& prefix) {
-    return text.rfind(prefix, 0) == 0;
-}
-
-uint32_t parse_u32(const std::string& text, uint32_t fallback = 0) {
-    if (text.empty()) return fallback;
-    char* end = nullptr;
-    unsigned long value = std::strtoul(text.c_str(), &end, 0);
-    if (end == text.c_str()) return fallback;
-    return static_cast<uint32_t>(value);
-}
-
-std::string json_string_value(const std::string& text, const std::string& key) {
-    const std::string needle = "\"" + key + "\"";
-    size_t pos = text.find(needle);
-    if (pos == std::string::npos) return "";
-    pos = text.find(':', pos + needle.size());
-    if (pos == std::string::npos) return "";
-    pos = text.find('"', pos + 1);
-    if (pos == std::string::npos) return "";
-    size_t end = text.find('"', pos + 1);
-    if (end == std::string::npos) return "";
-    return text.substr(pos + 1, end - pos - 1);
-}
-
 Meta load_meta(const std::string& path) {
     Meta meta;
     if (path.empty()) return meta;
@@ -114,23 +81,23 @@ Meta load_meta(const std::string& path) {
     std::ostringstream ss;
     ss << in.rdbuf();
     std::string text = ss.str();
-    meta.base_pc = parse_u32(json_string_value(text, "base_pc"), meta.base_pc);
-    meta.dram_base = parse_u32(json_string_value(text, "dram_base"), meta.dram_base);
-    meta.tohost = parse_u32(json_string_value(text, "tohost"), meta.tohost);
-    meta.pass_pc = parse_u32(json_string_value(text, "pass"), meta.pass_pc);
-    meta.fail_pc = parse_u32(json_string_value(text, "fail"), meta.fail_pc);
-    meta.led_addr = parse_u32(json_string_value(text, "led_addr"), meta.led_addr);
-    meta.pass_led = parse_u32(json_string_value(text, "pass_led"), meta.pass_led);
-    meta.fail_led = parse_u32(json_string_value(text, "fail_led"), meta.fail_led);
-    meta.seg_addr = parse_u32(json_string_value(text, "seg_addr"), meta.seg_addr);
-    meta.cnt_addr = parse_u32(json_string_value(text, "cnt_addr"), meta.cnt_addr);
-    meta.pass_tests = parse_u32(json_string_value(text, "pass_tests"), meta.pass_tests);
-    meta.virtual_sw_lo = parse_u32(json_string_value(text, "virtual_sw_lo"), meta.virtual_sw_lo);
-    meta.virtual_sw_hi = parse_u32(json_string_value(text, "virtual_sw_hi"), meta.virtual_sw_hi);
-    meta.virtual_key = parse_u32(json_string_value(text, "virtual_key"), meta.virtual_key);
-    meta.kind = json_string_value(text, "kind");
-    meta.suite = json_string_value(text, "suite");
-    meta.test_case = json_string_value(text, "case");
+    meta.base_pc = sim_common::parse_u32(sim_common::json_string_value(text, "base_pc"), meta.base_pc);
+    meta.dram_base = sim_common::parse_u32(sim_common::json_string_value(text, "dram_base"), meta.dram_base);
+    meta.tohost = sim_common::parse_u32(sim_common::json_string_value(text, "tohost"), meta.tohost);
+    meta.pass_pc = sim_common::parse_u32(sim_common::json_string_value(text, "pass"), meta.pass_pc);
+    meta.fail_pc = sim_common::parse_u32(sim_common::json_string_value(text, "fail"), meta.fail_pc);
+    meta.led_addr = sim_common::parse_u32(sim_common::json_string_value(text, "led_addr"), meta.led_addr);
+    meta.pass_led = sim_common::parse_u32(sim_common::json_string_value(text, "pass_led"), meta.pass_led);
+    meta.fail_led = sim_common::parse_u32(sim_common::json_string_value(text, "fail_led"), meta.fail_led);
+    meta.seg_addr = sim_common::parse_u32(sim_common::json_string_value(text, "seg_addr"), meta.seg_addr);
+    meta.cnt_addr = sim_common::parse_u32(sim_common::json_string_value(text, "cnt_addr"), meta.cnt_addr);
+    meta.pass_tests = sim_common::parse_u32(sim_common::json_string_value(text, "pass_tests"), meta.pass_tests);
+    meta.virtual_sw_lo = sim_common::parse_u32(sim_common::json_string_value(text, "virtual_sw_lo"), meta.virtual_sw_lo);
+    meta.virtual_sw_hi = sim_common::parse_u32(sim_common::json_string_value(text, "virtual_sw_hi"), meta.virtual_sw_hi);
+    meta.virtual_key = sim_common::parse_u32(sim_common::json_string_value(text, "virtual_key"), meta.virtual_key);
+    meta.kind = sim_common::json_string_value(text, "kind");
+    meta.suite = sim_common::json_string_value(text, "suite");
+    meta.test_case = sim_common::json_string_value(text, "case");
     return meta;
 }
 
@@ -138,21 +105,21 @@ Options parse_args(int argc, char** argv) {
     Options opt;
     for (int idx = 1; idx < argc; ++idx) {
         std::string arg = argv[idx];
-        if (starts_with(arg, "+irom=")) {
+        if (sim_common::starts_with(arg, "+irom=")) {
             opt.irom_path = arg.substr(6);
-        } else if (starts_with(arg, "+dram=")) {
+        } else if (sim_common::starts_with(arg, "+dram=")) {
             opt.dram_path = arg.substr(6);
-        } else if (starts_with(arg, "+meta=")) {
+        } else if (sim_common::starts_with(arg, "+meta=")) {
             opt.meta_path = arg.substr(6);
-        } else if (starts_with(arg, "+max-cycles=")) {
-            opt.max_cycles = std::strtoull(arg.substr(12).c_str(), nullptr, 0);
-        } else if (starts_with(arg, "+cpu-mhz=")) {
-            opt.cpu_mhz = parse_u32(arg.substr(9), opt.cpu_mhz);
-        } else if (starts_with(arg, "+cnt-mhz=")) {
-            opt.cnt_mhz = parse_u32(arg.substr(9), opt.cnt_mhz);
-        } else if (starts_with(arg, "+wave=")) {
-            opt.wave = parse_u32(arg.substr(6)) != 0;
-        } else if (starts_with(arg, "+wave-file=")) {
+        } else if (sim_common::starts_with(arg, "+max-cycles=")) {
+            opt.max_cycles = sim_common::parse_u64(arg.substr(12), opt.max_cycles);
+        } else if (sim_common::starts_with(arg, "+cpu-mhz=")) {
+            opt.cpu_mhz = sim_common::parse_u32(arg.substr(9), opt.cpu_mhz);
+        } else if (sim_common::starts_with(arg, "+cnt-mhz=")) {
+            opt.cnt_mhz = sim_common::parse_u32(arg.substr(9), opt.cnt_mhz);
+        } else if (sim_common::starts_with(arg, "+wave=")) {
+            opt.wave = sim_common::parse_u32(arg.substr(6)) != 0;
+        } else if (sim_common::starts_with(arg, "+wave-file=")) {
             opt.wave_path = arg.substr(11);
         }
     }
@@ -168,47 +135,6 @@ Options parse_args(int argc, char** argv) {
         opt.wave_path = "wave.vcd";
     }
     return opt;
-}
-
-double ratio(uint64_t numerator, uint64_t denominator) {
-    if (denominator == 0) return 0.0;
-    return static_cast<double>(numerator) / static_cast<double>(denominator);
-}
-
-uint64_t branch_hit(const PerfStats& stats) {
-    return stats.branches >= stats.branch_miss ? stats.branches - stats.branch_miss : 0;
-}
-
-double branch_hit_rate(const PerfStats& stats) {
-    return stats.branches ? 100.0 * ratio(branch_hit(stats), stats.branches) : 0.0;
-}
-
-double cpi(const PerfStats& stats) {
-    return ratio(stats.cycles, stats.instret);
-}
-
-double ipc(const PerfStats& stats) {
-    return ratio(stats.instret, stats.cycles);
-}
-
-double branch_mpki(const PerfStats& stats) {
-    return stats.instret ? 1000.0 * ratio(stats.branch_miss, stats.instret) : 0.0;
-}
-
-void print_stats_line(std::ostream& out, const PerfStats& stats, const std::string& label) {
-    out << "  " << label
-        << ": cycles=" << stats.cycles
-        << " instret=" << stats.instret
-        << " cpi=" << cpi(stats)
-        << " ipc=" << ipc(stats) << "\n";
-}
-
-void print_branch_line(std::ostream& out, const PerfStats& stats) {
-    out << "  branch: total=" << stats.branches
-        << " hit=" << branch_hit(stats)
-        << " miss=" << stats.branch_miss
-        << " hit_rate=" << branch_hit_rate(stats) << "%"
-        << " mpki=" << branch_mpki(stats) << "\n";
 }
 
 bool core_inst_valid(Vtb_rv32ui_top___024root* rootp) {
@@ -419,7 +345,7 @@ int main(int argc, char** argv) {
     }
 
     uint64_t sim_time = 0;
-    PerfStats stats;
+    sim_common::PerfStats stats;
     TestStatus status;
     auto eval_dump = [&]() {
         top->eval();
@@ -520,9 +446,9 @@ int main(int argc, char** argv) {
     if (!meta.suite.empty()) std::cout << " " << meta.suite;
     if (!meta.test_case.empty()) std::cout << "/" << meta.test_case;
     std::cout << "\n";
-    print_stats_line(std::cout, stats, "core");
+    sim_common::print_stats_line(std::cout, stats, "core");
     std::cout << "  clocks: cpu=" << opt.cpu_mhz << "MHz cnt=" << opt.cnt_mhz << "MHz\n";
-    print_branch_line(std::cout, stats);
+    sim_common::print_branch_line(std::cout, stats);
     if (meta.tohost != 0) {
         std::cout << "  tohost: 0x" << std::hex << std::setw(8) << std::setfill('0') << status.tohost_value << std::dec << std::setfill(' ') << "\n";
     }

@@ -141,7 +141,7 @@ build/src_test/wave.vcd       # WAVE=1 时生成
 
 `src_test` 是 COE 正确性测试，进入 `tb/sim_main.cpp` 正确性 runner，输出 `PASS/FAIL/TIMEOUT` 和周期、分支预测统计。
 
-`src_test` 使用 `tb/tb_src_test_top.sv`，其 Verilator 输出目录为 `build/verilator_src_test/`。它保留 `student_top` 默认 DRAM 窗口，因为程序会访问 `0x8010_0000` 一带保存计数、栈数据和返回地址。
+`src_test` 使用 `tb/tb_src_test_top.sv`，其 Verilator 输出目录为 `build/verilator/coe_correct/`。它保留 `student_top` 默认 DRAM 窗口，因为程序会访问 `0x8010_0000` 一带保存计数、栈数据和返回地址。
 
 `src_test` 的 `meta.json` 记录 LED oracle：
 
@@ -182,18 +182,26 @@ build/perf/src0/run.log
 build/perf/src0/wave.vcd       # WAVE=1 时生成
 ```
 
-`src*` 是性能压力测试，不按 `PASS/FAIL` 单元测试解释。它们应报告 counter 运行时间、周期数、分支预测统计等。
+`src*` 是性能压力测试，不按 `PASS/FAIL` 单元测试解释。它们应报告 counter 运行时间、周期数、分支预测统计等。默认仿真时钟为 `CPU_MHZ=200`、`CNT_MHZ=50`，可通过 Makefile 参数调整。
+
+对应 Verilator 输出目录：
+
+```text
+build/verilator/coe_perf/
+```
 
 ## Testbench 文件
 
 - `tb/sim_main.cpp`：`rv32ui/src_test` 正确性 runner。DUT 为 `student_top`，通过内部 IROM/DRAM 加载测试，并读取 SoC/CPU 内部信号统计周期和分支预测。`rv32ui` 使用 `tohost/pass/fail` oracle，`src_test` 使用 LED oracle。
+- `tb/sim_common.hpp`：C++ runner 共享的参数解析、`meta.json` 读取辅助函数和 CPI/IPC/分支统计打印函数。
 - `tb/tb_src_test_top.sv`：`src_test` correctness wrapper。模块名保持 `tb_rv32ui_top` 以复用 `sim_main.cpp` 的 Verilator 层级访问，但内部使用 `student_top` 默认 DRAM 映射。
 - `tb/tb_src_top.sv`：`src*` 压力测试 wrapper。DUT 为 `student_top`，通过 plusargs 加载 `irom.hex/dram.hex` 到内部 `IROM_0/DRAM_0`。
-- `tb/sim_src.cpp`：`src*` 压力测试 C++ testbench。驱动 50MHz counter 时钟和 100MHz CPU 时钟，观察 counter、PC 和分支预测信号，输出性能结果。
+- `tb/sim_src.cpp`：`src*` 压力测试 C++ testbench。按 `CPU_MHZ/CNT_MHZ` 生成 CPU/counter 时钟，观察 counter、PC 和分支预测信号，输出性能结果。
 
 ## 当前约束与注意点
 
 - 除仿真用 `rtl/ip/IROM_0.sv` 和 `rtl/ip/DRAM_0.sv` 外，`rtl/` 当前不因仿真框架改动而修改。
 - `src*` 使用 `student_top`，不是 `top`，因为当前目标是 CPU+外设性能测试，不是 UART 数字孪生系统测试。
+- 当前 Makefile 仿真入口固定使用 `rtl/core`，不再提供 `CORE_VARIANT/core_new` 选择；`rtl/core_new` 文件仍保留在仓库中。
 - `IROM_0/DRAM_0` 是仿真 memory 行为模型，`tb_rv32ui_top.sv`、`tb_src_test_top.sv` 和 `tb_src_top.sv` 会通过 plusargs 将真实 hex 加载到内部 memory。
 - `build/` 是生成目录，可以通过 `make clean` 删除后重新生成。
