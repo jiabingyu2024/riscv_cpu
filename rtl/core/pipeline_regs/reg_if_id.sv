@@ -26,11 +26,21 @@ module reg_if_id(
     input logic [`PC_BUS]    i_pc_f_d,
     input logic [`INST_BUS]  i_inst_f_d,
     input logic [`PC_BUS]    i_pc_predict,
+    input logic [7:0]        i_pht_idx,
+    input logic [7:0]        i_local_pht_idx,
+    input logic [7:0]        i_choice_idx,
+    input logic              i_global_pred_taken,
+    input logic              i_local_pred_taken,
 
 
     output logic [`PC_BUS]   o_pc_f_d,
     output logic [`INST_BUS] o_inst_f_d,
-    output logic [`PC_BUS]   o_pc_predict
+    output logic [`PC_BUS]   o_pc_predict,
+    output logic [7:0]       o_pht_idx,
+    output logic [7:0]       o_local_pht_idx,
+    output logic [7:0]       o_choice_idx,
+    output logic             o_global_pred_taken,
+    output logic             o_local_pred_taken
 );
 
     always_ff @(posedge i_clk or negedge i_rst_n) begin
@@ -38,14 +48,29 @@ module reg_if_id(
             o_pc_f_d     <= '0;
             o_inst_f_d   <= '0;
             o_pc_predict <= '0;
+            o_pht_idx    <= '0;
+            o_local_pht_idx <= '0;
+            o_choice_idx <= '0;
+            o_global_pred_taken <= 1'b0;
+            o_local_pred_taken <= 1'b0;
         end else if (i_flush) begin
             o_pc_f_d     <= '0;
             o_inst_f_d   <= '0;
             o_pc_predict <= '0;
+            o_pht_idx    <= '0;
+            o_local_pht_idx <= '0;
+            o_choice_idx <= '0;
+            o_global_pred_taken <= 1'b0;
+            o_local_pred_taken <= 1'b0;
         end else if (!i_stall) begin
             o_pc_f_d     <= i_pc_f_d;
             o_inst_f_d   <= i_inst_f_d;
             o_pc_predict <= i_pc_predict;
+            o_pht_idx    <= i_pht_idx;
+            o_local_pht_idx <= i_local_pht_idx;
+            o_choice_idx <= i_choice_idx;
+            o_global_pred_taken <= i_global_pred_taken;
+            o_local_pred_taken <= i_local_pred_taken;
         end
     end
 endmodule

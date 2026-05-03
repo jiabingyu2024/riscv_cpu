@@ -44,6 +44,11 @@ module reg_id_ex(
     input logic [`PC_BUS]           i_pc_d_e,
     input logic [`PC_BUS]           i_pc_target,
     input logic [`PC_BUS]           i_pc_predict,
+    input logic [7:0]               i_pht_idx,
+    input logic [7:0]               i_local_pht_idx,
+    input logic [7:0]               i_choice_idx,
+    input logic                     i_global_pred_taken,
+    input logic                     i_local_pred_taken,
     input logic [1:0]               i_rs1_fwd_sel,
     input logic [1:0]               i_rs2_fwd_sel,
 
@@ -76,6 +81,11 @@ module reg_id_ex(
     output logic [`PC_BUS]          o_pc_d_e,
     output logic [`PC_BUS]          o_pc_target,
     output logic [`PC_BUS]          o_pc_predict,
+    output logic [7:0]              o_pht_idx,
+    output logic [7:0]              o_local_pht_idx,
+    output logic [7:0]              o_choice_idx,
+    output logic                    o_global_pred_taken,
+    output logic                    o_local_pred_taken,
     output logic [1:0]              o_rs1_fwd_sel,
     output logic [1:0]              o_rs2_fwd_sel
 );
@@ -102,6 +112,11 @@ module reg_id_ex(
             o_pc_d_e         <= '0;
             o_pc_target      <= '0;
             o_pc_predict     <= '0;
+            o_pht_idx        <= '0;
+            o_local_pht_idx  <= '0;
+            o_choice_idx     <= '0;
+            o_global_pred_taken <= 1'b0;
+            o_local_pred_taken <= 1'b0;
             o_rs1_fwd_sel    <= `FWD_RF;
             o_rs2_fwd_sel    <= `FWD_RF;
         end else if (i_flush) begin
@@ -125,6 +140,11 @@ module reg_id_ex(
             o_pc_d_e         <= '0;
             o_pc_target      <= '0;
             o_pc_predict     <= '0;
+            o_pht_idx        <= '0;
+            o_local_pht_idx  <= '0;
+            o_choice_idx     <= '0;
+            o_global_pred_taken <= 1'b0;
+            o_local_pred_taken <= 1'b0;
             o_rs1_fwd_sel    <= `FWD_RF;
             o_rs2_fwd_sel    <= `FWD_RF;
         end else if (!i_stall) begin
@@ -148,6 +168,11 @@ module reg_id_ex(
             o_pc_d_e         <= i_pc_d_e;
             o_pc_target      <= i_pc_target;
             o_pc_predict     <= i_pc_predict;
+            o_pht_idx        <= i_pht_idx;
+            o_local_pht_idx  <= i_local_pht_idx;
+            o_choice_idx     <= i_choice_idx;
+            o_global_pred_taken <= i_global_pred_taken;
+            o_local_pred_taken <= i_local_pred_taken;
             o_rs1_fwd_sel    <= i_rs1_fwd_sel;
             o_rs2_fwd_sel    <= i_rs2_fwd_sel;
         end

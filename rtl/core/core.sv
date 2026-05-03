@@ -27,18 +27,41 @@ module core(
     logic [`PC_BUS]   pc_next_hz;
     logic [`PC_BUS]   pc_p;
     logic [`PC_BUS]   pc_predict_p;
+    logic [7:0]       pht_idx_p;
+    logic [7:0]       local_pht_idx_p;
+    logic [7:0]       choice_idx_p;
+    logic             global_pred_taken_p;
+    logic             local_pred_taken_p;
     logic [`PC_BUS]   pc_pf;
     logic [`PC_BUS]   pc_predict_pf;
+    logic [7:0]       pht_idx_pf;
+    logic [7:0]       local_pht_idx_pf;
+    logic [7:0]       choice_idx_pf;
+    logic             global_pred_taken_pf;
+    logic             local_pred_taken_pf;
     logic             valid_pf;
     logic [`PC_BUS]   pc_predict_f;
+    logic [7:0]       pht_idx_f;
+    logic [7:0]       local_pht_idx_f;
+    logic [7:0]       choice_idx_f;
+    logic             global_pred_taken_f;
+    logic             local_pred_taken_f;
     logic [`INST_BUS] inst_f;
     logic [`PC_BUS]   pc_f;
     logic             predict_taken_f;
     logic [`PC_BUS]   predict_target_f;
+    logic             ras_redirect_f;
+    logic [`PC_BUS]   ras_target_f;
+    logic [`PC_BUS]   pc_predict_f_effective;
 
     logic [`PC_BUS]   pc_d;
     logic [`INST_BUS] inst_d;
     logic [`PC_BUS]   pc_predict_d;
+    logic [7:0]       pht_idx_d;
+    logic [7:0]       local_pht_idx_d;
+    logic [7:0]       choice_idx_d;
+    logic             global_pred_taken_d;
+    logic             local_pred_taken_d;
 
     logic             mem_read_d;
     logic             mem_write_d;
@@ -79,6 +102,11 @@ module core(
     logic [`PC_BUS]   pc_e;
     logic [`PC_BUS]   pc_target_e;
     logic [`PC_BUS]   pc_predict_e;
+    logic [7:0]       pht_idx_e;
+    logic [7:0]       local_pht_idx_e;
+    logic [7:0]       choice_idx_e;
+    logic             global_pred_taken_e;
+    logic             local_pred_taken_e;
 
     logic [1:0]       rs1_fwd_sel_d;
     logic [1:0]       rs2_fwd_sel_d;
@@ -103,6 +131,14 @@ module core(
     logic             reg_write_m;
     logic [3:0]       mem_mask_m;
     logic             load_unsigned_m;
+    logic             is_branch_m;
+    logic [3:0]       inst_spec_m;
+    logic [`RF_BUS]   rs1_addr_m;
+    logic [7:0]       pht_idx_m;
+    logic [7:0]       local_pht_idx_m;
+    logic [7:0]       choice_idx_m;
+    logic             global_pred_taken_m;
+    logic             local_pred_taken_m;
     logic             update_taken_m;
     logic             update_en_m;
     logic [`PC_BUS]   update_pc_m;
@@ -142,6 +178,7 @@ module core(
     assign irom_ena  = !stall_p_f;
     assign pc_en     = !stall_p_f || flush_p_f;
     assign pc_target_d = pc_d + imm_d;
+    assign pc_predict_f_effective = ras_redirect_f ? ras_target_f : pc_predict_f;
 
     stage_pc u_stage_pc (
         .i_clk       (clk),
@@ -158,8 +195,18 @@ module core(
         .i_stall      (stall_p_f),
         .i_pc         (pc_p),
         .i_pc_predict (pc_predict_p),
+        .i_pht_idx    (pht_idx_p),
+        .i_local_pht_idx(local_pht_idx_p),
+        .i_choice_idx (choice_idx_p),
+        .i_global_pred_taken(global_pred_taken_p),
+        .i_local_pred_taken(local_pred_taken_p),
         .o_pc         (pc_pf),
         .o_pc_predict (pc_predict_pf),
+        .o_pht_idx    (pht_idx_pf),
+        .o_local_pht_idx(local_pht_idx_pf),
+        .o_choice_idx (choice_idx_pf),
+        .o_global_pred_taken(global_pred_taken_pf),
+        .o_local_pred_taken(local_pred_taken_pf),
         .o_valid      (valid_pf)
     );
 
@@ -167,22 +214,51 @@ module core(
         .i_pc         (pc_pf),
         .i_inst       (irom_data),
         .i_pc_predict (pc_predict_pf),
+        .i_pht_idx    (pht_idx_pf),
+        .i_local_pht_idx(local_pht_idx_pf),
+        .i_choice_idx (choice_idx_pf),
+        .i_global_pred_taken(global_pred_taken_pf),
+        .i_local_pred_taken(local_pred_taken_pf),
         .i_valid      (valid_pf),
         .o_pc         (pc_f),
         .o_inst       (inst_f),
-        .o_pc_predict (pc_predict_f)
+        .o_pc_predict (pc_predict_f),
+        .o_pht_idx    (pht_idx_f),
+        .o_local_pht_idx(local_pht_idx_f),
+        .o_choice_idx (choice_idx_f),
+        .o_global_pred_taken(global_pred_taken_f),
+        .o_local_pred_taken(local_pred_taken_f)
     );
 
     bpu_top u_bpu_top (
         .i_clk           (clk),
         .i_rst_n         (rst_n),
         .i_pc_cur        (pc_p),
+        .i_f_valid       (valid_pf),
+        .i_f_pc          (pc_f),
+        .i_f_inst        (inst_f),
         .i_update_en     (update_en_m),
         .i_update_taken  (update_taken_m),
         .i_update_target (update_target_m),
         .i_update_pc     (update_pc_m),
+        .i_update_is_branch(is_branch_m),
+        .i_update_inst_spec(inst_spec_m),
+        .i_update_rd_addr(rd_addr_m),
+        .i_update_rs1_addr(rs1_addr_m),
+        .i_update_pht_idx(pht_idx_m),
+        .i_update_local_pht_idx(local_pht_idx_m),
+        .i_update_choice_idx(choice_idx_m),
+        .i_update_global_pred_taken(global_pred_taken_m),
+        .i_update_local_pred_taken(local_pred_taken_m),
         .o_predict_taken (predict_taken_f),
-        .o_predict_target(predict_target_f)
+        .o_predict_target(predict_target_f),
+        .o_pht_idx       (pht_idx_p),
+        .o_local_pht_idx (local_pht_idx_p),
+        .o_choice_idx    (choice_idx_p),
+        .o_global_pred_taken(global_pred_taken_p),
+        .o_local_pred_taken(local_pred_taken_p),
+        .o_ras_redirect  (ras_redirect_f),
+        .o_ras_target    (ras_target_f)
     );
 
     hazard_unit u_hazard_unit (
@@ -198,6 +274,8 @@ module core(
         .i_reg_write_e   (reg_write_e),
         .i_predict_taken (predict_taken_f),
         .i_predict_target(predict_target_f),
+        .i_front_redirect(ras_redirect_f),
+        .i_front_redirect_target(ras_target_f),
         .i_error         (branch_error_m),
         .i_right_pc      (branch_right_pc_m),
         .o_stall_p_f     (stall_p_f),
@@ -221,10 +299,20 @@ module core(
         .i_stall      (stall_f_d),
         .i_pc_f_d     (pc_f),
         .i_inst_f_d   (inst_f),
-        .i_pc_predict (pc_predict_f),
+        .i_pc_predict (pc_predict_f_effective),
+        .i_pht_idx    (pht_idx_f),
+        .i_local_pht_idx(local_pht_idx_f),
+        .i_choice_idx (choice_idx_f),
+        .i_global_pred_taken(global_pred_taken_f),
+        .i_local_pred_taken(local_pred_taken_f),
         .o_pc_f_d     (pc_d),
         .o_inst_f_d   (inst_d),
-        .o_pc_predict (pc_predict_d)
+        .o_pc_predict (pc_predict_d),
+        .o_pht_idx    (pht_idx_d),
+        .o_local_pht_idx(local_pht_idx_d),
+        .o_choice_idx (choice_idx_d),
+        .o_global_pred_taken(global_pred_taken_d),
+        .o_local_pred_taken(local_pred_taken_d)
     );
 
     stage_id u_stage_id (
@@ -293,6 +381,11 @@ module core(
         .i_pc_d_e        (pc_d),
         .i_pc_target     (pc_target_d),
         .i_pc_predict    (pc_predict_d),
+        .i_pht_idx       (pht_idx_d),
+        .i_local_pht_idx (local_pht_idx_d),
+        .i_choice_idx    (choice_idx_d),
+        .i_global_pred_taken(global_pred_taken_d),
+        .i_local_pred_taken(local_pred_taken_d),
         .i_rs1_fwd_sel   (rs1_fwd_sel_d),
         .i_rs2_fwd_sel   (rs2_fwd_sel_d),
         .o_rs1_data      (rs1_data_e),
@@ -315,6 +408,11 @@ module core(
         .o_pc_d_e        (pc_e),
         .o_pc_target     (pc_target_e),
         .o_pc_predict    (pc_predict_e),
+        .o_pht_idx       (pht_idx_e),
+        .o_local_pht_idx (local_pht_idx_e),
+        .o_choice_idx    (choice_idx_e),
+        .o_global_pred_taken(global_pred_taken_e),
+        .o_local_pred_taken(local_pred_taken_e),
         .o_rs1_fwd_sel   (rs1_fwd_sel_e),
         .o_rs2_fwd_sel   (rs2_fwd_sel_e)
     );
@@ -361,6 +459,14 @@ module core(
         .i_reg_write     (reg_write_e),
         .i_mem_mask      (mem_mask_e),
         .i_load_unsigned (load_unsigned_e),
+        .i_is_branch     (is_branch_e),
+        .i_inst_spec     (inst_spec_e),
+        .i_rs1_addr      (rs1_addr_e),
+        .i_pht_idx       (pht_idx_e),
+        .i_local_pht_idx (local_pht_idx_e),
+        .i_choice_idx    (choice_idx_e),
+        .i_global_pred_taken(global_pred_taken_e),
+        .i_local_pred_taken(local_pred_taken_e),
         .i_update_taken  (update_taken_e),
         .i_update_en     (update_en_e),
         .i_update_pc     (update_pc_e),
@@ -376,6 +482,14 @@ module core(
         .o_reg_write     (reg_write_m),
         .o_mem_mask      (mem_mask_m),
         .o_load_unsigned (load_unsigned_m),
+        .o_is_branch     (is_branch_m),
+        .o_inst_spec     (inst_spec_m),
+        .o_rs1_addr      (rs1_addr_m),
+        .o_pht_idx       (pht_idx_m),
+        .o_local_pht_idx (local_pht_idx_m),
+        .o_choice_idx    (choice_idx_m),
+        .o_global_pred_taken(global_pred_taken_m),
+        .o_local_pred_taken(local_pred_taken_m),
         .o_update_taken  (update_taken_m),
         .o_update_en     (update_en_m),
         .o_update_pc     (update_pc_m),

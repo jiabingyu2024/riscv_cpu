@@ -20,6 +20,14 @@ module reg_ex_m1 (
     input logic                               i_reg_write,
     input logic  [3:0]                        i_mem_mask,
     input logic                               i_load_unsigned,
+    input logic                               i_is_branch,
+    input logic [3:0]                         i_inst_spec,
+    input logic [`RF_BUS]                     i_rs1_addr,
+    input logic [7:0]                         i_pht_idx,
+    input logic [7:0]                         i_local_pht_idx,
+    input logic [7:0]                         i_choice_idx,
+    input logic                               i_global_pred_taken,
+    input logic                               i_local_pred_taken,
     input logic                               i_update_taken,
     input logic                               i_update_en,
     input logic [`PC_BUS]                     i_update_pc,
@@ -37,6 +45,14 @@ module reg_ex_m1 (
     output logic                              o_reg_write,
     output logic [3:0]                        o_mem_mask,
     output logic                              o_load_unsigned,
+    output logic                              o_is_branch,
+    output logic [3:0]                        o_inst_spec,
+    output logic [`RF_BUS]                    o_rs1_addr,
+    output logic [7:0]                        o_pht_idx,
+    output logic [7:0]                        o_local_pht_idx,
+    output logic [7:0]                        o_choice_idx,
+    output logic                              o_global_pred_taken,
+    output logic                              o_local_pred_taken,
     output logic                              o_update_taken,
     output logic                              o_update_en,
     output logic [`PC_BUS]                    o_update_pc,
@@ -57,6 +73,14 @@ module reg_ex_m1 (
             o_reg_write     <= 1'b0;
             o_mem_mask      <= `MASK_WORD;
             o_load_unsigned <= 1'b0;
+            o_is_branch     <= 1'b0;
+            o_inst_spec     <= '0;
+            o_rs1_addr      <= '0;
+            o_pht_idx       <= '0;
+            o_local_pht_idx <= '0;
+            o_choice_idx    <= '0;
+            o_global_pred_taken <= 1'b0;
+            o_local_pred_taken <= 1'b0;
             o_update_taken  <= 1'b0;
             o_update_en     <= 1'b0;
             o_update_pc     <= '0;
@@ -73,6 +97,14 @@ module reg_ex_m1 (
             o_reg_write     <= 1'b0;
             o_mem_mask      <= `MASK_WORD;
             o_load_unsigned <= 1'b0;
+            o_is_branch     <= 1'b0;
+            o_inst_spec     <= '0;
+            o_rs1_addr      <= '0;
+            o_pht_idx       <= '0;
+            o_local_pht_idx <= '0;
+            o_choice_idx    <= '0;
+            o_global_pred_taken <= 1'b0;
+            o_local_pred_taken <= 1'b0;
             o_update_taken  <= 1'b0;
             o_update_en     <= 1'b0;
             o_update_pc     <= '0;
@@ -89,6 +121,14 @@ module reg_ex_m1 (
             o_reg_write     <= i_reg_write;
             o_mem_mask      <= i_mem_mask;
             o_load_unsigned <= i_load_unsigned;
+            o_is_branch     <= i_is_branch;
+            o_inst_spec     <= i_inst_spec;
+            o_rs1_addr      <= i_rs1_addr;
+            o_pht_idx       <= i_pht_idx;
+            o_local_pht_idx <= i_local_pht_idx;
+            o_choice_idx    <= i_choice_idx;
+            o_global_pred_taken <= i_global_pred_taken;
+            o_local_pred_taken <= i_local_pred_taken;
             o_update_taken  <= i_update_taken;
             o_update_en     <= i_update_en;
             o_update_pc     <= i_update_pc;

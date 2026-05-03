@@ -24,6 +24,8 @@ module hazard_unit(
 
     input  logic                            i_predict_taken,
     input  logic  [`PC_BUS]                 i_predict_target,
+    input  logic                            i_front_redirect,
+    input  logic  [`PC_BUS]                 i_front_redirect_target,
 
     input  logic                            i_error,
     input  logic  [`PC_BUS]                 i_right_pc,
@@ -51,12 +53,14 @@ module hazard_unit(
     logic load_use_hazard_hold_d;
     logic load_use_hazard_hold_f;
     logic load_use_hazard;
+    logic front_redirect_active;
 
     assign load_use_hazard_raw_e = i_mem_read_e && i_reg_write_e && (i_rd_addr_e != '0) &&
                                    ((i_rd_addr_e == i_rs1_addr_d) || (i_rd_addr_e == i_rs2_addr_d));
     assign load_use_hazard_raw_f = i_mem_read_e && i_reg_write_e && (i_rd_addr_e != '0) &&
                                    ((i_rd_addr_e == i_rs1_addr_f) || (i_rd_addr_e == i_rs2_addr_f));
     assign load_use_hazard = load_use_hazard_raw_e || load_use_hazard_hold_d || load_use_hazard_hold_f;
+    assign front_redirect_active = i_front_redirect && !load_use_hazard;
 
     always_ff @(posedge i_clk or negedge i_rst_n) begin
         if (!i_rst_n) begin
@@ -79,7 +83,7 @@ module hazard_unit(
         o_stall_e_m = 1'b0;
         o_stall_m_w = 1'b0;
 
-        o_flush_p_f = i_error;
+        o_flush_p_f = i_error || front_redirect_active;
         o_flush_f_d = i_error;
         o_flush_d_e = i_error || load_use_hazard;
         // Redirect is reported from EX/M1, so the current EX instruction is
@@ -91,6 +95,9 @@ module hazard_unit(
 
         if (i_error) begin
             o_pc_next = i_right_pc;
+        end else if (front_redirect_active) begin
+            o_pc_next = i_front_redirect_target;
+            o_pc_predict = i_front_redirect_target;
         end else begin
             o_pc_next = o_pc_predict;
         end
