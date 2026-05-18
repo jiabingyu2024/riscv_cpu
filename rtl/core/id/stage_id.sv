@@ -46,7 +46,9 @@ module stage_id(
     output logic  [`RF_BUS]                 o_rs1_addr,
     output logic  [`DATA_BUS]               o_rs2_data,
     output logic  [`RF_BUS]                 o_rs2_addr,
-    output logic  [`RF_BUS]                 o_rd_addr
+    output logic  [`RF_BUS]                 o_rd_addr,
+    output logic                            o_is_m_ext,
+    output logic  [2:0]                     o_m_op
 );
 
     logic [`DATA_BUS] rs1_data;
@@ -70,7 +72,9 @@ module stage_id(
         .o_func3         (o_func3),
         .o_is_branch     (o_is_branch),
         .o_mem_mask      (o_mem_mask),
-        .o_load_unsigned (o_load_unsigned)
+        .o_load_unsigned (o_load_unsigned),
+        .o_is_m_ext      (o_is_m_ext),
+        .o_m_op          (o_m_op)
     );
 
     imm_unit u_imm_unit (

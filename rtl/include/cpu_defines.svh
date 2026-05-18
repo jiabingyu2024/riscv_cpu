@@ -62,6 +62,8 @@
 `define FUNC7_SRL      7'B0000000
 `define FUNC7_SRA      7'B0100000
 
+`define FUNC7_MULDIV   7'B0000001   // func7 for R-type (RV32M)
+
 // used in ex
 
 `define ALU_CTRL_WID    4
@@ -80,6 +82,16 @@
 `define ALU_GTEU        4'B1101//
 `define ALU_EQ          4'B1010
 `define ALU_NEQ         4'B1011
+
+`define M_OP_BUS        2:0
+`define M_MUL           3'B000
+`define M_MULH          3'B001
+`define M_MULHSU        3'B010
+`define M_MULHU         3'B011
+`define M_DIV           3'B100
+`define M_DIVU          3'B101
+`define M_REM           3'B110
+`define M_REMU          3'B111
 
 `define EX_AUIPC        4'B0001
 `define EX_LUI          4'B0010

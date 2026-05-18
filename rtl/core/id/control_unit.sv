@@ -26,9 +26,12 @@ module control_unit(
 
     output logic                            o_is_branch,
     output logic  [3:0]                     o_mem_mask,
-    output logic                            o_load_unsigned
+    output logic                            o_load_unsigned,
     // output logic                            o_is_jtype,
     // output logic                            o_is_lui,
+
+    output logic                            o_is_m_ext,
+    output logic  [2:0]                     o_m_op
     
 );
 
@@ -52,9 +55,16 @@ module control_unit(
         o_is_branch     = 1'b0;
         o_mem_mask      = `MASK_WORD;
         o_load_unsigned = 1'b0;
+        o_is_m_ext      = 1'b0;
+        o_m_op          = func3;
 
         unique case (opcode)
             `OP_R_TYPE: begin
+                if (func7 == `FUNC7_MULDIV) begin
+                    o_is_m_ext = 1'b1;
+                end else begin
+                    o_is_m_ext = 1'b0;
+                end
                 o_reg_write = 1'b1;
                 unique case (func3)
                     `FUNC3_ADD_SUB: o_alu_ctrl = (func7 == `FUNC7_SUB) ? `ALU_SUB : `ALU_ADD;

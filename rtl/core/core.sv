@@ -94,6 +94,11 @@ module core(
     logic             error_e;
     logic [`PC_BUS]   right_pc_e;
 
+    logic             is_m_ext_d;
+    logic [2:0]       m_op_d;
+    logic             is_m_ext_e;
+    logic [2:0]       m_op_e;
+
     logic [`RF_BUS]   rd_addr_m;
     logic [`DATA_BUS] alu_res_m;
     logic [`DATA_BUS] a2_data_m;
@@ -252,7 +257,9 @@ module core(
         .o_rs1_addr      (rs1_addr_d),
         .o_rs2_data      (rs2_data_d),
         .o_rs2_addr      (rs2_addr_d),
-        .o_rd_addr       (rd_addr_d)
+        .o_rd_addr       (rd_addr_d),
+        .o_is_m_ext      (is_m_ext_d),
+        .o_m_op          (m_op_d)
     );
 
     forward_unit u_forward_unit (
@@ -295,6 +302,8 @@ module core(
         .i_pc_predict    (pc_predict_d),
         .i_rs1_fwd_sel   (rs1_fwd_sel_d),
         .i_rs2_fwd_sel   (rs2_fwd_sel_d),
+        .i_is_m_ext      (is_m_ext_d),
+        .i_m_op          (m_op_d),
         .o_rs1_data      (rs1_data_e),
         .o_rs2_data      (rs2_data_e),
         .o_rd_addr       (rd_addr_e),
@@ -316,7 +325,9 @@ module core(
         .o_pc_target     (pc_target_e),
         .o_pc_predict    (pc_predict_e),
         .o_rs1_fwd_sel   (rs1_fwd_sel_e),
-        .o_rs2_fwd_sel   (rs2_fwd_sel_e)
+        .o_rs2_fwd_sel   (rs2_fwd_sel_e),
+        .o_is_m_ext      (is_m_ext_e),
+        .o_m_op          (m_op_e)
     );
 
     stage_ex u_stage_ex (
@@ -337,6 +348,8 @@ module core(
         .i_is_branch     (is_branch_e),
         .i_is_rs2_imm    (is_rs2_imm_e),
         .i_inst_spec     (inst_spec_e),
+        .i_is_m_ext      (is_m_ext_e),
+        .i_m_op          (m_op_e),
         .o_alu_res       (alu_res_e),
         .o_a2_data       (a2_data_e),
         .o_update_taken  (update_taken_e),

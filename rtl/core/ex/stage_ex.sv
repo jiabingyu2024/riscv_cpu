@@ -35,6 +35,9 @@ module stage_ex(
     input  logic                            i_is_rs2_imm,
     input  logic  [3:0]                     i_inst_spec,
 
+    input logic                             i_is_m_ext,
+    input logic   [2:0]                     i_m_op,
+
     output logic  [`DATA_BUS]               o_alu_res,
     output logic  [`DATA_BUS]               o_a2_data,
 
@@ -53,6 +56,7 @@ module stage_ex(
     logic [`DATA_BUS] rs2_exec_data;
     logic [`PC_BUS]   t1_data;
     logic [`DATA_BUS] alu_res_raw;
+    logic [`DATA_BUS] m_res;
 
     always_comb begin
         unique case (i_rs1_fwd_sel)
@@ -81,6 +85,13 @@ module stage_ex(
         .o_alu_res  (alu_res_raw)
     );
 
+    m_unit u_m_unit (
+        .i_rs1   (rs1_exec_data),
+        .i_rs2   (rs2_exec_data),
+        .i_m_op  (i_m_op),
+        .o_res   (m_res) 
+    );
+
     branch_cmp u_branch_cmp (
         .i_b1_data       (rs1_exec_data),
         .i_b2_data       (rs2_exec_data),
@@ -102,12 +113,15 @@ module stage_ex(
 
     always_comb begin
         o_a2_data = rs2_exec_data;
-
-        unique case (i_inst_spec)
-            `EX_LUI:   o_alu_res = i_imm;
-            `EX_JAL,
-            `EX_JALR:  o_alu_res = i_pc + 32'd4;
-            default:     o_alu_res = alu_res_raw;
-        endcase
+        if (i_is_m_ext) begin
+            o_alu_res = m_res;
+        end else begin
+            unique case (i_inst_spec)
+                `EX_LUI:   o_alu_res = i_imm;
+                `EX_JAL,
+                `EX_JALR:  o_alu_res = i_pc + 32'd4;
+                default:     o_alu_res = alu_res_raw;
+            endcase
+        end
     end
 endmodule

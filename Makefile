@@ -12,6 +12,7 @@ FAST_COUNTER ?= 0
 RUN_MS ?= 0
 STRICT_SIM_LIMIT ?= 0
 CORE_VARIANT ?= old
+ISA_SUITES := rv32ui rv32um
 
 BUILD_DIR := build
 SCRIPT := scripts/build_tests.py
@@ -45,6 +46,7 @@ CORE_OLD_SRCS := \
 	rtl/core/id/regfile.sv \
 	rtl/core/ex/stage_ex.sv \
 	rtl/core/ex/alu.sv \
+	rtl/core/ex/m_unit.sv \
 	rtl/core/ex/branch_cmp.sv \
 	rtl/core/m2/stage_m2.sv \
 	rtl/core/wb/stage_wb.sv \
@@ -121,7 +123,7 @@ sim:
 		-I$(RTL_INC) \
 		--Mdir $(SIM_DIR) \
 		--cc $(RTL_SRCS) \
-		--exe tb/sim_main.cpp \
+		--exe $$(pwd)/tb/sim_main.cpp \
 		--build
 
 sim-src:
@@ -131,7 +133,7 @@ sim-src:
 		-I$(RTL_INC) \
 		--Mdir $(SRC_SIM_DIR) \
 		--cc $(SRC_RTL_SRCS) \
-		--exe tb/sim_src.cpp \
+		--exe $$(pwd)/tb/sim_src.cpp \
 		--build
 
 sim-src-test:
@@ -141,15 +143,15 @@ sim-src-test:
 		-I$(RTL_INC) \
 		--Mdir $(SRC_TEST_SIM_DIR) \
 		--cc $(SRC_TEST_RTL_SRCS) \
-		--exe tb/sim_main.cpp \
+		--exe $$(pwd)/tb/sim_main.cpp \
 		--build
 
 run: build
 	@set -e; \
-	if [[ "$(SUITE)" == "rv32ui" && -z "$(ISA)" ]]; then \
+	if [[ " $(ISA_SUITES) " == *" $(SUITE) "* && -z "$(ISA)" ]]; then \
 		$(MAKE) sim; \
 		$(MAKE) run-all SUITE=$(SUITE) WAVE=$(WAVE) MAX_CYCLES=$(MAX_CYCLES); \
-	elif [[ "$(SUITE)" == "rv32ui" ]]; then \
+	elif [[ " $(ISA_SUITES) " == *" $(SUITE) "* ]]; then \
 		$(MAKE) sim; \
 		$(MAKE) run-one SUITE=$(SUITE) ISA=$(ISA) WAVE=$(WAVE) MAX_CYCLES=$(MAX_CYCLES); \
 	elif [[ "$(SUITE)" == "src_test" ]]; then \
@@ -195,10 +197,10 @@ run-correctness:
 run-all:
 	@set -e -o pipefail; \
 	status=0; \
-	for meta in $(BUILD_DIR)/rv32ui/*/meta.json; do \
+	for meta in $(BUILD_DIR)/$(SUITE)/*/meta.json; do \
 		case_dir=$$(dirname "$$meta"); \
 		case_name=$$(basename "$$case_dir"); \
-		echo "==> rv32ui/$$case_name"; \
+		echo "==> $(SUITE)/$$case_name"; \
 		if ! $(SIM_BIN) +irom=$$case_dir/irom.hex +meta=$$meta +max-cycles=$(MAX_CYCLES) +cpu-mhz=$(CPU_MHZ) +cnt-mhz=$(CNT_MHZ) +wave=0 | tee "$$case_dir/run.log"; then \
 			status=1; \
 		fi; \
