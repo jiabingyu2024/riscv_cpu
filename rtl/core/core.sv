@@ -19,7 +19,7 @@ module core(
 
 );
     //PF
-    PreFetchStage preFetchStage( pfStageIF, iromAccessIF, ifStageIF, ctrlIF, recoveryManagerIF );
+    PreFetchStage preFetchStage( pfStageIF, iromAccessIF, ctrlIF, recoveryManagerIF );
         PC pc( pfStageIF);
         // 分支预测部分
         BPU bpu( pfStageIF, ifStageIF, ctrlIF);
