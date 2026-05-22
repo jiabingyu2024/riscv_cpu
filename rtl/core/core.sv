@@ -19,29 +19,63 @@ module core(
 
 );
     //PF
+    /*
+    更新 PC 的选择逻辑
+    */
     PreFetchStage preFetchStage( pfStageIF, iromAccessIF, ctrlIF, recoveryManagerIF );
         PC pc( pfStageIF);
         // 分支预测部分
-        BPU bpu( pfStageIF, ifStageIF, ctrlIF);
+        BPU bpu( pfStageIF, ifStageIF, ctrlIF,recoveryManagerIF);
     //IF   接口例化格式：(上一级，本级，控制，其他)
-    FetchStage fetchStage  (pfStageIF,ifStageIF, ctrlIF );
+    /*
+
+    */
+    FetchStage fetchStage  (pfStageIF,ifStageIF, ctrlIF);
     
     //ID
     DecodeStage decodeStage (ifStageIF, idStageIF, ctrlIF);
 
     //RN
-    RenameStage renameStage (idStageIF, rnStageIF, ctrlIF, renameLogicIF, robIF, recoveryManagerIF);
-        SpecRAT specRAT(renameLogicIF);
-        ArchRAT archRAT(renameLogicIF);
-        RenameLogic renameLogic();//负责重命名的逻辑部分，包含分配和释放逻辑
-        RenameLogicCommitter renameLogicCommitter(); //负责 提交后的相关修改和恢复逻辑
-        ROB rob();
-    
-    //DS dispatch
-    DispatchStage dispatchStage (rnStageIF, dsStageIF, ctrlIF, robIF);
+    // RenameStage 内完成 组内相关性检查  部分预测错误纠正recovery和 分支限制一条出错后的恢复ctrl
+    RenameStage renameStage (idStageIF, rnStageIF, ctrlIF, specRATIF,freeListIF ,recoveryManagerIF);
+        SpecRAT specRAT(specRATIF);
+        ArchRAT archRAT(archRATIF);
+        FreeList freeList(freeListIF);
 
+    //DS dispatch
+    DispatchStage dispatchStage (rnStageIF, dsStageIF,issueQueueIF, ctrlIF, robIF);
+        ROB rob(robIF);
+        IssueQueue issueQueue(issueQueueIF);
     //IS issue 
-    IssueStage issueStage (dsStageIF, isStageIF, ctrlIF, reservationStationIF, lsqIF);
+    IssueStage issueStage (dsStageIF, isStageIF, ctrlIF,issueQueueIF);
+
+    //RR
+    RegReadStage regReadStage (isStageIF, rrStageIF, bypassIF,ctrlIF);
+    //EX
+    //RW
+    ExecuteAluStage executeAluStage (rrStageIF, exAluStageIF, ctrlIF);
+    WriteBackAluStage writeBackStage (exStageIF, wbAludStageIF, ctrlIF);
+
+    ExecuteBrcStage executeBrcStage (rrStageIF, exBrcStageIF, ctrlIF);
+    WriteBackBrcStage writeBackBrcStage (exBrcStageIF, wbBrcStageIF, ctrlIF);
+
+    ExecuteMulDivStage executeMulDivStage (rrStageIF, exMulDivStageIF, ctrlIF);
+    WriteBackMulDivStage writeBackMulDivStage (exMulDivStageIF, wbMulDivStageIF, ctrlIF);
+
+    ExecuteMemStage executeMemStage (rrStageIF, exMemStageIF, ctrlIF);
+    WriteBackMemStage writeBackMemStage (exMemStageIF, wbMemStageIF, ctrlIF);
+
+    ExecuteSysStage executeSysStage (rrStageIF, exSysStageIF, ctrlIF);
+    WriteBackSysStage writeBackSysStage (exSysStageIF, wbSysStageIF, ctrlIF);
+
+    Bypass bypassIF(bypassIF);
+    //CM
+
+    CommitStage cmStage (cmStageIF,recoveryManagerIF,ctrlIF);
+
+    RecoveryManager recoveryManager(recoveryManagerIF);
+
+    Ctrl ctrl(ctrlIF, recoveryManagerIF);
 
 
 endmodule
