@@ -18,7 +18,9 @@ module DecodeStage (
 
     always_ff @(posedge self.clk) begin
         if (self.rst) begin
-            pipeReg <= '0;
+            for (int i = 0; i < WAY_NUM; i++) begin
+                pipeReg[i] <= '0;
+            end
         end 
         else if (!ctrl.idPipe.stall) begin
             pipeReg <= prev.nextStage; 
@@ -26,13 +28,16 @@ module DecodeStage (
     end
 
     always_comb begin
+        ctrl.idStallReq = 1'b0;
+        ctrl.idStageEmpty = 1'b1;
         for (int i = 0; i < WAY_NUM; i++) begin
             nextStage[i].pc = pipeReg[i].pc;
             nextStage[i].inst = pipeReg[i].inst; // 从指令缓存中取出的指令 --- IGNORE ---   、
             nextStage[i].predInfo = pipeReg[i].predInfo; // 来自分支预测器的预测信息 --- IGNORE ---
             nextStage[i].valid = pipeReg[i].valid && !ctrl.idPipe.flush; // 如果当前指令有效且没有被清空，则传递到下一阶段
-            DecodeInst decodeInst(pipeReg[i].inst, nextStage[i].instInfo, nextStage[i].lgcRegInfo, nextStage[i].csrAddr ); // 对指令进行解码，得到指令信息和寄存器信息
-            ImmGen immGen(pipeReg[i].inst, nextStage[i].imm); // 对指令进行立即数生成，得到立即数
+            DecodeInst(pipeReg[i].inst, nextStage[i].instInfo, nextStage[i].lgcRegInfo, nextStage[i].csrAddr );
+            ImmGen(pipeReg[i].inst, nextStage[i].imm);
+            ctrl.idStageEmpty &= !nextStage[i].valid;
         end
     end
 

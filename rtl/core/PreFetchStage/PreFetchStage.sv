@@ -7,23 +7,42 @@
 
 import BasicTypes::*;
 import PipelineTypes::*;
+import RecoveryTypes::*;
 
 module PreFetchStage(
     PreFetchStageIF.PreFetchStage self,
-    IromAccessIF.PreFetchStage    iromAccess,
+    IromAccessIF.core             iromAccess,
     CtrlIF.PreFetchStage          ctrl,
     RecoveryManagerIF.PreFetchStage recovery
 );
     
-    // PC选择逻辑
     always_comb begin
-        // 默认情况下，PC递增
-        self.pcIn = self.pcOut + PC_STEP; // 假设每条指令占4字节
-        self.pcWe = 1'b0; // 默认不更新PC
-        
-        if()
+        self.pcIn = self.pcOut + PC_STEP;
+        self.predictPc = self.pcOut + PC_STEP;
+        self.pcWe = !ctrl.pfPipe.stall;
 
+        if (recovery.pcUpdateEn) begin
+            self.pcIn = recovery.pcUpdate;
+            self.predictPc = recovery.pcUpdate;
+            self.pcWe = 1'b1;
+        end else begin
+            for (int i = 0; i < WAY_NUM; i++) begin
+                if (self.bpuResult[i].btbhit && self.bpuResult[i].taken) begin
+                    self.pcIn = self.bpuResult[i].target;
+                    self.predictPc = self.bpuResult[i].target;
+                end
+            end
+        end
+
+        iromAccess.ena = !ctrl.pfPipe.stall;
+        iromAccess.iromAddr = self.pcOut;
+
+        for (int i = 0; i < WAY_NUM; i++) begin
+            self.nextStage[i].valid = !ctrl.pfPipe.flush && !ctrl.pfPipe.stall;
+            self.nextStage[i].pc = self.pcOut + PcPath'(i * 4);
+            self.nextStage[i].predInfo.pcPred = self.predictPc;
+            self.nextStage[i].predInfo.isPred = (self.predictPc != (self.pcOut + PC_STEP));
+        end
     end
 
 endmodule
-

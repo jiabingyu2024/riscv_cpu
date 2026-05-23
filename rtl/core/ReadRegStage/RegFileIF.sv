@@ -12,9 +12,6 @@ import  ReadRegTypes::*;
 
 interface   RegFileIF( input logic clk, rst );
 
-    localparam int REGFILE_READ_PORT_NUM = WAY_NUM * 2;
-    localparam int REGFILE_WRITE_PORT_NUM = WAY_NUM * 5;
-
     RegFileReadResPath regFileReadRes [REGFILE_READ_PORT_NUM];
     RegFileWriteReqPath regFileWriteReq [REGFILE_WRITE_PORT_NUM];
 
@@ -34,7 +31,11 @@ interface   RegFileIF( input logic clk, rst );
         input
             regFileReadRes,
         output
-            regFileReadReq,
+            regFileReadReq
+    );
+
+    modport WriteBackStage(
+        output
             regFileWriteReq
     );
 

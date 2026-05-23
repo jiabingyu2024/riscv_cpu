@@ -41,6 +41,9 @@ package IssueTypes;
         ShiftType       srcBShift;
         logic           srcBRdy;
 
+        PhyRegNumPath   dst;
+        logic           writeDst;
+
         logic           srcBIsImm;
         ShiftType       delay;
 

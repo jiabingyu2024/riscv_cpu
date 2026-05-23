@@ -219,6 +219,7 @@ package PipelineTypes;
         logic         valid;
         PhyRegNumPath Rd;
         logic         writeRd;
+        DataPath      data;
         RobIndexPath  robIndex;
     } ExAluToWbPath;
 
@@ -226,6 +227,7 @@ package PipelineTypes;
         logic         valid;
         PhyRegNumPath Rd;
         logic         writeRd;
+        DataPath      data;
         RobIndexPath  robIndex;
     } ExMemToWbPath;
 
@@ -233,6 +235,7 @@ package PipelineTypes;
         logic         valid;
         PhyRegNumPath Rd;
         logic         writeRd;
+        DataPath      data;
         RobIndexPath  robIndex;
     } ExMulToWbPath;
 
@@ -240,6 +243,7 @@ package PipelineTypes;
         logic         valid;
         PhyRegNumPath Rd;
         logic         writeRd;
+        DataPath      data;
 
         PcPath        trueTargetPc;
         logic         taken;
@@ -251,6 +255,7 @@ package PipelineTypes;
         logic         valid;
         PhyRegNumPath Rd;
         logic         writeRd;
+        DataPath      data;
 
         RobIndexPath  robIndex;
 

@@ -19,12 +19,12 @@ module RecoveryManager(
         self.pcUpdateEn = self.recoveryInfo.valid;
         self.pcUpdate = self.recoveryInfo.recoverPc;
 
-        self.branchUpdateValid = self.commitBranchUpdateValid;
-        self.branchPc = self.commitBranchPc;
-        self.branchTaken = self.commitBranchTaken;
-        self.branchTarget = self.commitBranchTarget;
-        self.branchMiss = self.recoveryInfo.valid &&
-                          self.recoveryInfo.cause == REC_BRANCH_MISS;
+        self.branchUpdateValid = self.recoveryInfo.valid &&
+                                 self.recoveryInfo.cause == REC_BRANCH_MISS;
+        self.branchPc = '0;
+        self.branchTaken = 1'b0;
+        self.branchTarget = self.recoveryInfo.recoverPc;
+        self.branchMiss = self.branchUpdateValid;
 
         specRAT.specRATChkptRecover.ChkptRecoverEn = self.recoveryInfo.valid &&
                                                      self.recoveryInfo.chkptRecoverEn;

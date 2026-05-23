@@ -1,0 +1,38 @@
+{
+  "timestamp": "2026-05-23T21:13:35+08:00",
+  "trigger": "BPU/BTB/BHB skeleton completion request and branch predictor training source fix",
+  "files_modified": [
+    {
+      "path": "rtl/core/PreFetchStage/BPU.sv",
+      "lines_changed": "full file",
+      "change_type": "logic_implementation"
+    },
+    {
+      "path": "rtl/core/PreFetchStage/BTB.sv",
+      "lines_changed": "full file",
+      "change_type": "logic_implementation"
+    },
+    {
+      "path": "rtl/core/PreFetchStage/BHB.sv",
+      "lines_changed": "full file",
+      "change_type": "logic_implementation"
+    },
+    {
+      "path": "rtl/core/CommitStage/RecoveryManagerIF.sv",
+      "lines_changed": "19-63",
+      "change_type": "interface_extension"
+    },
+    {
+      "path": "rtl/core/CommitStage/CommitStage.sv",
+      "lines_changed": "18-56",
+      "change_type": "logic_fix"
+    },
+    {
+      "path": "rtl/core/CommitStage/RecoveryManager.sv",
+      "lines_changed": "20-26",
+      "change_type": "logic_fix"
+    }
+  ],
+  "cascade_scope": "compile_and_lint",
+  "notes": "Implemented a small competitive branch predictor and added a commit-stage branch training path so BPU updates use the real branch PC, taken result, and target instead of a fixed zero PC and miss-only update."
+}

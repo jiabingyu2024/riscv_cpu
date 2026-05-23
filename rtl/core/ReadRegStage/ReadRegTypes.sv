@@ -12,6 +12,8 @@ import PipelineTypes::*;
 package ReadRegTypes;
 
     localparam  REG_DEPTH = PHYREG_NUM;
+    localparam int REGFILE_READ_PORT_NUM = WAY_NUM * 2;
+    localparam int REGFILE_WRITE_PORT_NUM = WAY_NUM * 5;
     localparam int BYPASS_READ_PORT_NUM = WAY_NUM * 2;
     localparam int BYPASS_WB_PORT_NUM   = WAY_NUM * 5;
     

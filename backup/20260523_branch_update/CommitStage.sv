@@ -17,10 +17,6 @@ module CommitStage(
 );
     always_comb begin
         recovery.commitRecoveryReq = '0;
-        recovery.commitBranchUpdateValid = 1'b0;
-        recovery.commitBranchPc = '0;
-        recovery.commitBranchTaken = 1'b0;
-        recovery.commitBranchTarget = '0;
         ctrl.serialBlock = 1'b0;
         storeBuffer.StoreBufferPopReq = '0;
 
@@ -42,15 +38,6 @@ module CommitStage(
                 !recovery.commitRecoveryReq.valid) begin
                 self.commitValid[i] = 1'b1;
                 self.commitPc[i] = rob.RobPopRes[i].entry.pc;
-
-                if (rob.RobPopRes[i].entry.isBranch && !recovery.commitBranchUpdateValid) begin
-                    recovery.commitBranchUpdateValid = 1'b1;
-                    recovery.commitBranchPc = rob.RobPopRes[i].entry.pc;
-                    recovery.commitBranchTaken = rob.RobPopRes[i].entry.isMiss ?
-                                                 !rob.RobPopRes[i].entry.takenPred :
-                                                 rob.RobPopRes[i].entry.takenPred;
-                    recovery.commitBranchTarget = rob.RobPopRes[i].entry.truePc;
-                end
 
                 if (rob.RobPopRes[i].entry.exception) begin
                     self.commitException = 1'b1;

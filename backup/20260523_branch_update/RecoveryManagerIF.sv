@@ -19,11 +19,6 @@ interface RecoveryManagerIF(
     RecoveryReqPath writeBackRecoveryReq;
     RecoveryReqPath recoveryInfo;
 
-    logic           commitBranchUpdateValid;
-    PcPath          commitBranchPc;
-    logic           commitBranchTaken;
-    PcPath          commitBranchTarget;
-
     logic           pcUpdateEn;
     PcPath          pcUpdate;
 
@@ -39,10 +34,6 @@ interface RecoveryManagerIF(
             rst,
             commitRecoveryReq,
             writeBackRecoveryReq,
-            commitBranchUpdateValid,
-            commitBranchPc,
-            commitBranchTaken,
-            commitBranchTarget,
         output
             recoveryInfo,
             pcUpdateEn,
@@ -58,11 +49,7 @@ interface RecoveryManagerIF(
         input
             recoveryInfo,
         output
-            commitRecoveryReq,
-            commitBranchUpdateValid,
-            commitBranchPc,
-            commitBranchTaken,
-            commitBranchTarget
+            commitRecoveryReq
     );
 
     modport WriteBackStage(
