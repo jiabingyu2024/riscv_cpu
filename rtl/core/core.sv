@@ -43,9 +43,10 @@ module core(
         FreeList freeList(freeListIF);
 
     //DS dispatch
-    DispatchStage dispatchStage (rnStageIF, dsStageIF,issueQueueIF, ctrlIF, robIF);
+    DispatchStage dispatchStage (rnStageIF, dsStageIF,issueQueueIF, ctrlIF, robIF,storeBufferIF);
         ROB rob(robIF);
         IssueQueue issueQueue(issueQueueIF);
+        StoreBuffer storeBuffer(storeBufferIF);
     //IS issue 
     IssueStage issueStage (dsStageIF, isStageIF, ctrlIF,issueQueueIF);
 
@@ -53,29 +54,22 @@ module core(
     RegReadStage regReadStage (isStageIF, rrStageIF, bypassIF,ctrlIF);
     //EX
     //RW
-    ExecuteAluStage executeAluStage (rrStageIF, exAluStageIF, ctrlIF);
-    WriteBackAluStage writeBackStage (exStageIF, wbAludStageIF, ctrlIF);
+    ExecuteAluStage executeAluStage (rrStageIF, exAluStageIF, ctrlIF,bypassIF);
+    ExecuteBrcStage executeBrcStage (rrStageIF, exBrcStageIF, ctrlIF,bypassIF);
+    ExecuteMulStage executeMulStage (rrStageIF, exMultageIF, ctrlIF,bypassIF);
+    ExecuteMemStage executeMemStage (rrStageIF, exMemStageIF, ctrlIF, storeBufferIF,bypassIF);
+    ExecuteSysStage executeSysStage (rrStageIF, exSysStageIF, ctrlIF,bypassIF);
 
-    ExecuteBrcStage executeBrcStage (rrStageIF, exBrcStageIF, ctrlIF);
-    WriteBackBrcStage writeBackBrcStage (exBrcStageIF, wbBrcStageIF, ctrlIF);
-
-    ExecuteMulStage executeMulStage (rrStageIF, exMultageIF, ctrlIF);
-    WriteBackMulStage writeBackMulStage (exMulStageIF, wbMulDivStageIF, ctrlIF);
-
-    ExecuteMemStage executeMemStage (rrStageIF, exMemStageIF, ctrlIF);
-    WriteBackMemStage writeBackMemStage (exMemStageIF, wbMemStageIF, ctrlIF);
-
-    ExecuteSysStage executeSysStage (rrStageIF, exSysStageIF, ctrlIF);
-    WriteBackSysStage writeBackSysStage (exSysStageIF, wbSysStageIF, ctrlIF);
+    WriteBackStage writeBackStage (exAluStageIF,exBrcStageIF,exMultageIF,exMemStageIF,exSysStageIF, wbStageIF, ctrlIF, recoveryManagerIF,bypassIF);
 
     Bypass bypassIF(bypassIF);
     //CM
 
-    CommitStage cmStage (cmStageIF,recoveryManagerIF,ctrlIF);
+    CommitStage cmStage (cmStageIF,recoveryManagerIF,ctrlIF,archRATIF,specRATIF,freeListIF,wbStageIF,storeBufferIF,robIF);
 
-    RecoveryManager recoveryManager(recoveryManagerIF);
+    RecoveryManager recoveryManager(recoveryManagerIF,ctrlIF,specRATIF,freeListIF);
 
-    Ctrl ctrl(ctrlIF, recoveryManagerIF);
+    Ctrl ctrl(ctrlIF,recoveryManagerIF);
 
 
 endmodule
