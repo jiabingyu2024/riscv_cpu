@@ -1,3 +1,11 @@
+//------------------------------------------------------------------------------
+// IssueQueueIF.sv
+// 作用：定义 IssueQueue 的派发写入、发射读出和调度控制接口。
+// 微架构定位：Dispatch 将 uop 的调度相关信息 push 进 IssueQueue；IssueStage 从
+// ready entry 中 pop/issue。IssueQueue 只保存唤醒/选择所需的轻量信息，较大的
+// 执行 payload 由 PayloadIF 管理。
+//------------------------------------------------------------------------------
+
 import BasicTypes::*;
 import PipelineTypes::*;
 import IssueTypes::*;
@@ -34,19 +42,19 @@ interface IssueQueueIF( input logic clk, rst );
 
     modport DispatchStage(
     input
-        IssuePushReq,
-    output
         IssuePushRes,
         IssueFreeCount,
+    output
+        IssuePushReq,
         IssueCtrl
     );
 
     modport IssueStage(
 
     input
-        IssuePopReq,
+        IssuePopRes,
     output
-        IssuePopRes
+        IssuePopReq
     );
 
 

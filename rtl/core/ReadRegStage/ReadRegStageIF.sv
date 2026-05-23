@@ -1,3 +1,11 @@
+//------------------------------------------------------------------------------
+// ReadRegStageIF.sv
+// 作用：定义 RR->EX 各执行管线的操作数 payload 接口。
+// 微架构定位：ReadRegStage 根据 Issue 结果读取物理寄存器堆，并按 ALU/MEM/MUL/
+// BRC/SYS 五类执行管线拆分输出到 RR/EX 流水寄存器。WB-only bypass 不在 RR 级
+// 最终选择，而是在 EX 执行前由各 ExecuteStage 查询 BypassIF 完成。
+//------------------------------------------------------------------------------
+
 import BasicTypes::*;
 import PipelineTypes::*;
 import ReadRegTypes::*;

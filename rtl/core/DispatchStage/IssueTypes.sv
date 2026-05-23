@@ -1,3 +1,11 @@
+//------------------------------------------------------------------------------
+// IssueTypes.sv
+// 作用：定义 IssueQueue 与 Payload 存储结构的 push/pop/entry 协议。
+// 微架构定位：Dispatch 将已分配 ROB 的 uop 写入 IssueQueue，并把较大的静态
+// 执行 payload 写入 Payload 存储；Issue 选择 ready entry 后结合 payload 送往
+// ReadReg。这里描述调度队列/载荷存储协议，不描述通用级间寄存器。
+//------------------------------------------------------------------------------
+
 import BasicTypes::*;
 import PipelineTypes::*;
 

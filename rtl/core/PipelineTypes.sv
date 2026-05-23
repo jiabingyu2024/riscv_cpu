@@ -1,3 +1,12 @@
+//------------------------------------------------------------------------------
+// PipelineTypes.sv
+// 作用：定义各流水级之间传递的 payload。
+// 微架构定位：这里描述“某一级寄存器后一拍送到下一级”的信息边界，例如
+// PF->IF、IF->ID、ID->RN、RN->DS、IS->RR、RR->EX、EX->WB。它不拥有 ROB、
+// IssueQueue、StoreBuffer、Recovery 等存储/仲裁协议。当前保留对这些独立
+// Types package 的 export，是为了兼容已有 IF 文件，后续可逐步改成直接 import。
+//------------------------------------------------------------------------------
+
 import BasicTypes::*;
 import ROBTypes::*;
 import StoreBufferTypes::*;

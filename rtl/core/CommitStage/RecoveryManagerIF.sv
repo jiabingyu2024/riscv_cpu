@@ -1,27 +1,89 @@
-  import BasicTypes::*;
-  import PipelineTypes::*;
-  import RenameTypes::*;
+//------------------------------------------------------------------------------
+// RecoveryManagerIF.sv
+// 作用：定义全核恢复管理接口。
+// 微架构定位：Commit/WriteBack 等恢复请求源只发 RecoveryReqPath；RecoveryManager
+// 仲裁后统一输出 recoveryInfo、PC redirect 和分支预测器更新信息。PreFetch 只
+// 消费重定向 PC，Ctrl 只消费 flush/stall 所需恢复事件，Rename 只消费 checkpoint
+// 恢复信息，避免各模块私自生成不一致的全局恢复控制。
+//------------------------------------------------------------------------------
 
-  interface RecoveryManagerIF(
-      input logic clk,
-      input logic rst
-  );
+import BasicTypes::*;
+import PipelineTypes::*;
+import RecoveryTypes::*;
+
+interface RecoveryManagerIF(
+    input logic clk,
+    input logic rst
+);
+    RecoveryReqPath commitRecoveryReq;
+    RecoveryReqPath writeBackRecoveryReq;
+    RecoveryReqPath recoveryInfo;
+
     logic           pcUpdateEn;
     PcPath          pcUpdate;
+
+    logic           branchUpdateValid;
+    PcPath          branchPc;
+    logic           branchTaken;
+    PcPath          branchTarget;
+    logic           branchMiss;
 
     modport RecoveryManager(
         input
             clk,
-            rst
+            rst,
+            commitRecoveryReq,
+            writeBackRecoveryReq,
         output
+            recoveryInfo,
             pcUpdateEn,
-            pcUpdate
-    )
+            pcUpdate,
+            branchUpdateValid,
+            branchPc,
+            branchTaken,
+            branchTarget,
+            branchMiss
+    );
 
-    modport PrefetchStage(
-        input   
+    modport CommitStage(
+        input
+            recoveryInfo,
+        output
+            commitRecoveryReq
+    );
+
+    modport WriteBackStage(
+        input
+            recoveryInfo,
+        output
+            writeBackRecoveryReq
+    );
+
+    modport PreFetchStage(
+        input
+            recoveryInfo,
             pcUpdateEn,
             pcUpdate
     );
 
-  endinterface
+    modport CtrlUnit(
+        input
+            recoveryInfo,
+            pcUpdateEn
+    );
+
+    modport RenameStage(
+        input
+            recoveryInfo
+    );
+
+    modport BPU(
+        input
+            branchUpdateValid,
+            branchPc,
+            branchTaken,
+            branchTarget,
+            branchMiss
+    );
+
+endinterface

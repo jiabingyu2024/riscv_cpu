@@ -1,3 +1,12 @@
+//------------------------------------------------------------------------------
+// RenameTypes.sv
+// 作用：定义 rename 相关的 RAT 读写、checkpoint create/recover/free 和 FreeList
+// 分配/释放协议。
+// 微架构定位：SpecRAT/FreeList 服务投机重命名，ArchRAT 服务提交态映射。
+// 分支 checkpoint 在 rename 创建，分支正确提交时释放，错误预测或异常恢复时
+// 由 RecoveryManager 触发恢复。全局 checkpoint 索引定义在 BasicTypes。
+//------------------------------------------------------------------------------
+
 import BasicTypes::*;
 
 package RenameTypes;
