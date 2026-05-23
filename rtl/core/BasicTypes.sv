@@ -34,6 +34,16 @@ package BasicTypes;
     typedef logic [$clog2(WAY_NUM)-1:0] WayNumPath;
     localparam PC_STEP = WAY_NUM * 4; // 每次取指的PC递增量
 
+    // Backend global indexes. Keep these here so pipeline/recovery/rename
+    // types do not depend on one concrete module package.
+    localparam ROB_DEPTH = 16;
+    localparam ROB_DEPTH_WIDTH = $clog2(ROB_DEPTH);
+    typedef logic [ROB_DEPTH_WIDTH-1:0] RobIndexPath;
+
+    localparam CHECKPOINT_NUM = 8;
+    localparam CHECKPOINT_WIDTH = $clog2(CHECKPOINT_NUM);
+    typedef logic [CHECKPOINT_WIDTH-1:0] ChkptIndexPath;
+
 
     // 操作数来源于寄存器堆的索引
     typedef struct packed {

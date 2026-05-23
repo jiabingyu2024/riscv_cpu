@@ -6,6 +6,15 @@ package IssueTypes;
     localparam SHIFT_WIDTH = 4;
     typedef logic [SHIFT_WIDTH-1:0] ShiftType;
 
+    localparam ISSUE_QUEUE_DEPTH = 16;
+    localparam ISSUE_QUEUE_WIDTH = $clog2(ISSUE_QUEUE_DEPTH);
+    typedef logic [ISSUE_QUEUE_WIDTH-1:0] IssueFreeCountPath;
+    typedef logic [ISSUE_QUEUE_WIDTH-1:0] IssueIndexPath;
+
+    typedef struct packed {
+        logic flush;
+    } IssueCtrlPath;
+
     typedef struct packed {
         IssueIndexPath  payloadIndex;
         TubeTypePath tubeType;
@@ -28,7 +37,7 @@ package IssueTypes;
         ShiftType       delay;
 
         logic           robIndexPosition;
-        RobIndex        robIndex;
+        RobIndexPath    robIndex;
 
         // TubeTypePath tubeType;
         // SubTypePath  SubType;
@@ -55,12 +64,6 @@ package IssueTypes;
         logic            done;
         IssueEntryPath       entry;
     } IssuePopResPath;
-
-    localparam ISSUE_QUEUE_DEPTH = 16;
-    localparam ISSUE_QUEUE_WIDTH = $clog2(ISSUE_QUEUE_DEPTH);
-    typedef logic [ISSUE_QUEUE_WIDTH-1:0] IssueFreeCountPath;
-    typedef logic [ISSUE_QUEUE_WIDTH-1:0] IssueIndexPath;
-
 
     typedef struct packed {
         PcPath pc;
@@ -94,7 +97,7 @@ package IssueTypes;
     typedef struct packed {
         logic         valid;
         PayloadEntryPath entry;
-    };
+    } PayloadPopResPath;
 
 
 endpackage

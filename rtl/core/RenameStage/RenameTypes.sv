@@ -1,5 +1,4 @@
 import BasicTypes::*;
-import PipelineTypes::*;
 
 package RenameTypes;
 
@@ -27,12 +26,6 @@ package RenameTypes;
 
     
 
-
-    // checkpoint
-    localparam CHECKPOINT_NUM = 8;
-    localparam CHECKPOINT_WIDTH = $clog2(CHECKPINT_NUM);
-
-    typedef logic [CHECKPOINT_WIDTH-1:0] ChkptIndexPath;
 
     typedef struct packed {
         logic          ChkptIndexValid;
