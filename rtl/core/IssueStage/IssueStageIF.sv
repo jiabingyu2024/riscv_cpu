@@ -4,7 +4,7 @@ import  PipelineTypes::*;
 
 interface IssueStageIF( input logic clk, rst );
 
-    IsToExPath nextStage [WAY_NUM];
+    IsToRrPath nextStage [WAY_NUM];
 
     modport IssueStage(
     input

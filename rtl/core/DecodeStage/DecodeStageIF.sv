@@ -1,5 +1,6 @@
 import  BasicTypes::*;
-import PipelineTypes::*;
+import  PipelineTypes::*;
+import  DecodeStageTypes::*;
 
 
 interface DecodeStageIF ( input logic clk, rst );

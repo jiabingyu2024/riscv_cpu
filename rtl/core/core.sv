@@ -59,8 +59,8 @@ module core(
     ExecuteBrcStage executeBrcStage (rrStageIF, exBrcStageIF, ctrlIF);
     WriteBackBrcStage writeBackBrcStage (exBrcStageIF, wbBrcStageIF, ctrlIF);
 
-    ExecuteMulDivStage executeMulDivStage (rrStageIF, exMulDivStageIF, ctrlIF);
-    WriteBackMulDivStage writeBackMulDivStage (exMulDivStageIF, wbMulDivStageIF, ctrlIF);
+    ExecuteMulStage executeMulStage (rrStageIF, exMultageIF, ctrlIF);
+    WriteBackMulStage writeBackMulStage (exMulStageIF, wbMulDivStageIF, ctrlIF);
 
     ExecuteMemStage executeMemStage (rrStageIF, exMemStageIF, ctrlIF);
     WriteBackMemStage writeBackMemStage (exMemStageIF, wbMemStageIF, ctrlIF);

@@ -1,4 +1,4 @@
-// 
+// 同时对WAY_NUM条指令进行解码，同时进行branch数量判断，和serial判断 ，限制同时送往下一阶段的指令中只能有一条branch,同时传出ctrl 信号请求stall
 
 
 

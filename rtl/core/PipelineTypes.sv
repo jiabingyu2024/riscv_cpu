@@ -10,13 +10,13 @@ package PipelineTypes;
     typedef struct packed {
         logic stall;
         logic flush;
-    } PipeCtrl;
+    } PipeCtrlPath;
 
     // PF to IF
     typedef struct packed {
         PcPath pcPred; // 来自分支预测器的预测PC地址
         logic  isPred;
-    } PredInfo;
+    } PredInfoPath;
     typedef struct packed {
         PcPath pc;
         PredInfo predInfo;
@@ -28,7 +28,7 @@ package PipelineTypes;
         PcPath pc;
         InstPath inst;
         logic  valid;
-        PredInfo predInfo; 
+        PredInfoPath predInfo; 
     } IfToIdPath;
 
     // ID to RN
@@ -95,15 +95,6 @@ package PipelineTypes;
         
     } RnToDsPath;
 
-    //DS to IS
-    typedef struct packed {
-        logic valid;
-        PcPath pc;
-        PredInfoPath predInfo;
-        
-        CsrAddrPath      csrAddr;
-        DataPath         imm;
-    } DsToIsPath;
 
     //ROB 
     localparam ROB_DEPTH = 16;
@@ -131,6 +122,10 @@ package PipelineTypes;
     typedef struct packed {
         logic  valid;
         RobIndexPath robIndex;
+        logic        isSerial;
+        logic        exception;
+        PcPath       trueTargetPc;
+        logic        taken;
     }RobDoneReqPath;
 
     typedef struct packed {
@@ -147,12 +142,222 @@ package PipelineTypes;
         logic               takenPred;
         logic               isMiss;
         PcPath              truePc;
-        ChkptIndexPath      chkptIndex; 
+        ChkptIndexPath      specRATChkptIndex; 
+        ChkptIndexPath      freeListChkptIndex;
 
         logic               isSerial;
         logic               exception;
         
     } RobEntryPath;
 
+    //DS to IS
+    typedef struct packed {
+        logic valid;
+        // PcPath pc;
+        // PredInfoPath predInfo;
+        
+        // CsrAddrPath      csrAddr;
+        // DataPath         imm;
+    } DsToIsPath;
+
+    // IS to RR
+    typedef struct packed {
+        logic valid;
+        PayloadEntryPath payloadEntry;
+        IssueEntryPath   issueEntry;
+
+    } IsToRrPath;
+
+
+    typedef struct packed {
+        logic valid;
+        SubTypePath subType;
+
+        DataPath dataA;
+        DataPath dataB;
+        PhyRegNumPath Rs1;
+        PhyRegNumPath Rs2;
+        logic         srcAIsRs1;
+        logic         srcBIsRs2;
+
+        PhyRegNumPath Rd;
+        logic         writeRd;
+
+        RobIndexPath robIndex;
+
+    }RrToExAluPath;
+
+    typedef struct packed {
+        logic valid;
+        SubTypePath subType;
+
+        DataPath dataA;
+        DataPath dataB;
+        PhyRegNumPath Rs1;
+        PhyRegNumPath Rs2;
+        logic         srcAIsRs1;
+        logic         srcBIsRs2;
+
+        DataPath      imm;
+
+        PhyRegNumPath Rd;
+        logic         writeRd;
+
+        RobIndexPath robIndex;
+
+
+    }RrToExMemPath;
+
+    typedef struct packed {
+        logic valid;
+        SubTypePath subType;
+
+        DataPath dataA;
+        DataPath dataB;
+        PhyRegNumPath Rs1;
+        PhyRegNumPath Rs2;
+        logic         srcAIsRs1;
+        logic         srcBIsRs2;
+
+        PhyRegNumPath Rd;
+        logic         writeRd;
+
+        RobIndexPath robIndex;
+
+    }RrToExMulPath;
+
+    typedef struct packed {
+        logic valid;
+        SubTypePath subType;
+
+        DataPath dataA;
+        DataPath dataB;
+        PhyRegNumPath Rs1;
+        PhyRegNumPath Rs2;
+        logic         srcAIsRs1;
+        logic         srcBIsRs2;    
+
+        PhyRegNumPath Rd;
+        logic         writeRd;
+
+
+        RobIndexPath robIndex;
+
+    }RrToExBrcPath;
+
+    typedef struct packed {
+        logic valid;
+        SubTypePath subType;
+
+        DataPath dataA;
+        PhyRegNumPath Rs1;
+        logic         srcAIsRs1;
+
+        CsrAddrPath      csrAddr;
+
+        PhyRegNumPath Rd;
+        logic         writeRd;
+
+        RobIndexPath robIndex;
+
+    }RrToExSysPath;
+
+    typedef struct packed {
+        logic          valid;
+        
+        PhyRegNumPath  Rd;
+        logic          writeRd;
+
+        RobIndexPath   robIndex;
+    } ExAluToWbPath;
+
+    typedef struct packed {
+        logic          valid;
+        
+        PhyRegNumPath  Rd;
+        logic          writeRd;
+
+        RobIndexPath   robIndex;
+    } ExMemToWbPath;
+
+    typedef struct packed {
+        logic          valid;
+        
+        PhyRegNumPath  Rd;
+        logic          writeRd;
+
+        RobIndexPath   robIndex;
+    } ExMulToWbPath;
+
+    typedef struct packed {
+        logic          valid;
+        
+        PhyRegNumPath  Rd;
+        logic          writeRd;
+
+        PcPath         trueTargetPc;
+        logic          taken;
+
+        RobIndexPath   robIndex;
+    } ExBrcToWbPath;
+
+    typedef struct packed {
+        logic          valid;
+        
+        PhyRegNumPath  Rd;
+        logic          writeRd;
+
+        RobIndexPath   robIndex;    
+
+        logic          isSerial;
+        logic          exception;
+    } ExSysToWbPath;
+
+    
+    //storeBuffer
+    localparam STORE_BUFFER_DEPTH = 8;
+    localparam STORE_BUFFER_WIDTH = $clog2(STORE_BUFFER_DEPTH);
+    typedef logic [STORE_BUFFER_WIDTH-1:0] StoreBufferIndex;
+
+    typedef struct packed {
+        logic valid;
+        StoreBufferIndex index;
+        AddrPath addr;
+        DataPath data;
+    } StoreBufferPushReqPath;
+
+    typedef struct packed {
+        logic     valid;
+        StoreBufferIndex index;      
+    } StoreBufferPopReqPath;
+
+    typedef struct packed {
+        logic valid;
+        AddrPath addr;
+    } StoreBufferMatchInPath;
+
+    typedef struct packed {
+        logic    hit;
+        DataPath data;
+    } StoreBufferMatchOutPath;
+    
+  typedef enum logic [2:0] {
+      REC_NONE,
+      REC_BRANCH_MISS,
+      REC_EXCEPTION,
+      REC_REPLAY,
+      REC_SERIAL
+  } RecoveryCausePath;
+
+  typedef struct packed {
+      logic             valid;
+      RecoveryCausePath cause;
+      PcPath            recoverPc;
+      ChkptIndexPath    specRATChkptIndex;
+      ChkptIndexPath    freeListChkptIndex;
+      logic             chkptRecoverEn;
+      logic             frontendFlush;
+      logic             backendFlush;
+  } RecoveryReqPath;
 
 endpackage PipelineTypes;

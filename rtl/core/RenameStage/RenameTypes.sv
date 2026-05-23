@@ -35,7 +35,7 @@ package RenameTypes;
     typedef logic [CHECKPOINT_WIDTH-1:0] ChkptIndexPath;
 
     typedef struct packed {
-        logic          ChkptCreateEn;
+        logic          ChkptIndexValid;
         ChkptIndexPath ChkptCreateIndex;
     }ChkptCreatePath; 
     typedef struct packed {

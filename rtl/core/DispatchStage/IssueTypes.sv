@@ -1,12 +1,16 @@
 import BasicTypes::*;
 import PipelineTypes::*;
 
-
+package IssueTypes;
 
     localparam SHIFT_WIDTH = 4;
     typedef logic [SHIFT_WIDTH-1:0] ShiftType;
 
     typedef struct packed {
+        IssueIndexPath  payloadIndex;
+        TubeTypePath tubeType;
+
+
         logic           freed;
         logic           issued;
 
@@ -26,20 +30,21 @@ import PipelineTypes::*;
         logic           robIndexPosition;
         RobIndex        robIndex;
 
-        TubeTypePath tubeType;
-        SubTypePath  SubType;
+        // TubeTypePath tubeType;
+        // SubTypePath  SubType;
 
-        OperandTypePath opTypeA;
-        OperandTypePath opTypeB;
-    } IssueEntry;
+        // OperandTypePath opTypeA;
+        // OperandTypePath opTypeB;
+    } IssueEntryPath;
 
     typedef struct packed {
         logic            valid;
-        IssueEntry       entry;
+        IssueEntryPath       entry;
     } IssuePushReqPath;
 
     typedef struct packed {
-        logic            done;  
+        logic                done;
+        IssueIndexPath       payloadIndex;
     }IssuePushResPath;
 
     typedef struct packed {
@@ -48,11 +53,48 @@ import PipelineTypes::*;
 
     typedef struct packed {
         logic            done;
-        IssueEntry       entry;
+        IssueEntryPath       entry;
     } IssuePopResPath;
 
     localparam ISSUE_QUEUE_DEPTH = 16;
     localparam ISSUE_QUEUE_WIDTH = $clog2(ISSUE_QUEUE_DEPTH);
     typedef logic [ISSUE_QUEUE_WIDTH-1:0] IssueFreeCountPath;
+    typedef logic [ISSUE_QUEUE_WIDTH-1:0] IssueIndexPath;
 
 
+    typedef struct packed {
+        PcPath pc;
+        PredInfoPath predInfo;
+        
+        CsrAddrPath  csrAddr;
+
+        SubTypePath  SubType;
+
+        OperandTypePath opTypeA;
+        OperandTypePath opTypeB;
+
+        DataPath         imm;
+    } PayloadEntryPath;
+
+    //payload
+    typedef struct packed {
+        logic valid;
+        PayloadEntryPath entry;
+    } PayloadPushReqPath;
+
+    typedef struct packed {
+        logic done;
+    } PayloadPushResPath;
+
+    typedef struct packed {
+        logic        valid;
+        IssueIndexPath payloadIndex;
+    } PayloadPopReqPath;
+
+    typedef struct packed {
+        logic         valid;
+        PayloadEntryPath entry;
+    };
+
+
+endpackage

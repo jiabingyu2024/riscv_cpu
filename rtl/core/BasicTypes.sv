@@ -39,12 +39,12 @@ package BasicTypes;
     typedef struct packed {
         PhyRegNumPath phyRegNumA;
         PhyRegNumPath phyRegNumB;
-    } OpSrc;
+    } OpSrcPath;
 
     typedef struct packed {
         PhyRegNumPath phyRegNumA;
         PhyRegNumPath phyRegNumB;
-    } DstSrc;
+    } DstSrcPath;
 
 
     
