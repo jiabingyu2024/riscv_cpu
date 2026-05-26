@@ -24,6 +24,7 @@ interface ROBIF( input logic clk, rst );
     RobPopResPath       RobPopRes [WAY_NUM];  
 
     RobFreeCountPath    RobFreeCount;
+    logic               RobFlush;
 
     localparam int ROB_DONE_PORT_NUM = WAY_NUM * 5;
 
@@ -35,6 +36,7 @@ interface ROBIF( input logic clk, rst );
         input
             clk,
             rst,
+            RobFlush,
             RobPushReq,
             RobPopReq,
             RobDoneReq,
@@ -48,7 +50,8 @@ interface ROBIF( input logic clk, rst );
         input
             RobPopRes,
         output
-            RobPopReq
+            RobPopReq,
+            RobFlush
             
     );
 

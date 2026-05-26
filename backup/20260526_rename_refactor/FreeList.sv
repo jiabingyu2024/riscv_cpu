@@ -67,20 +67,14 @@ module FreeList(FreeListIF.FreeList self);
             end
         end else begin
             logic [PHYREG_NUM-1:0] nextMask;
-            logic [PHYREG_NUM-1:0] chkptNextMask;
             nextMask = freeMask;
-            chkptNextMask = freeMask;
 
             for (i = 0; i < WAY_NUM; i++) begin
                 if (self.freeListAllocReq[i] && self.freeListAlloc[i].allocValid) begin
                     nextMask[self.freeListAlloc[i].allocPhyRegNum] = 1'b0;
-                    if (WayNumPath'(i) <= self.freeListChkptBranchWay) begin
-                        chkptNextMask[self.freeListAlloc[i].allocPhyRegNum] = 1'b0;
-                    end
                 end
                 if (self.freeListFree[i].freeReq && self.freeListFree[i].freePhyRegNum != '0) begin
                     nextMask[self.freeListFree[i].freePhyRegNum] = 1'b1;
-                    chkptNextMask[self.freeListFree[i].freePhyRegNum] = 1'b1;
                 end
             end
 
@@ -88,7 +82,7 @@ module FreeList(FreeListIF.FreeList self);
 
             if (self.freeListChkptCreateEn && self.freeListChkptCreate.ChkptIndexValid) begin
                 chkptValid[self.freeListChkptCreate.ChkptCreateIndex] <= 1'b1;
-                chkptMask[self.freeListChkptCreate.ChkptCreateIndex] <= chkptNextMask;
+                chkptMask[self.freeListChkptCreate.ChkptCreateIndex] <= nextMask;
             end
             if (self.freeListChkptFree.ChkptFreeEn) begin
                 chkptValid[self.freeListChkptFree.ChkptFreeIndex] <= 1'b0;

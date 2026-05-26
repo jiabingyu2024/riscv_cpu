@@ -17,12 +17,9 @@ module PreFetchStage(
 );
     
     always_comb begin
-        logic predTakenSeen;
-
         self.pcIn = self.pcOut + PC_STEP;
         self.predictPc = self.pcOut + PC_STEP;
         self.pcWe = !ctrl.pfPipe.stall;
-        predTakenSeen = 1'b0;
 
         if (recovery.pcUpdateEn) begin
             self.pcIn = recovery.pcUpdate;
@@ -30,10 +27,9 @@ module PreFetchStage(
             self.pcWe = 1'b1;
         end else begin
             for (int i = 0; i < WAY_NUM; i++) begin
-                if (!predTakenSeen && self.bpuResult[i].btbhit && self.bpuResult[i].taken) begin
+                if (self.bpuResult[i].btbhit && self.bpuResult[i].taken) begin
                     self.pcIn = self.bpuResult[i].target;
                     self.predictPc = self.bpuResult[i].target;
-                    predTakenSeen = 1'b1;
                 end
             end
         end
@@ -41,17 +37,11 @@ module PreFetchStage(
         iromAccess.ena = !ctrl.pfPipe.stall;
         iromAccess.iromAddr = self.pcOut;
 
-        predTakenSeen = 1'b0;
         for (int i = 0; i < WAY_NUM; i++) begin
-            self.nextStage[i].valid = !ctrl.pfPipe.flush && !ctrl.pfPipe.stall && !predTakenSeen;
+            self.nextStage[i].valid = !ctrl.pfPipe.flush && !ctrl.pfPipe.stall;
             self.nextStage[i].pc = self.pcOut + PcPath'(i * 4);
-            self.nextStage[i].predInfo.pcPred = self.bpuResult[i].taken ?
-                                                self.bpuResult[i].target :
-                                                (self.pcOut + PC_STEP);
-            self.nextStage[i].predInfo.isPred = self.bpuResult[i].taken;
-            if (self.bpuResult[i].taken) begin
-                predTakenSeen = 1'b1;
-            end
+            self.nextStage[i].predInfo.pcPred = self.predictPc;
+            self.nextStage[i].predInfo.isPred = (self.predictPc != (self.pcOut + PC_STEP));
         end
     end
 

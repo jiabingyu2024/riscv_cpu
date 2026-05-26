@@ -98,19 +98,10 @@ package PipelineTypes;
         PcPath         pc;
         PredInfoPath   predInfo;
 
-        LgcRegInfoPath lgcRegInfo;
         CsrAddrPath    csrAddr;
         InstInfoPath   instInfo;
         DataPath       imm;
         PhyRegInfoPath phyRegInfo;
-        PhyRegNumPath  phyPrevDst;
-
-        logic           chkptValid;
-        ChkptIndexPath  specRATChkptIndex;
-        ChkptIndexPath  freeListChkptIndex;
-
-        logic                storeBufferIndexValid;
-        StoreBufferIndexPath storeBufferIndex;
     } RnToDsPath;
 
     // DS to IS
@@ -136,9 +127,6 @@ package PipelineTypes;
         PhyRegNumPath   dst;
         logic           writeDst;
         RobIndexPath    robIndex;
-
-        logic                storeBufferIndexValid;
-        StoreBufferIndexPath storeBufferIndex;
     } IsToRrPath;
 
     typedef struct packed {
@@ -175,9 +163,6 @@ package PipelineTypes;
         logic         writeRd;
 
         RobIndexPath  robIndex;
-
-        logic                storeBufferIndexValid;
-        StoreBufferIndexPath storeBufferIndex;
     } RrToExMemPath;
 
     typedef struct packed {
@@ -190,9 +175,6 @@ package PipelineTypes;
         PhyRegNumPath Rs2;
         logic         srcAIsRs1;
         logic         srcBIsRs2;
-
-        PcPath        pc;
-        DataPath      imm;
 
         PhyRegNumPath Rd;
         logic         writeRd;

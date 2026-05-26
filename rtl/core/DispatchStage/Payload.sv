@@ -25,8 +25,8 @@ module Payload(PayloadIF.Payload self);
         end else begin
             for (i = 0; i < WAY_NUM; i++) begin
                 if (self.PayloadPushReq[i].valid) begin
-                    entries[i] <= self.PayloadPushReq[i].entry;
-                    valid[i] <= 1'b1;
+                    entries[self.PayloadPushReq[i].payloadIndex] <= self.PayloadPushReq[i].entry;
+                    valid[self.PayloadPushReq[i].payloadIndex] <= 1'b1;
                 end
             end
         end

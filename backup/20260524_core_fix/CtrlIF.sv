@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// CtrlUnitIF.sv
+// CtrlIF.sv
 // 作用：定义全流水控制接口，承载各级 stall/flush 和资源阻塞请求。
 // 微架构定位：CtrlUnit 根据 RecoveryManager 的恢复事件、ROB/IQ/FreeList 资源状态、
 // serialBlock 和各级本地 stallReq 生成每个流水级的 PipeCtrlPath。该接口不传

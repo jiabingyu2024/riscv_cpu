@@ -22,8 +22,10 @@ module IssueQueue(IssueQueueIF.IssueQueue self);
     always_comb begin
         logic [ISSUE_QUEUE_DEPTH-1:0] selected;
         logic [ISSUE_QUEUE_DEPTH-1:0] allocMask;
+        logic memSelected;
         int freeCnt;
         selected = '0;
+        memSelected = 1'b0;
         freeCnt = 0;
         for (int k = 0; k < ISSUE_QUEUE_DEPTH; k++) begin
             allocMask[k] = valid[k];
@@ -47,7 +49,8 @@ module IssueQueue(IssueQueueIF.IssueQueue self);
             for (j = 0; j < ISSUE_QUEUE_DEPTH; j++) begin
                 if (valid[j] && !selected[j] && !entries[j].issued &&
                     entries[j].srcARdy && (entries[j].srcBRdy || entries[j].srcBIsImm) &&
-                    entries[j].delay == '0) begin
+                    entries[j].delay == '0 &&
+                    !(memSelected && entries[j].tubeType == TUBE_TYPE_MEM)) begin
                     if (!self.IssuePopRes[i].done ||
                         older_than(entries[j], self.IssuePopRes[i].entry)) begin
                         self.IssuePopRes[i].done = 1'b1;
@@ -57,6 +60,9 @@ module IssueQueue(IssueQueueIF.IssueQueue self);
             end
             if (self.IssuePopRes[i].done) begin
                 selected[self.IssuePopRes[i].entry.payloadIndex] = 1'b1;
+                if (self.IssuePopRes[i].entry.tubeType == TUBE_TYPE_MEM) begin
+                    memSelected = 1'b1;
+                end
             end
         end
 

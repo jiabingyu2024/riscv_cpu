@@ -71,12 +71,18 @@ module RegReadStage(
                     self.nextToMemStage[i].Rd = prev.nextStage[i].dst;
                     self.nextToMemStage[i].writeRd = prev.nextStage[i].writeDst;
                     self.nextToMemStage[i].robIndex = prev.nextStage[i].robIndex;
+                    self.nextToMemStage[i].storeBufferIndexValid = prev.nextStage[i].storeBufferIndexValid;
+                    self.nextToMemStage[i].storeBufferIndex = prev.nextStage[i].storeBufferIndex;
                 end
                 TUBE_TYPE_MUL: begin
                     self.nextToMulStage[i].valid = prev.nextStage[i].valid && !ctrl.rrPipe.flush;
                     self.nextToMulStage[i].subType = prev.nextStage[i].SubType;
                     self.nextToMulStage[i].dataA = dataA;
                     self.nextToMulStage[i].dataB = dataB;
+                    self.nextToMulStage[i].Rs1 = prev.nextStage[i].srcA;
+                    self.nextToMulStage[i].Rs2 = prev.nextStage[i].srcB;
+                    self.nextToMulStage[i].srcAIsRs1 = prev.nextStage[i].opTypeA == OP_TYPE_REG;
+                    self.nextToMulStage[i].srcBIsRs2 = prev.nextStage[i].opTypeB == OP_TYPE_REG;
                     self.nextToMulStage[i].Rd = prev.nextStage[i].dst;
                     self.nextToMulStage[i].writeRd = prev.nextStage[i].writeDst;
                     self.nextToMulStage[i].robIndex = prev.nextStage[i].robIndex;
@@ -86,6 +92,12 @@ module RegReadStage(
                     self.nextToBrcStage[i].subType = prev.nextStage[i].SubType;
                     self.nextToBrcStage[i].dataA = dataA;
                     self.nextToBrcStage[i].dataB = dataB;
+                    self.nextToBrcStage[i].Rs1 = prev.nextStage[i].srcA;
+                    self.nextToBrcStage[i].Rs2 = prev.nextStage[i].srcB;
+                    self.nextToBrcStage[i].srcAIsRs1 = prev.nextStage[i].opTypeA == OP_TYPE_REG;
+                    self.nextToBrcStage[i].srcBIsRs2 = prev.nextStage[i].opTypeB == OP_TYPE_REG;
+                    self.nextToBrcStage[i].pc = prev.nextStage[i].pc;
+                    self.nextToBrcStage[i].imm = prev.nextStage[i].imm;
                     self.nextToBrcStage[i].Rd = prev.nextStage[i].dst;
                     self.nextToBrcStage[i].writeRd = prev.nextStage[i].writeDst;
                     self.nextToBrcStage[i].robIndex = prev.nextStage[i].robIndex;

@@ -14,6 +14,12 @@ module DecodeStage (
 
     IfToIdPath pipeReg [WAY_NUM];
     IdToRnPath nextStage [WAY_NUM];
+    IdToRnPath decodedStage [WAY_NUM];
+    IdToRnPath replaySlot;
+    logic      replayValid;
+    logic      idStallReqReg;
+    logic      multiBranch;
+    logic      splitPacket;
 
 
     always_ff @(posedge self.clk) begin
@@ -21,22 +27,76 @@ module DecodeStage (
             for (int i = 0; i < WAY_NUM; i++) begin
                 pipeReg[i] <= '0;
             end
+            replaySlot <= '0;
+            replayValid <= 1'b0;
+            idStallReqReg <= 1'b0;
+        end else if (ctrl.idPipe.flush) begin
+            replaySlot <= '0;
+            replayValid <= 1'b0;
+            idStallReqReg <= 1'b0;
+        end else if (replayValid) begin
+            if (!ctrl.rnPipe.stall) begin
+                pipeReg <= prev.nextStage;
+                replaySlot <= '0;
+                replayValid <= 1'b0;
+                idStallReqReg <= 1'b0;
+            end else begin
+                idStallReqReg <= 1'b1;
+            end
+        end else if (splitPacket && !replayValid) begin
+            replaySlot <= decodedStage[1];
+            replaySlot.valid <= decodedStage[1].valid && !ctrl.idPipe.flush;
+            replayValid <= 1'b1;
+            idStallReqReg <= 1'b1;
         end 
         else if (!ctrl.idPipe.stall) begin
             pipeReg <= prev.nextStage; 
+            replayValid <= 1'b0;
+            idStallReqReg <= 1'b0;
         end
     end
 
     always_comb begin
-        ctrl.idStallReq = 1'b0;
+        int branchCount;
+
+        ctrl.idStallReq = idStallReqReg;
         ctrl.idStageEmpty = 1'b1;
+        branchCount = 0;
+
         for (int i = 0; i < WAY_NUM; i++) begin
-            nextStage[i].pc = pipeReg[i].pc;
-            nextStage[i].inst = pipeReg[i].inst; // 从指令缓存中取出的指令 --- IGNORE ---   、
-            nextStage[i].predInfo = pipeReg[i].predInfo; // 来自分支预测器的预测信息 --- IGNORE ---
-            nextStage[i].valid = pipeReg[i].valid && !ctrl.idPipe.flush; // 如果当前指令有效且没有被清空，则传递到下一阶段
-            DecodeInst(pipeReg[i].inst, nextStage[i].instInfo, nextStage[i].lgcRegInfo, nextStage[i].csrAddr );
-            ImmGen(pipeReg[i].inst, nextStage[i].imm);
+            decodedStage[i] = '0;
+            decodedStage[i].pc = pipeReg[i].pc;
+            decodedStage[i].inst = pipeReg[i].inst;
+            decodedStage[i].predInfo = pipeReg[i].predInfo;
+            decodedStage[i].valid = pipeReg[i].valid && !ctrl.idPipe.flush;
+            DecodeInst(pipeReg[i].inst, decodedStage[i].instInfo, decodedStage[i].lgcRegInfo, decodedStage[i].csrAddr);
+            ImmGen(pipeReg[i].inst, decodedStage[i].imm);
+            if (decodedStage[i].valid && decodedStage[i].instInfo.valid &&
+                decodedStage[i].instInfo.tubeType == TUBE_TYPE_BRC) begin
+                branchCount++;
+            end
+        end
+
+        multiBranch = (branchCount > 1) && !ctrl.idPipe.flush;
+        splitPacket = multiBranch;
+
+        for (int i = 0; i < WAY_NUM; i++) begin
+            nextStage[i] = '0;
+        end
+
+        if (replayValid) begin
+            nextStage[0] = replaySlot;
+            nextStage[0].valid = replaySlot.valid && !ctrl.idPipe.flush;
+        end else if (splitPacket) begin
+            nextStage[0] = decodedStage[0];
+            nextStage[0].valid = decodedStage[0].valid && !ctrl.idPipe.flush;
+        end else begin
+            for (int i = 0; i < WAY_NUM; i++) begin
+                nextStage[i] = decodedStage[i];
+            end
+        end
+
+        for (int i = 0; i < WAY_NUM; i++) begin
             ctrl.idStageEmpty &= !nextStage[i].valid;
         end
     end

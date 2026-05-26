@@ -7,11 +7,8 @@
 //------------------------------------------------------------------------------
 
 import BasicTypes::*;
-import StoreBufferTypes::*;
 
 package ROBTypes;
-    import BasicTypes::*;
-    import StoreBufferTypes::*;
 
     typedef logic [ROB_DEPTH_WIDTH-1:0] RobFreeCountPath;
 
@@ -28,13 +25,9 @@ package ROBTypes;
         logic               isBranch;
         logic               takenPred;
         logic               isMiss;
-        PcPath              predPc;
         PcPath              truePc;
         ChkptIndexPath      specRATChkptIndex;
         ChkptIndexPath      freeListChkptIndex;
-
-        logic               isStore;
-        StoreBufferIndexPath storeBufferIndex;
 
         logic               isSerial;
         logic               exception;

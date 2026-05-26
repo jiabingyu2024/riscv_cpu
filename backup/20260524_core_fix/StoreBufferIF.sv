@@ -19,8 +19,6 @@ interface StoreBufferIF( input logic clk, rst );
     StoreBufferPushReqPath  StoreBufferPushReq;
 
     StoreBufferPopReqPath   StoreBufferPopReq;
-    StoreBufferCommitPath   StoreBufferCommit;
-    logic                   flush;
 
     StoreBufferMatchInPath  StoreBufferMatchIn;
     StoreBufferMatchOutPath StoreBufferMatchOut;  
@@ -29,7 +27,6 @@ interface StoreBufferIF( input logic clk, rst );
         input
             clk,
             rst,
-            flush,
             allocReq,
             StoreBufferPushReq,
             StoreBufferPopReq,
@@ -37,7 +34,6 @@ interface StoreBufferIF( input logic clk, rst );
         output
             allocRdy,
             allocIndex,
-            StoreBufferCommit,
             StoreBufferMatchOut
     );
 
@@ -59,10 +55,7 @@ interface StoreBufferIF( input logic clk, rst );
     );
 
     modport CommitStage(
-        input
-            StoreBufferCommit,
         output
-            flush,
             StoreBufferPopReq
     );
 

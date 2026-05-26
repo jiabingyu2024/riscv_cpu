@@ -79,12 +79,7 @@ module WriteBackStage(
         self.RobDoneReq[port].exception <= exception;
         self.RobDoneReq[port].trueTargetPc <= trueTargetPc;
         self.RobDoneReq[port].taken <= taken;
-        rob.RobDoneReq[port].valid <= valid && !ctrl.wbPipe.flush;
-        rob.RobDoneReq[port].robIndex <= robIndex;
-        rob.RobDoneReq[port].isSerial <= isSerial;
-        rob.RobDoneReq[port].exception <= exception;
-        rob.RobDoneReq[port].trueTargetPc <= trueTargetPc;
-        rob.RobDoneReq[port].taken <= taken;
+        rob.RobDoneReq[port] <= self.RobDoneReq[port];
 
         bypass.wbForward[port].valid <= valid && writeRd;
         bypass.wbForward[port].writeRd <= writeRd;

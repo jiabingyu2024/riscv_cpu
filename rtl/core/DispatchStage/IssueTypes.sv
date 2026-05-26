@@ -8,8 +8,10 @@
 
 import BasicTypes::*;
 import PipelineTypes::*;
+import StoreBufferTypes::*;
 
 package IssueTypes;
+    import StoreBufferTypes::*;
 
     localparam SHIFT_WIDTH = 4;
     typedef logic [SHIFT_WIDTH-1:0] ShiftType;
@@ -88,11 +90,15 @@ package IssueTypes;
         OperandTypePath opTypeB;
 
         DataPath         imm;
+
+        logic                storeBufferIndexValid;
+        StoreBufferIndexPath storeBufferIndex;
     } PayloadEntryPath;
 
     //payload
     typedef struct packed {
         logic valid;
+        IssueIndexPath payloadIndex;
         PayloadEntryPath entry;
     } PayloadPushReqPath;
 

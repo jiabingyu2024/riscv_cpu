@@ -18,7 +18,7 @@ module Ctrl(
         ctrl.pfPipe = '{stall: frontendBlock, flush: 1'b0};
         ctrl.ifPipe = '{stall: frontendBlock, flush: 1'b0};
         ctrl.idPipe = '{stall: frontendBlock, flush: 1'b0};
-        ctrl.rnPipe = '{stall: ctrl.serialBlock | ctrl.rnStallReq | ctrl.robFull |
+        ctrl.rnPipe = '{stall: ctrl.serialBlock | ctrl.rnStallReq | ctrl.dsStallReq | ctrl.robFull |
                               ctrl.issueQueueFull | ctrl.freeListEmpty,
                         flush: 1'b0};
         ctrl.dsPipe = '{stall: ctrl.dsStallReq | ctrl.robFull | ctrl.issueQueueFull,

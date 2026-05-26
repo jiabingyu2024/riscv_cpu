@@ -35,6 +35,8 @@ module IssueStage(
             self.nextStage[i].dst = issueQueue.IssuePopRes[i].entry.dst;
             self.nextStage[i].writeDst = issueQueue.IssuePopRes[i].entry.writeDst;
             self.nextStage[i].robIndex = issueQueue.IssuePopRes[i].entry.robIndex;
+            self.nextStage[i].storeBufferIndexValid = payload.PayloadPopRes[i].entry.storeBufferIndexValid;
+            self.nextStage[i].storeBufferIndex = payload.PayloadPopRes[i].entry.storeBufferIndex;
 
             ctrl.isStageEmpty &= !self.nextStage[i].valid;
         end

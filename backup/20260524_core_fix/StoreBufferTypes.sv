@@ -20,7 +20,6 @@ package StoreBufferTypes;
         StoreBufferIndexPath index;
         AddrPath             addr;
         DataPath             data;
-        logic [3:0]          wstrb;
     } StoreBufferPushReqPath;
 
     typedef struct packed {
@@ -37,13 +36,5 @@ package StoreBufferTypes;
         logic    hit;
         DataPath data;
     } StoreBufferMatchOutPath;
-
-    typedef struct packed {
-        logic                valid;
-        StoreBufferIndexPath index;
-        AddrPath             addr;
-        DataPath             data;
-        logic [3:0]          wstrb;
-    } StoreBufferCommitPath;
 
 endpackage : StoreBufferTypes

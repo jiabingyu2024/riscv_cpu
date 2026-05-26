@@ -16,9 +16,8 @@ interface SpecRATIF( input logic clk, rst );
     // specRAT接口
     RATUpdatePath       specRATUpdate   [SPECRAT_WRITE_PORT_NUM];
     RATReadPath         specRATReadIn   [SPECRAT_READ_PORT_NUM];
+    ChkptCreatePath     specRATChkptCreate;
     logic               specRATChkptCreateEn;
-    ChkptIndexPath      specRATChkptCreateIndex;
-    WayNumPath          specRATChkptBranchWay;
     // commit 接口
     ChkptRecoveryPath   specRATChkptRecover;
     ChkptFreePath       specRATChkptFree;
@@ -31,13 +30,12 @@ interface SpecRATIF( input logic clk, rst );
         rst,
         specRATReadIn,
         specRATChkptCreateEn,
-        specRATChkptCreateIndex,
-        specRATChkptBranchWay,
         specRATChkptRecover,
         specRATChkptFree,
         specRATUpdate,
     output
-        specRATReadOut
+        specRATReadOut,
+        specRATChkptCreate
 
     ); 
     
@@ -45,16 +43,15 @@ interface SpecRATIF( input logic clk, rst );
     modport RenameStage(
     input
         specRATReadOut,
+        specRATChkptCreate,
     output
         specRATReadIn,
-        specRATChkptCreateEn,
-        specRATChkptCreateIndex,
-        specRATChkptBranchWay,
-        specRATUpdate
+        specRATChkptCreateEn
     );
 
     modport CommitStage(
     output
+        specRATUpdate,
         specRATChkptFree
     );
 

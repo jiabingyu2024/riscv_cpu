@@ -21,7 +21,6 @@ interface FreeListIF( input logic clk, rst );
     FreeListCountPath   freeListCount; //FreeList剩余物理寄存器数量
     ChkptCreatePath     freeListChkptCreate;
     logic               freeListChkptCreateEn;
-    WayNumPath          freeListChkptBranchWay;
     ChkptRecoveryPath   freeListChkptRecover;
     ChkptFreePath       freeListChkptFree;
 
@@ -32,7 +31,6 @@ interface FreeListIF( input logic clk, rst );
         freeListAllocReq,
         freeListFree,
         freeListChkptCreateEn,
-        freeListChkptBranchWay,
         freeListChkptRecover,
         freeListChkptFree,
     output
@@ -49,8 +47,7 @@ interface FreeListIF( input logic clk, rst );
         freeListChkptCreate,
     output
         freeListAllocReq,
-        freeListChkptCreateEn,
-        freeListChkptBranchWay
+        freeListChkptCreateEn
     );
     
     modport CommitStage(

@@ -30,7 +30,6 @@ module RenameStage (
         int writeNeed;
         int branchCount;
         logic branchPresent;
-        WayNumPath branchWay;
         logic serialPresent;
         logic backendDrained;
         logic resourceStall;
@@ -41,7 +40,6 @@ module RenameStage (
         writeNeed = 0;
         branchCount = 0;
         branchPresent = 1'b0;
-        branchWay = '0;
         serialPresent = 1'b0;
         backendDrained = ctrl.dsStageEmpty && ctrl.isStageEmpty && ctrl.rrStageEmpty &&
                          ctrl.exStageEmpty && ctrl.wbStageEmpty;
@@ -54,10 +52,7 @@ module RenameStage (
             if (pipeReg[i].valid && pipeReg[i].instInfo.valid &&
                 pipeReg[i].instInfo.tubeType == TUBE_TYPE_BRC) begin
                 branchCount++;
-                if (!branchPresent) begin
-                    branchPresent = 1'b1;
-                    branchWay = WayNumPath'(i);
-                end
+                branchPresent = 1'b1;
             end
             if (pipeReg[i].valid && pipeReg[i].instInfo.isSerial) begin
                 serialPresent = 1'b1;
@@ -65,16 +60,15 @@ module RenameStage (
         end
 
         resourceStall = (freeList.freeListCount < FreeListCountPath'(writeNeed));
-        chkptStall = branchPresent && !freeList.freeListChkptCreate.ChkptIndexValid;
+        chkptStall = branchPresent &&
+                     (!specRAT.specRATChkptCreate.ChkptIndexValid ||
+                      !freeList.freeListChkptCreate.ChkptIndexValid);
         localStall = resourceStall || chkptStall || (serialPresent && !backendDrained) ||
                      (branchCount > 1);
         canRename = !ctrl.rnPipe.flush && !ctrl.rnPipe.stall && !localStall;
 
         specRAT.specRATChkptCreateEn = branchPresent && canRename;
-        specRAT.specRATChkptCreateIndex = freeList.freeListChkptCreate.ChkptCreateIndex;
-        specRAT.specRATChkptBranchWay = branchWay;
         freeList.freeListChkptCreateEn = branchPresent && canRename;
-        freeList.freeListChkptBranchWay = branchWay;
 
         ctrl.rnStageEmpty = 1'b1;
         ctrl.rnStallReq = localStall;
@@ -146,8 +140,8 @@ module RenameStage (
             nextStage[i].phyRegInfo.PhyRegNumDst = freeList.freeListAlloc[i].allocPhyRegNum;
             nextStage[i].phyPrevDst = oldDst;
 
-            nextStage[i].chkptValid = branchPresent && (WayNumPath'(i) == branchWay);
-            nextStage[i].specRATChkptIndex = freeList.freeListChkptCreate.ChkptCreateIndex;
+            nextStage[i].chkptValid = branchPresent;
+            nextStage[i].specRATChkptIndex = specRAT.specRATChkptCreate.ChkptCreateIndex;
             nextStage[i].freeListChkptIndex = freeList.freeListChkptCreate.ChkptCreateIndex;
 
             specRAT.specRATUpdate[i].UpdateEn = nextStage[i].valid &&

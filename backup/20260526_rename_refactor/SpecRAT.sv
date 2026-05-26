@@ -16,6 +16,14 @@ module SpecRAT(SpecRATIF.SpecRAT self);
                                      rat[self.specRATReadIn[i].ReadLgcRegNum] : '0;
         end
 
+        self.specRATChkptCreate.ChkptIndexValid = 1'b0;
+        self.specRATChkptCreate.ChkptCreateIndex = '0;
+        for (i = 0; i < CHECKPOINT_NUM; i++) begin
+            if (!chkptValid[i] && !self.specRATChkptCreate.ChkptIndexValid) begin
+                self.specRATChkptCreate.ChkptIndexValid = 1'b1;
+                self.specRATChkptCreate.ChkptCreateIndex = ChkptIndexPath'(i);
+            end
+        end
     end
 
     always_ff @(posedge self.clk or posedge self.rst) begin
@@ -38,29 +46,23 @@ module SpecRAT(SpecRATIF.SpecRAT self);
             end
         end else begin
             PhyRegNumPath nextRat [SPECRAT_ENTRY_NUM];
-            PhyRegNumPath chkptNextRat [SPECRAT_ENTRY_NUM];
 
             for (i = 0; i < SPECRAT_ENTRY_NUM; i++) begin
                 nextRat[i] = rat[i];
-                chkptNextRat[i] = rat[i];
             end
             for (i = 0; i < SPECRAT_WRITE_PORT_NUM; i++) begin
                 if (self.specRATUpdate[i].UpdateEn) begin
                     nextRat[self.specRATUpdate[i].UpdateLgcRegNum] = self.specRATUpdate[i].UpdatePhyRegNum;
-                    if (WayNumPath'(i) <= self.specRATChkptBranchWay) begin
-                        chkptNextRat[self.specRATUpdate[i].UpdateLgcRegNum] =
-                            self.specRATUpdate[i].UpdatePhyRegNum;
-                    end
                 end
             end
             for (i = 0; i < SPECRAT_ENTRY_NUM; i++) begin
                 rat[i] <= nextRat[i];
             end
 
-            if (self.specRATChkptCreateEn) begin
-                chkptValid[self.specRATChkptCreateIndex] <= 1'b1;
+            if (self.specRATChkptCreateEn && self.specRATChkptCreate.ChkptIndexValid) begin
+                chkptValid[self.specRATChkptCreate.ChkptCreateIndex] <= 1'b1;
                 for (i = 0; i < SPECRAT_ENTRY_NUM; i++) begin
-                    chkptRat[self.specRATChkptCreateIndex][i] <= chkptNextRat[i];
+                    chkptRat[self.specRATChkptCreate.ChkptCreateIndex][i] <= nextRat[i];
                 end
             end
             if (self.specRATChkptFree.ChkptFreeEn) begin

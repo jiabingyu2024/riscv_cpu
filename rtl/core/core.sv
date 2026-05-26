@@ -45,6 +45,8 @@ module core(
     FreeListIF         freeListIF(clk, rst);
     RegFileIF          regFileIF(clk, rst);
     BypassIF           bypassIF(clk, rst);
+    DramAccessIF       exDramAccess(clk, rst);
+    DramAccessIF       cmDramAccess(clk, rst);
     //PF
     /*
     更新 PC 的选择逻辑
@@ -86,7 +88,7 @@ module core(
     ExecuteAluStage executeAluStage (rrStageIF, exStageIF, ctrlIF, bypassIF);
     ExecuteBrcStage executeBrcStage (rrStageIF, exStageIF, ctrlIF, bypassIF);
     ExecuteMulStage executeMulStage (rrStageIF, exStageIF, ctrlIF, bypassIF);
-    ExecuteMemStage executeMemStage (rrStageIF, exStageIF, ctrlIF, dromAccess, storeBufferIF, bypassIF);
+    ExecuteMemStage executeMemStage (rrStageIF, exStageIF, ctrlIF, exDramAccess, storeBufferIF, bypassIF);
     ExecuteSysStage executeSysStage (rrStageIF, exStageIF, ctrlIF, bypassIF);
 
     WriteBackStage writeBackStage (exStageIF, wbStageIF, ctrlIF, recoveryManagerIF, bypassIF, regFileIF, robIF);
@@ -94,7 +96,9 @@ module core(
     Bypass bypass(bypassIF);
     //CM
 
-    CommitStage cmStage (cmStageIF, recoveryManagerIF, ctrlIF, archRATIF, specRATIF, freeListIF, storeBufferIF, robIF);
+    CommitStage cmStage (cmStageIF, recoveryManagerIF, ctrlIF, archRATIF, specRATIF, freeListIF, storeBufferIF, robIF, cmDramAccess);
+
+    DramAccessArbiter dramAccessArbiter(exDramAccess, cmDramAccess, dromAccess);
 
     RecoveryManager recoveryManager(recoveryManagerIF,ctrlIF,specRATIF,freeListIF);
 
@@ -107,11 +111,17 @@ module core(
             perf.branchCnt <= '0;
             perf.branchMissCnt <= '0;
         end else begin
+            int commitThisCycle;
+            commitThisCycle = 0;
             perf.cycle <= perf.cycle + 1'b1;
             for (int i = 0; i < WAY_NUM; i++) begin
                 if (cmStageIF.commitValid[i]) begin
-                    perf.commitCnt <= perf.commitCnt + 1'b1;
+                    commitThisCycle++;
                 end
+            end
+            perf.commitCnt <= perf.commitCnt + commitThisCycle;
+            if (recoveryManagerIF.commitBranchUpdateValid) begin
+                perf.branchCnt <= perf.branchCnt + 1'b1;
             end
             if (cmStageIF.commitBranchMiss) begin
                 perf.branchMissCnt <= perf.branchMissCnt + 1'b1;
@@ -119,4 +129,26 @@ module core(
         end
     end
 
+endmodule
+
+module DramAccessArbiter(
+    DramAccessIF ex,
+    DramAccessIF cm,
+    DramAccessIF.core dram
+);
+    always_comb begin
+        dram.req = ex.req | cm.req;
+        dram.we = ex.req ? ex.we : cm.we;
+        dram.addr = ex.req ? ex.addr : cm.addr;
+        dram.wdata = ex.req ? ex.wdata : cm.wdata;
+        dram.wstrb = ex.req ? ex.wstrb : cm.wstrb;
+
+        ex.rdata = dram.rdata;
+        ex.rvalid = dram.rvalid;
+        ex.ready = dram.ready;
+
+        cm.rdata = '0;
+        cm.rvalid = 1'b0;
+        cm.ready = dram.ready && !ex.req;
+    end
 endmodule

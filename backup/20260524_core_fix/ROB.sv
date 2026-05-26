@@ -36,15 +36,6 @@ module ROB(ROBIF.ROB self);
             for (i = 0; i < ROB_DEPTH; i++) begin
                 entries[i] <= '0;
             end
-        end else if (self.RobFlush) begin
-            head <= '0;
-            tail <= '0;
-            headPos <= 1'b0;
-            tailPos <= 1'b0;
-            count <= '0;
-            for (i = 0; i < ROB_DEPTH; i++) begin
-                entries[i] <= '0;
-            end
         end else begin
             int pushCnt;
             int popCnt;
@@ -59,9 +50,7 @@ module ROB(ROBIF.ROB self);
                     entries[self.RobDoneReq[i].robIndex].truePc <= self.RobDoneReq[i].trueTargetPc;
                     entries[self.RobDoneReq[i].robIndex].isMiss <=
                         entries[self.RobDoneReq[i].robIndex].isBranch &&
-                        ((entries[self.RobDoneReq[i].robIndex].takenPred != self.RobDoneReq[i].taken) ||
-                         (self.RobDoneReq[i].taken &&
-                          entries[self.RobDoneReq[i].robIndex].predPc != self.RobDoneReq[i].trueTargetPc));
+                        (entries[self.RobDoneReq[i].robIndex].takenPred != self.RobDoneReq[i].taken);
                 end
             end
 
