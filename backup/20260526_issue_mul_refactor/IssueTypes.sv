@@ -13,7 +13,7 @@ import StoreBufferTypes::*;
 package IssueTypes;
     import StoreBufferTypes::*;
 
-    localparam SHIFT_WIDTH = 36;
+    localparam SHIFT_WIDTH = 4;
     typedef logic [SHIFT_WIDTH-1:0] ShiftType;
 
     localparam ISSUE_QUEUE_DEPTH = 16;

@@ -13,7 +13,6 @@ module FreeList(FreeListIF.FreeList self);
     always_comb begin
         logic [PHYREG_NUM-1:0] usedMask;
         usedMask = freeMask;
-        usedMask[0] = 1'b0;
 
         for (i = 0; i < WAY_NUM; i++) begin
             self.freeListAlloc[i].allocValid = 1'b0;
@@ -30,7 +29,7 @@ module FreeList(FreeListIF.FreeList self);
         end
 
         count = 0;
-        for (i = 1; i < PHYREG_NUM; i++) begin
+        for (i = 0; i < PHYREG_NUM; i++) begin
             if (freeMask[i]) count++;
         end
         self.freeListCount = FreeListCountPath'(count);
@@ -50,7 +49,6 @@ module FreeList(FreeListIF.FreeList self);
             for (i = 0; i < PHYREG_NUM; i++) begin
                 freeMask[i] <= (i >= LOGICREG_NUM);
             end
-            freeMask[0] <= 1'b0;
             for (i = 0; i < CHECKPOINT_NUM; i++) begin
                 chkptMask[i] <= '0;
                 chkptValid[i] <= 1'b0;
@@ -63,7 +61,6 @@ module FreeList(FreeListIF.FreeList self);
                     recoverMask[self.freeListFree[i].freePhyRegNum] = 1'b1;
                 end
             end
-            recoverMask[0] = 1'b0;
             freeMask <= recoverMask;
             for (i = 0; i < CHECKPOINT_NUM; i++) begin
                 chkptValid[i] <= 1'b0;
@@ -73,8 +70,6 @@ module FreeList(FreeListIF.FreeList self);
             logic [PHYREG_NUM-1:0] chkptNextMask;
             nextMask = freeMask;
             chkptNextMask = freeMask;
-            nextMask[0] = 1'b0;
-            chkptNextMask[0] = 1'b0;
 
             for (i = 0; i < WAY_NUM; i++) begin
                 if (self.freeListAllocReq[i] && self.freeListAlloc[i].allocValid) begin
@@ -88,8 +83,6 @@ module FreeList(FreeListIF.FreeList self);
                     chkptNextMask[self.freeListFree[i].freePhyRegNum] = 1'b1;
                 end
             end
-            nextMask[0] = 1'b0;
-            chkptNextMask[0] = 1'b0;
 
             freeMask <= nextMask;
 

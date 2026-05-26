@@ -27,7 +27,6 @@ module RegFile(RegFileIF.RegFile self);
                     regs[self.regFileWriteReq[i].regIndex] <= self.regFileWriteReq[i].data;
                 end
             end
-            regs[0] <= '0;
         end
     end
 endmodule

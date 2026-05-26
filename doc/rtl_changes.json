@@ -23,6 +23,10 @@
       "change_type": "logic_fix"
     },
     {
+      "path": "rtl/core/RenameStage/ArchRAT.sv",
+      "change_type": "logic_fix"
+    },
+    {
       "path": "rtl/core/RenameStage/SpecRATIF.sv",
       "change_type": "interface_refactor"
     },
@@ -43,10 +47,42 @@
       "change_type": "logic_fix"
     },
     {
+      "path": "rtl/core/ExecuteStage/ExecuteAluStage.sv",
+      "change_type": "logic_fix"
+    },
+    {
+      "path": "rtl/core/ExecuteStage/ExecuteBrcStage.sv",
+      "change_type": "logic_fix"
+    },
+    {
+      "path": "rtl/core/ExecuteStage/ExecuteSysStage.sv",
+      "change_type": "logic_fix"
+    },
+    {
+      "path": "rtl/core/ReadRegStage/ReadRegStage.sv",
+      "change_type": "logic_fix"
+    },
+    {
+      "path": "rtl/core/ReadRegStage/RegFile.sv",
+      "change_type": "logic_fix"
+    },
+    {
+      "path": "rtl/core/DispatchStage/IssueQueue.sv",
+      "change_type": "logic_fix"
+    },
+    {
+      "path": "rtl/core/DispatchStage/IssueTypes.sv",
+      "change_type": "type_update"
+    },
+    {
+      "path": "rtl/core/ExecuteStage/ExecuteMulStage.sv",
+      "change_type": "logic_fix"
+    },
+    {
       "path": "rtl/core/core.sv",
       "change_type": "integration_fix"
     }
   ],
   "cascade_scope": "compile_and_lint",
-  "notes": "Fixed packet splitting for multi-branch cases, real SpecRAT/FreeList checkpoint allocation and recovery, rename resource gating, ROB branch target miss detection, payload index alignment, store buffer commit writes to DRAM through an internal arbiter, two-cycle load response tracking, and refactored RenameStage so FreeList owns the shared checkpoint index while SpecRAT consumes that index and saves a branch-boundary snapshot."
+  "notes": "Fixed packet splitting for multi-branch cases, real SpecRAT/FreeList checkpoint allocation and recovery, rename resource gating, ROB branch target miss detection, payload index alignment, store buffer commit writes to DRAM through an internal arbiter, two-cycle load response tracking, refactored RenameStage so FreeList owns the shared checkpoint index while SpecRAT consumes that index and saves a branch-boundary snapshot, changed IssueQueue wakeup delay to a 36-bit one-hot shift mask, replaced combinational DIV/REM with a 36-stage iterative pipeline in ExecuteMulStage, added a real DispatchStage pipe register with all-or-stall resource gating, unified dispatchFire side effects, flush-safe writes, added real ReadRegStage and ExecuteStage input pipe registers so RegFile read and execute fanout use stable stage boundaries, and hardened x0 handling across RenameStage, SpecRAT, ArchRAT, FreeList, and RegFile."
 }

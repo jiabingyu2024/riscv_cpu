@@ -11,8 +11,6 @@ module ExecuteMulStage(
     localparam int MUL_LATENCY = 3;
     localparam int DIV_LATENCY = 36;
 
-    RrToExMulPath pipeReg [WAY_NUM];
-
     typedef struct packed {
         logic         valid;
         PhyRegNumPath Rd;
@@ -124,16 +122,6 @@ module ExecuteMulStage(
         end
     endfunction
 
-    always_ff @(posedge self.clk or posedge self.rst) begin
-        if (self.rst) begin
-            for (int i = 0; i < WAY_NUM; i++) begin
-                pipeReg[i] <= '0;
-            end
-        end else if (!ctrl.exPipe.stall) begin
-            pipeReg <= prev.nextToMulStage;
-        end
-    end
-
     always_comb begin
         for (int i = 0; i < BYPASS_READ_PORT_NUM; i++) bypass.mulReadReq[i] = '0;
 
@@ -142,34 +130,32 @@ module ExecuteMulStage(
             DataPath b;
             logic signedOp;
 
-            bypass.mulReadReq[i*2+0].valid = pipeReg[i].valid && pipeReg[i].srcAIsRs1;
-            bypass.mulReadReq[i*2+0].phyRegNum = pipeReg[i].Rs1;
-            bypass.mulReadReq[i*2+1].valid = pipeReg[i].valid && pipeReg[i].srcBIsRs2;
-            bypass.mulReadReq[i*2+1].phyRegNum = pipeReg[i].Rs2;
-            a = bypass.mulReadRes[i*2+0].hit ? bypass.mulReadRes[i*2+0].data : pipeReg[i].dataA;
-            b = bypass.mulReadRes[i*2+1].hit ? bypass.mulReadRes[i*2+1].data : pipeReg[i].dataB;
+            bypass.mulReadReq[i*2+0].valid = prev.nextToMulStage[i].valid && prev.nextToMulStage[i].srcAIsRs1;
+            bypass.mulReadReq[i*2+0].phyRegNum = prev.nextToMulStage[i].Rs1;
+            bypass.mulReadReq[i*2+1].valid = prev.nextToMulStage[i].valid && prev.nextToMulStage[i].srcBIsRs2;
+            bypass.mulReadReq[i*2+1].phyRegNum = prev.nextToMulStage[i].Rs2;
+            a = bypass.mulReadRes[i*2+0].hit ? bypass.mulReadRes[i*2+0].data : prev.nextToMulStage[i].dataA;
+            b = bypass.mulReadRes[i*2+1].hit ? bypass.mulReadRes[i*2+1].data : prev.nextToMulStage[i].dataB;
 
             mulLaunch[i] = '0;
-            mulLaunch[i].valid = pipeReg[i].valid &&
+            mulLaunch[i].valid = prev.nextToMulStage[i].valid &&
                                  !ctrl.exPipe.flush &&
-                                 !ctrl.exPipe.stall &&
-                                 !is_divrem(pipeReg[i].subType);
-            mulLaunch[i].Rd = pipeReg[i].Rd;
-            mulLaunch[i].writeRd = pipeReg[i].writeRd;
-            mulLaunch[i].data = mul_result(pipeReg[i].subType, a, b);
-            mulLaunch[i].robIndex = pipeReg[i].robIndex;
+                                 !is_divrem(prev.nextToMulStage[i].subType);
+            mulLaunch[i].Rd = prev.nextToMulStage[i].Rd;
+            mulLaunch[i].writeRd = prev.nextToMulStage[i].writeRd;
+            mulLaunch[i].data = mul_result(prev.nextToMulStage[i].subType, a, b);
+            mulLaunch[i].robIndex = prev.nextToMulStage[i].robIndex;
 
             divLaunch[i] = '0;
-            divLaunch[i].valid = pipeReg[i].valid &&
+            divLaunch[i].valid = prev.nextToMulStage[i].valid &&
                                  !ctrl.exPipe.flush &&
-                                 !ctrl.exPipe.stall &&
-                                 is_divrem(pipeReg[i].subType);
-            divLaunch[i].subType = pipeReg[i].subType;
-            divLaunch[i].Rd = pipeReg[i].Rd;
-            divLaunch[i].writeRd = pipeReg[i].writeRd;
-            divLaunch[i].robIndex = pipeReg[i].robIndex;
+                                 is_divrem(prev.nextToMulStage[i].subType);
+            divLaunch[i].subType = prev.nextToMulStage[i].subType;
+            divLaunch[i].Rd = prev.nextToMulStage[i].Rd;
+            divLaunch[i].writeRd = prev.nextToMulStage[i].writeRd;
+            divLaunch[i].robIndex = prev.nextToMulStage[i].robIndex;
             divLaunch[i].origA = a;
-            signedOp = pipeReg[i].subType.mulSubType inside {MUL_SUBTYPE_DIV, MUL_SUBTYPE_REM};
+            signedOp = prev.nextToMulStage[i].subType.mulSubType inside {MUL_SUBTYPE_DIV, MUL_SUBTYPE_REM};
             divLaunch[i].divByZero = (b == '0);
             divLaunch[i].overflow = signedOp && (a == 32'h8000_0000) && (b == 32'hffff_ffff);
             divLaunch[i].quotNeg = signedOp && (a[31] ^ b[31]);

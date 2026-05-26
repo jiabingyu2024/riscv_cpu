@@ -11,7 +11,6 @@ module ExecuteMemStage(
     StoreBufferIF.ExecuteMemStage storeBuffer,
     BypassIF.ExecuteMemStage bypass
 );
-    RrToExMemPath pipeReg [WAY_NUM];
     ExMemToWbPath loadPipe0;
     ExMemToWbPath loadPipe1;
     ExMemToWbPath loadRsp;
@@ -36,16 +35,6 @@ module ExecuteMemStage(
             default:        align_store_data = data;
         endcase
     endfunction
-
-    always_ff @(posedge self.clk or posedge self.rst) begin
-        if (self.rst) begin
-            for (int i = 0; i < WAY_NUM; i++) begin
-                pipeReg[i] <= '0;
-            end
-        end else if (!ctrl.exPipe.stall) begin
-            pipeReg <= prev.nextToMemStage;
-        end
-    end
 
     always_ff @(posedge self.clk or posedge self.rst) begin
         if (self.rst) begin
@@ -97,39 +86,39 @@ module ExecuteMemStage(
             DataPath dataB;
             AddrPath effAddr;
 
-            base = pipeReg[i].dataA;
-            dataB = pipeReg[i].dataB;
-            bypass.memReadReq[i*2+0].valid = pipeReg[i].valid && pipeReg[i].srcAIsRs1;
-            bypass.memReadReq[i*2+0].phyRegNum = pipeReg[i].Rs1;
-            bypass.memReadReq[i*2+1].valid = pipeReg[i].valid && pipeReg[i].srcBIsRs2;
-            bypass.memReadReq[i*2+1].phyRegNum = pipeReg[i].Rs2;
+            base = prev.nextToMemStage[i].dataA;
+            dataB = prev.nextToMemStage[i].dataB;
+            bypass.memReadReq[i*2+0].valid = prev.nextToMemStage[i].valid && prev.nextToMemStage[i].srcAIsRs1;
+            bypass.memReadReq[i*2+0].phyRegNum = prev.nextToMemStage[i].Rs1;
+            bypass.memReadReq[i*2+1].valid = prev.nextToMemStage[i].valid && prev.nextToMemStage[i].srcBIsRs2;
+            bypass.memReadReq[i*2+1].phyRegNum = prev.nextToMemStage[i].Rs2;
             if (bypass.memReadRes[i*2+0].hit) base = bypass.memReadRes[i*2+0].data;
             if (bypass.memReadRes[i*2+1].hit) dataB = bypass.memReadRes[i*2+1].data;
 
-            effAddr = base + pipeReg[i].imm;
+            effAddr = base + prev.nextToMemStage[i].imm;
 
-            if (pipeReg[i].valid && !ctrl.exPipe.flush && !ctrl.exPipe.stall) begin
-                if (is_store(pipeReg[i].subType.memSubType)) begin
-                    storeBuffer.StoreBufferPushReq.valid = pipeReg[i].storeBufferIndexValid;
-                    storeBuffer.StoreBufferPushReq.index = pipeReg[i].storeBufferIndex;
+            if (prev.nextToMemStage[i].valid && !ctrl.exPipe.flush) begin
+                if (is_store(prev.nextToMemStage[i].subType.memSubType)) begin
+                    storeBuffer.StoreBufferPushReq.valid = prev.nextToMemStage[i].storeBufferIndexValid;
+                    storeBuffer.StoreBufferPushReq.index = prev.nextToMemStage[i].storeBufferIndex;
                     storeBuffer.StoreBufferPushReq.addr = effAddr;
                     storeBuffer.StoreBufferPushReq.data =
-                        align_store_data(pipeReg[i].subType.memSubType, effAddr, dataB);
+                        align_store_data(prev.nextToMemStage[i].subType.memSubType, effAddr, dataB);
                     storeBuffer.StoreBufferPushReq.wstrb =
-                        store_wstrb(pipeReg[i].subType.memSubType, effAddr);
+                        store_wstrb(prev.nextToMemStage[i].subType.memSubType, effAddr);
 
                     self.nextMemToStage[i].valid = 1'b1;
-                    self.nextMemToStage[i].Rd = pipeReg[i].Rd;
+                    self.nextMemToStage[i].Rd = prev.nextToMemStage[i].Rd;
                     self.nextMemToStage[i].writeRd = 1'b0;
-                    self.nextMemToStage[i].robIndex = pipeReg[i].robIndex;
+                    self.nextMemToStage[i].robIndex = prev.nextToMemStage[i].robIndex;
                 end else if (!loadSelected) begin
                     storeBuffer.StoreBufferMatchIn.valid = 1'b1;
                     storeBuffer.StoreBufferMatchIn.addr = effAddr;
 
                     loadLaunch.valid = 1'b1;
-                    loadLaunch.Rd = pipeReg[i].Rd;
-                    loadLaunch.writeRd = pipeReg[i].writeRd;
-                    loadLaunch.robIndex = pipeReg[i].robIndex;
+                    loadLaunch.Rd = prev.nextToMemStage[i].Rd;
+                    loadLaunch.writeRd = prev.nextToMemStage[i].writeRd;
+                    loadLaunch.robIndex = prev.nextToMemStage[i].robIndex;
 
                     if (storeBuffer.StoreBufferMatchOut.hit) begin
                         self.nextMemToStage[0].valid = 1'b1;

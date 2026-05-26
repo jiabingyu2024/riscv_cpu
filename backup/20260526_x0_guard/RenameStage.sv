@@ -16,13 +16,6 @@ module RenameStage (
     IdToRnPath pipeReg [WAY_NUM];
     RnToDsPath nextStage [WAY_NUM];
 
-    function automatic logic needs_dst_alloc(input IdToRnPath uop);
-        needs_dst_alloc = uop.valid &&
-                          uop.instInfo.writeReg &&
-                          uop.lgcRegInfo.lgcRegNumDstValid &&
-                          uop.lgcRegInfo.lgcRegNumDst != '0;
-    endfunction
-
     always_ff @(posedge self.clk or posedge self.rst) begin
         if (self.rst) begin
             for (int i = 0; i < WAY_NUM; i++) begin
@@ -54,7 +47,8 @@ module RenameStage (
                          ctrl.exStageEmpty && ctrl.wbStageEmpty;
 
         for (int i = 0; i < WAY_NUM; i++) begin
-            if (needs_dst_alloc(pipeReg[i])) begin
+            if (pipeReg[i].valid && pipeReg[i].instInfo.writeReg &&
+                pipeReg[i].lgcRegInfo.lgcRegNumDstValid) begin
                 writeNeed++;
             end
             if (pipeReg[i].valid && pipeReg[i].instInfo.valid &&
@@ -95,7 +89,9 @@ module RenameStage (
         end
         for (int i = 0; i < WAY_NUM; i++) begin
             freeList.freeListAllocReq[i] = canRename &&
-                                           needs_dst_alloc(pipeReg[i]);
+                                           pipeReg[i].valid &&
+                                           pipeReg[i].instInfo.writeReg &&
+                                           pipeReg[i].lgcRegInfo.lgcRegNumDstValid;
         end
 
         for (int i = 0; i < WAY_NUM; i++) begin
@@ -112,8 +108,7 @@ module RenameStage (
                                                      pipeReg[i].lgcRegInfo.lgcRegNumSrcBValid;
             specRAT.specRATReadIn[base + 1].ReadLgcRegNum = pipeReg[i].lgcRegInfo.lgcRegNumSrcB;
             specRAT.specRATReadIn[base + 2].ReadEn = pipeReg[i].valid &&
-                                                     pipeReg[i].lgcRegInfo.lgcRegNumDstValid &&
-                                                     pipeReg[i].lgcRegInfo.lgcRegNumDst != '0;
+                                                     pipeReg[i].lgcRegInfo.lgcRegNumDstValid;
             specRAT.specRATReadIn[base + 2].ReadLgcRegNum = pipeReg[i].lgcRegInfo.lgcRegNumDst;
 
             srcA = specRAT.specRATReadOut[base + 0];
@@ -121,7 +116,8 @@ module RenameStage (
             oldDst = specRAT.specRATReadOut[base + 2];
 
             for (int k = 0; k < i; k++) begin
-                if (needs_dst_alloc(pipeReg[k]) && freeList.freeListAlloc[k].allocValid) begin
+                if (pipeReg[k].valid && pipeReg[k].lgcRegInfo.lgcRegNumDstValid &&
+                    freeList.freeListAlloc[k].allocValid) begin
                     if (pipeReg[i].lgcRegInfo.lgcRegNumSrcAValid &&
                         pipeReg[i].lgcRegInfo.lgcRegNumSrcA == pipeReg[k].lgcRegInfo.lgcRegNumDst) begin
                         srcA = freeList.freeListAlloc[k].allocPhyRegNum;
@@ -155,7 +151,8 @@ module RenameStage (
             nextStage[i].freeListChkptIndex = freeList.freeListChkptCreate.ChkptCreateIndex;
 
             specRAT.specRATUpdate[i].UpdateEn = nextStage[i].valid &&
-                                                needs_dst_alloc(pipeReg[i]) &&
+                                                pipeReg[i].instInfo.writeReg &&
+                                                pipeReg[i].lgcRegInfo.lgcRegNumDstValid &&
                                                 freeList.freeListAlloc[i].allocValid;
             specRAT.specRATUpdate[i].UpdateLgcRegNum = pipeReg[i].lgcRegInfo.lgcRegNumDst;
             specRAT.specRATUpdate[i].UpdatePhyRegNum = freeList.freeListAlloc[i].allocPhyRegNum;

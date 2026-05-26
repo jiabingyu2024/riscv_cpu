@@ -14,6 +14,7 @@ module DispatchStage(
     StoreBufferIF.DispatchStage storeBuffer
 );
     RnToDsPath pipeReg [WAY_NUM];
+    RnToDsPath pipeNext[WAY_NUM];
 
     logic dispatchFire[WAY_NUM];
 
@@ -28,33 +29,44 @@ module DispatchStage(
             for (int i = 0; i < WAY_NUM; i++) begin
                 pipeReg[i] <= '0;
             end
-        end else if (!ctrl.dsPipe.stall) begin
-            pipeReg <= prev.nextStage;
+        end else if (ctrl.dsPipe.flush) begin
+            for (int i = 0; i < WAY_NUM; i++) begin
+                pipeReg[i] <= '0;
+            end
+        end else begin
+            pipeReg <= pipeNext;
         end
     end
 
     always_comb begin
-        int validCount;
-        int storeCount;
-        logic packetValid;
-        logic resourceReady;
-        logic dispatchEn;
+        int robSlots;
+        int issueSlots;
+        int wrPtr;
+        int loadPtr;
+        logic prefixOpen;
+        logic storeAllocUsed;
+        logic pipeHasValid;
+        logic willBlockRename;
+        logic loadFromRename;
 
+        ctrl.robFull = (rob.RobFreeCount < WAY_NUM);
+        ctrl.issueQueueFull = (issueQueue.IssueFreeCount < WAY_NUM);
         ctrl.dsStageEmpty = 1'b1;
         ctrl.dsStallReq = 1'b0;
-        ctrl.robFull = 1'b0;
-        ctrl.issueQueueFull = 1'b0;
 
         storeBuffer.allocReq = 1'b0;
         issueQueue.IssueCtrl.flush = ctrl.dsPipe.flush;
 
-        validCount = 0;
-        storeCount = 0;
-        packetValid = 1'b0;
-        resourceReady = 1'b1;
-        dispatchEn = 1'b0;
+        robSlots = int'(rob.RobFreeCount);
+        issueSlots = int'(issueQueue.IssueFreeCount);
+        prefixOpen = !ctrl.dsPipe.flush;
+        storeAllocUsed = 1'b0;
+        pipeHasValid = 1'b0;
+        wrPtr = 0;
+        loadPtr = 0;
 
         for (int i = 0; i < WAY_NUM; i++) begin
+            pipeNext[i] = '0;
             dispatchFire[i] = 1'b0;
             self.nextStage[i] = '0;
 
@@ -62,29 +74,29 @@ module DispatchStage(
             issueQueue.IssuePushReq[i] = '0;
             payload.PayloadPushReq[i] = '0;
 
-            if (pipeReg[i].valid) begin
-                validCount++;
-                packetValid = 1'b1;
-                if (is_store_uop(pipeReg[i])) begin
-                    storeCount++;
-                end
-            end
+            pipeHasValid |= pipeReg[i].valid;
             ctrl.dsStageEmpty &= !pipeReg[i].valid;
         end
-
-        ctrl.robFull = packetValid && (int'(rob.RobFreeCount) < validCount);
-        ctrl.issueQueueFull = packetValid && (int'(issueQueue.IssueFreeCount) < validCount);
-
-        resourceReady = !ctrl.robFull &&
-                        !ctrl.issueQueueFull &&
-                        (storeCount == 0 || (storeCount == 1 && storeBuffer.allocRdy));
 
         for (int i = 0; i < WAY_NUM; i++) begin
             logic isStore;
             isStore = is_store_uop(pipeReg[i]);
 
-            resourceReady &= !pipeReg[i].valid ||
-                             (rob.RobPushRes[i].valid && issueQueue.IssuePushRes[i].done);
+            if (pipeReg[i].valid && prefixOpen &&
+                robSlots > 0 && issueSlots > 0 &&
+                rob.RobPushRes[i].valid && issueQueue.IssuePushRes[i].done &&
+                (!isStore || (storeBuffer.allocRdy && !storeAllocUsed))) begin
+                dispatchFire[i] = 1'b1;
+                robSlots--;
+                issueSlots--;
+                if (isStore) begin
+                    storeAllocUsed = 1'b1;
+                end
+            end else if (pipeReg[i].valid) begin
+                prefixOpen = 1'b0;
+            end
+
+            self.nextStage[i].valid = dispatchFire[i];
 
             rob.RobPushReq[i].req = dispatchFire[i];
             rob.RobPushReq[i].entry.valid = dispatchFire[i];
@@ -133,17 +145,29 @@ module DispatchStage(
             payload.PayloadPushReq[i].entry.storeBufferIndex = storeBuffer.allocIndex;
         end
 
-        ctrl.dsStallReq = packetValid && !ctrl.dsPipe.flush && !resourceReady;
-        dispatchEn = packetValid && !ctrl.dsPipe.flush && !ctrl.dsPipe.stall && resourceReady;
-        storeBuffer.allocReq = dispatchEn && (storeCount != 0);
+        storeBuffer.allocReq = storeAllocUsed && !ctrl.dsPipe.flush;
 
         for (int i = 0; i < WAY_NUM; i++) begin
-            dispatchFire[i] = pipeReg[i].valid && dispatchEn;
-            self.nextStage[i].valid = dispatchFire[i];
-            rob.RobPushReq[i].req = dispatchFire[i];
-            rob.RobPushReq[i].entry.valid = dispatchFire[i];
-            issueQueue.IssuePushReq[i].valid = dispatchFire[i];
-            payload.PayloadPushReq[i].valid = dispatchFire[i];
+            if (pipeReg[i].valid && !dispatchFire[i]) begin
+                pipeNext[wrPtr] = pipeReg[i];
+                wrPtr++;
+            end
+        end
+
+        willBlockRename = pipeHasValid && (wrPtr != 0);
+        loadFromRename = !ctrl.dsPipe.flush && !willBlockRename;
+        ctrl.dsStallReq = willBlockRename;
+
+        if (loadFromRename) begin
+            for (int i = 0; i < WAY_NUM; i++) begin
+                pipeNext[i] = '0;
+            end
+            for (int i = 0; i < WAY_NUM; i++) begin
+                if (prev.nextStage[i].valid) begin
+                    pipeNext[loadPtr] = prev.nextStage[i];
+                    loadPtr++;
+                end
+            end
         end
     end
 

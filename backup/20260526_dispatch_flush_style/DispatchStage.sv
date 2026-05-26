@@ -28,6 +28,10 @@ module DispatchStage(
             for (int i = 0; i < WAY_NUM; i++) begin
                 pipeReg[i] <= '0;
             end
+        end else if (ctrl.dsPipe.flush) begin
+            for (int i = 0; i < WAY_NUM; i++) begin
+                pipeReg[i] <= '0;
+            end
         end else if (!ctrl.dsPipe.stall) begin
             pipeReg <= prev.nextStage;
         end
@@ -133,7 +137,7 @@ module DispatchStage(
             payload.PayloadPushReq[i].entry.storeBufferIndex = storeBuffer.allocIndex;
         end
 
-        ctrl.dsStallReq = packetValid && !ctrl.dsPipe.flush && !resourceReady;
+        ctrl.dsStallReq = packetValid && !resourceReady;
         dispatchEn = packetValid && !ctrl.dsPipe.flush && !ctrl.dsPipe.stall && resourceReady;
         storeBuffer.allocReq = dispatchEn && (storeCount != 0);
 
