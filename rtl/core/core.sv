@@ -142,6 +142,7 @@ module core(
     logic             flush_e_m;
     logic             flush_m_w;
     logic             pc_en;
+    logic             m_busy_e;
 
     assign irom_addr = pc_p;
     assign irom_ena  = !stall_p_f;
@@ -205,6 +206,7 @@ module core(
         .i_predict_target(predict_target_f),
         .i_error         (branch_error_m),
         .i_right_pc      (branch_right_pc_m),
+        .i_m_busy        (m_busy_e),
         .o_stall_p_f     (stall_p_f),
         .o_stall_f_d     (stall_f_d),
         .o_stall_d_e     (stall_d_e),
@@ -331,6 +333,9 @@ module core(
     );
 
     stage_ex u_stage_ex (
+        .i_clk           (clk),
+        .i_rst_n         (rst_n),
+        .i_flush_e       (flush_e_m),
         .i_rs1_data      (rs1_data_e),
         .i_rs2_data      (rs2_data_e),
         .i_imm           (imm_e),
@@ -357,7 +362,8 @@ module core(
         .o_update_pc     (update_pc_e),
         .o_update_target (update_target_e),
         .o_error         (error_e),
-        .o_right_pc      (right_pc_e)
+        .o_right_pc      (right_pc_e),
+        .o_m_busy        (m_busy_e)
     );
 
     reg_ex_m1 u_reg_ex_m1 (

@@ -47,6 +47,9 @@ CORE_OLD_SRCS := \
 	rtl/core/ex/stage_ex.sv \
 	rtl/core/ex/alu.sv \
 	rtl/core/ex/m_unit.sv \
+	rtl/core/ex/mul_pipe.sv \
+	rtl/core/ex/div_wrapper.sv \
+	rtl/core/ex/div_sim_model.sv \
 	rtl/core/ex/branch_cmp.sv \
 	rtl/core/m2/stage_m2.sv \
 	rtl/core/wb/stage_wb.sv \
