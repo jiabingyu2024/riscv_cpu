@@ -93,6 +93,10 @@
 `define M_REM           3'B110
 `define M_REMU          3'B111
 
+// RV32M 单元固定延迟（与 m_unit 倒计时口径一致）
+`define MUL_LATENCY     3
+`define DIV_LATENCY_R4  17
+
 `define EX_AUIPC        4'B0001
 `define EX_LUI          4'B0010
 `define EX_JAL          4'B0100

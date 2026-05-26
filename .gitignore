@@ -70,6 +70,29 @@ fpga/**/*.bin
 fpga/**/*.ltx
 
 # -----------------------------------------------------------------------------
+# Vivado debug scratch under fpga/: ad-hoc Python scripts that dump traces from
+# VCD/hex/mem and the trace files they produce. Not used by any RTL or build
+# flow; kept locally for debugging only.
+# -----------------------------------------------------------------------------
+fpga/dump_trace.py
+fpga/dump_trace2.py
+fpga/parse3.py
+fpga/parse_hex.py
+fpga/parse_mem.py
+fpga/parse_vcd.py
+fpga/parse_vcd_clk.py
+fpga/test_vcd.py
+fpga/trace.txt
+fpga/trace_hex.txt
+
+
+# -----------------------------------------------------------------------------
+# Early pure-LUT FPGA prototype, kept locally for reference only — never built
+# or imported by the active flow.
+# -----------------------------------------------------------------------------
+fpga_slow/
+
+# -----------------------------------------------------------------------------
 # Explicitly keep project source-of-truth files visible
 # -----------------------------------------------------------------------------
 !Makefile
