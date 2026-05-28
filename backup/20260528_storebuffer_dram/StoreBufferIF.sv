@@ -2,8 +2,8 @@
 // StoreBufferIF.sv
 // 作用：定义 StoreBuffer 与 Dispatch、ExecuteMem、Commit 的接口。
 // 微架构定位：Dispatch 为 store 分配 entry；ExecuteMem 在地址/数据就绪后写入
-// StoreBuffer，并为 load 提供同地址匹配/转发查询；Commit 按 ROB 顺序授权 head
-// store 提交，StoreBuffer 负责把已提交 store 写入 DRAM。
+// StoreBuffer，并为 load 提供同地址匹配/转发查询；Commit 按 ROB 顺序 pop store，
+// 保证错误路径 store 不会提前对外可见。
 //------------------------------------------------------------------------------
 
 import BasicTypes::*;
@@ -18,9 +18,8 @@ interface StoreBufferIF( input logic clk, rst );
 
     StoreBufferPushReqPath  StoreBufferPushReq;
 
-    StoreBufferCommitReqPath StoreBufferCommitReq;
+    StoreBufferPopReqPath   StoreBufferPopReq;
     StoreBufferCommitPath   StoreBufferCommit;
-    logic                   StoreBufferCommitReady;
     logic                   flush;
 
     StoreBufferMatchInPath  StoreBufferMatchIn;
@@ -33,13 +32,12 @@ interface StoreBufferIF( input logic clk, rst );
             flush,
             allocReq,
             StoreBufferPushReq,
-            StoreBufferCommitReq,
+            StoreBufferPopReq,
             StoreBufferMatchIn,
         output
             allocRdy,
             allocIndex,
             StoreBufferCommit,
-            StoreBufferCommitReady,
             StoreBufferMatchOut
     );
 
@@ -63,10 +61,9 @@ interface StoreBufferIF( input logic clk, rst );
     modport CommitStage(
         input
             StoreBufferCommit,
-            StoreBufferCommitReady,
         output
             flush,
-            StoreBufferCommitReq
+            StoreBufferPopReq
     );
 
 

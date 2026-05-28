@@ -3,8 +3,7 @@
 // 作用：定义 StoreBuffer 的分配、写入、提交弹出和 load 匹配查询协议。
 // 微架构定位：StoreBuffer 承担 store 的投机暂存和按 commit 顺序对外可见。
 // Dispatch 分配 entry，ExecuteMem 写入地址/数据并供 load forwarding 查询，
-// Commit 按 ROB 顺序授权 head store 对外写出，保证 store 不会在异常或错误路径上
-// 提前生效；StoreBuffer 自己负责驱动 DRAM 并在写请求被接受后释放 entry。
+// Commit 按 ROB 顺序 pop，保证 store 不会在异常或错误路径上提前生效。
 //------------------------------------------------------------------------------
 
 import BasicTypes::*;
@@ -27,7 +26,7 @@ package StoreBufferTypes;
     typedef struct packed {
         logic                valid;
         StoreBufferIndexPath index;
-    } StoreBufferCommitReqPath;
+    } StoreBufferPopReqPath;
 
     typedef struct packed {
         logic    valid;

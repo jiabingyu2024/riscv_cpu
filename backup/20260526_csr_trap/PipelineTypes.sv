@@ -221,7 +221,6 @@ package PipelineTypes;
         logic         valid;
         SubTypePath   subType;
 
-        PcPath        pc;
         DataPath      dataA;
         PhyRegNumPath Rs1;
         logic         srcAIsRs1;
@@ -277,7 +276,6 @@ package PipelineTypes;
         DataPath      data;
 
         RobIndexPath  robIndex;
-        PcPath        trueTargetPc;
 
         logic         isSerial;
         logic         exception;

@@ -13,7 +13,8 @@ module CommitStage(
     SpecRATIF.CommitStage specRAT,
     FreeListIF.CommitStage freeList,
     StoreBufferIF.CommitStage storeBuffer,
-    ROBIF.CommitStage rob
+    ROBIF.CommitStage rob,
+    DramAccessIF.core dram
 );
     task automatic clear_outputs();
         recovery.commitRecoveryReq = '0;
@@ -22,9 +23,15 @@ module CommitStage(
         recovery.commitBranchTaken = 1'b0;
         recovery.commitBranchTarget = '0;
         ctrl.serialBlock = 1'b0;
-        storeBuffer.StoreBufferCommitReq = '0;
+        storeBuffer.StoreBufferPopReq = '0;
         storeBuffer.flush = 1'b0;
         rob.RobFlush = 1'b0;
+
+        dram.req = 1'b0;
+        dram.we = 1'b0;
+        dram.addr = '0;
+        dram.wdata = '0;
+        dram.wstrb = '0;
 
         for (int i = 0; i < WAY_NUM; i++) begin
             rob.RobPopReq[i].req = 1'b0;
@@ -139,11 +146,16 @@ module CommitStage(
                         stopCommit = 1'b1;
                     end else if (entry.isStore) begin
                         if (storeBuffer.StoreBufferCommit.valid &&
-                            storeBuffer.StoreBufferCommit.index == entry.storeBufferIndex) begin
-                            storeBuffer.StoreBufferCommitReq.valid = 1'b1;
-                            storeBuffer.StoreBufferCommitReq.index = entry.storeBufferIndex;
-                        end
-                        if (storeBuffer.StoreBufferCommitReady) begin
+                            storeBuffer.StoreBufferCommit.index == entry.storeBufferIndex &&
+                            dram.ready) begin
+                            dram.req = 1'b1;
+                            dram.we = 1'b1;
+                            dram.addr = storeBuffer.StoreBufferCommit.addr;
+                            dram.wdata = storeBuffer.StoreBufferCommit.data;
+                            dram.wstrb = storeBuffer.StoreBufferCommit.wstrb;
+
+                            storeBuffer.StoreBufferPopReq.valid = 1'b1;
+                            storeBuffer.StoreBufferPopReq.index = entry.storeBufferIndex;
                             commit_pop(i);
                         end
                         stopCommit = 1'b1;

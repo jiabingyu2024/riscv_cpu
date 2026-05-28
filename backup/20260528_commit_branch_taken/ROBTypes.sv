@@ -27,7 +27,6 @@ package ROBTypes;
 
         logic               isBranch;
         logic               takenPred;
-        logic               takenActual;
         logic               isMiss;
         PcPath              predPc;
         PcPath              truePc;

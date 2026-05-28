@@ -20,9 +20,7 @@ module Bypass(BypassIF.Bypass self);
         res.hit = 1'b0;
         res.data = '0;
         for (j = 0; j < BYPASS_WB_PORT_NUM; j++) begin
-            if (req.valid && req.phyRegNum != '0 &&
-                self.wbForward[j].valid && self.wbForward[j].writeRd &&
-                self.wbForward[j].rd != '0 &&
+            if (req.valid && self.wbForward[j].valid && self.wbForward[j].writeRd &&
                 self.wbForward[j].rd == req.phyRegNum) begin
                 res.hit = 1'b1;
                 res.data = self.wbForward[j].data;

@@ -96,6 +96,7 @@ module DispatchStage(
             rob.RobPushReq[i].entry.phyPrevRegNum = pipeReg[i].phyPrevDst;
             rob.RobPushReq[i].entry.isBranch = pipeReg[i].instInfo.tubeType == TUBE_TYPE_BRC;
             rob.RobPushReq[i].entry.takenPred = pipeReg[i].predInfo.isPred;
+            rob.RobPushReq[i].entry.takenActual = 1'b0;
             rob.RobPushReq[i].entry.predPc = pipeReg[i].predInfo.pcPred;
             rob.RobPushReq[i].entry.truePc = pipeReg[i].predInfo.pcPred;
             rob.RobPushReq[i].entry.specRATChkptIndex = pipeReg[i].specRATChkptIndex;

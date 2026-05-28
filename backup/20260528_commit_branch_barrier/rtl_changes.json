@@ -43,32 +43,8 @@
       "change_type": "logic_fix"
     },
     {
-      "path": "rtl/core/DispatchStage/StoreBuffer.sv",
-      "change_type": "logic_fix"
-    },
-    {
-      "path": "rtl/core/DispatchStage/StoreBufferIF.sv",
-      "change_type": "interface_refactor"
-    },
-    {
-      "path": "rtl/core/StoreBufferTypes.sv",
-      "change_type": "type_update"
-    },
-    {
       "path": "rtl/core/CommitStage/CommitStage.sv",
       "change_type": "logic_fix"
-    },
-    {
-      "path": "rtl/core/CommitStage/RecoveryManager.sv",
-      "change_type": "logic_fix"
-    },
-    {
-      "path": "rtl/core/CommitStage/RecoveryManagerIF.sv",
-      "change_type": "comment_update"
-    },
-    {
-      "path": "rtl/core/DramAccessIF.sv",
-      "change_type": "comment_update"
     },
     {
       "path": "rtl/core/ROBTypes.sv",
@@ -136,5 +112,5 @@
     }
   ],
   "cascade_scope": "compile_and_lint",
-  "notes": "Fixed packet splitting for multi-branch cases, real SpecRAT/FreeList checkpoint allocation and recovery, rename resource gating, ROB branch target miss detection, payload index alignment, store buffer commit writes to DRAM through an internal arbiter, two-cycle load response tracking, refactored RenameStage so FreeList owns the shared checkpoint index while SpecRAT consumes that index and saves a branch-boundary snapshot, changed IssueQueue wakeup delay to a 36-bit one-hot shift mask, replaced combinational DIV/REM with a 36-stage iterative pipeline in ExecuteMulStage, added real DispatchStage, ReadRegStage, ExecuteStage, and WriteBackStage pipe registers so backend stage boundaries are stable, hardened x0 handling across RenameStage, SpecRAT, ArchRAT, FreeList, RegFile, and Bypass, added minimal M-mode CSR/trap support for mstatus, mepc, mtvec, mcause, ecall, mret, and Zicsr CSR ops, made commit-time branch predictor updates use an explicit ROB-stored actual taken bit instead of reconstructing it from miss status, changed CommitStage so a committed branch is a commit barrier like store while factoring repeated commit side effects into local tasks, moved committed-store DRAM driving from CommitStage into StoreBuffer through a commit request/ready handshake, and changed RecoveryManager from combinational recovery forwarding to a one-cycle registered IDLE/EMIT FSM to shorten miss-to-Ctrl timing."
+  "notes": "Fixed packet splitting for multi-branch cases, real SpecRAT/FreeList checkpoint allocation and recovery, rename resource gating, ROB branch target miss detection, payload index alignment, store buffer commit writes to DRAM through an internal arbiter, two-cycle load response tracking, refactored RenameStage so FreeList owns the shared checkpoint index while SpecRAT consumes that index and saves a branch-boundary snapshot, changed IssueQueue wakeup delay to a 36-bit one-hot shift mask, replaced combinational DIV/REM with a 36-stage iterative pipeline in ExecuteMulStage, added real DispatchStage, ReadRegStage, ExecuteStage, and WriteBackStage pipe registers so backend stage boundaries are stable, hardened x0 handling across RenameStage, SpecRAT, ArchRAT, FreeList, RegFile, and Bypass, added minimal M-mode CSR/trap support for mstatus, mepc, mtvec, mcause, ecall, mret, and Zicsr CSR ops, and made commit-time branch predictor updates use an explicit ROB-stored actual taken bit instead of reconstructing it from miss status."
 }

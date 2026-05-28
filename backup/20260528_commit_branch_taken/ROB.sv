@@ -57,7 +57,6 @@ module ROB(ROBIF.ROB self);
                     entries[self.RobDoneReq[i].robIndex].exception <= self.RobDoneReq[i].exception;
                     entries[self.RobDoneReq[i].robIndex].isSerial <= self.RobDoneReq[i].isSerial;
                     entries[self.RobDoneReq[i].robIndex].truePc <= self.RobDoneReq[i].trueTargetPc;
-                    entries[self.RobDoneReq[i].robIndex].takenActual <= self.RobDoneReq[i].taken;
                     entries[self.RobDoneReq[i].robIndex].isMiss <=
                         entries[self.RobDoneReq[i].robIndex].isBranch &&
                         ((entries[self.RobDoneReq[i].robIndex].takenPred != self.RobDoneReq[i].taken) ||

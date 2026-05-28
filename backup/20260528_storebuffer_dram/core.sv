@@ -76,7 +76,7 @@ module core(
         ROB rob(robIF);
         IssueQueue issueQueue(issueQueueIF);
         Payload payload(payloadIF);
-        StoreBuffer storeBuffer(storeBufferIF, cmDramAccess);
+        StoreBuffer storeBuffer(storeBufferIF);
     //IS issue 
     IssueStage issueStage (dsStageIF, isStageIF, ctrlIF, issueQueueIF, payloadIF);
 
@@ -96,7 +96,7 @@ module core(
     Bypass bypass(bypassIF);
     //CM
 
-    CommitStage cmStage (cmStageIF, recoveryManagerIF, ctrlIF, archRATIF, specRATIF, freeListIF, storeBufferIF, robIF);
+    CommitStage cmStage (cmStageIF, recoveryManagerIF, ctrlIF, archRATIF, specRATIF, freeListIF, storeBufferIF, robIF, cmDramAccess);
 
     DramAccessArbiter dramAccessArbiter(exDramAccess, cmDramAccess, dromAccess);
 

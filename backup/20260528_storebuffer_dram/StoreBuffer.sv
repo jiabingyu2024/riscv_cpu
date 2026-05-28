@@ -1,10 +1,7 @@
 import BasicTypes::*;
 import StoreBufferTypes::*;
 
-module StoreBuffer(
-    StoreBufferIF.StoreBuffer self,
-    DramAccessIF.core dram
-);
+module StoreBuffer(StoreBufferIF.StoreBuffer self);
     StoreBufferPushReqPath entries [STORE_BUFFER_DEPTH];
     logic valid [STORE_BUFFER_DEPTH];
     StoreBufferIndexPath head;
@@ -17,29 +14,12 @@ module StoreBuffer(
         self.allocRdy = (count < STORE_BUFFER_DEPTH);
         self.allocIndex = tail;
         self.StoreBufferCommit = '0;
-        self.StoreBufferCommitReady = 1'b0;
-        dram.req = 1'b0;
-        dram.we = 1'b0;
-        dram.addr = '0;
-        dram.wdata = '0;
-        dram.wstrb = '0;
         if (count != '0 && valid[head] && entries[head].valid) begin
             self.StoreBufferCommit.valid = 1'b1;
             self.StoreBufferCommit.index = head;
             self.StoreBufferCommit.addr = entries[head].addr;
             self.StoreBufferCommit.data = entries[head].data;
             self.StoreBufferCommit.wstrb = entries[head].wstrb;
-        end
-
-        if (self.StoreBufferCommitReq.valid &&
-            self.StoreBufferCommit.valid &&
-            self.StoreBufferCommitReq.index == head) begin
-            dram.req = 1'b1;
-            dram.we = 1'b1;
-            dram.addr = self.StoreBufferCommit.addr;
-            dram.wdata = self.StoreBufferCommit.data;
-            dram.wstrb = self.StoreBufferCommit.wstrb;
-            self.StoreBufferCommitReady = dram.ready;
         end
 
         self.StoreBufferMatchOut.hit = 1'b0;
@@ -73,9 +53,10 @@ module StoreBuffer(
             end
         end else begin
             logic doAlloc;
-            logic doHeadCommit;
+            logic doHeadPop;
             doAlloc = self.allocReq && self.allocRdy;
-            doHeadCommit = self.StoreBufferCommitReady && count != '0;
+            doHeadPop = self.StoreBufferPopReq.valid && count != '0 &&
+                        self.StoreBufferPopReq.index == head;
 
             if (doAlloc) begin
                 valid[tail] <= 1'b1;
@@ -86,11 +67,13 @@ module StoreBuffer(
                 entries[self.StoreBufferPushReq.index] <= self.StoreBufferPushReq;
                 valid[self.StoreBufferPushReq.index] <= 1'b1;
             end
-            if (doHeadCommit) begin
-                valid[head] <= 1'b0;
-                head <= head + 1'b1;
+            if (self.StoreBufferPopReq.valid && count != '0) begin
+                valid[self.StoreBufferPopReq.index] <= 1'b0;
+                if (doHeadPop) begin
+                    head <= head + 1'b1;
+                end
             end
-            count <= count + doAlloc - doHeadCommit;
+            count <= count + doAlloc - doHeadPop;
         end
     end
 endmodule

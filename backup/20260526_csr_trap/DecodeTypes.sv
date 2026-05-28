@@ -396,11 +396,7 @@ package DecodeTypes;
             unique case (inst[31:20])
                 12'h000:  instInfo.SubType.sysSubType = SYS_SUBTYPE_ECALL;
                 12'h001:  instInfo.SubType.sysSubType = SYS_SUBTYPE_EBREAK;
-                12'h302: begin
-                    instInfo.SubType.sysSubType = SYS_SUBTYPE_EBREAK;
-                    csrAddr.valid = TRUE;
-                    csrAddr.csrAddr = 12'h302;
-                end
+                12'h302:  instInfo.SubType.sysSubType = SYS_SUBTYPE_EBREAK;
                 default: begin
                     instInfo.valid = FALSE;
                     instInfo.SubType.sysSubType = SYS_SUBTYPE_ECALL;
@@ -471,7 +467,6 @@ package DecodeTypes;
             OP_JALR, OP_LOAD, OP_OP_IMM: imm = {{20{inst[31]}}, inst[31:20]};
             OP_BRANCH:        imm = {{19{inst[31]}}, inst[31], inst[7], inst[30:25], inst[11:8], 1'b0};
             OP_STORE:         imm = {{20{inst[31]}}, inst[31:25], inst[11:7]};
-            OP_SYSTEM:        imm = {27'b0, inst[19:15]};
             default:          imm = '0;
         endcase
     endfunction

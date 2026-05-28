@@ -10,7 +10,7 @@ import BasicTypes::*;
 import PipelineTypes::*;
 
 
-interface CommitStageIf( input logic clk, rst );
+interface CommitStageIF( input logic clk, rst );
 
     logic  commitValid [WAY_NUM];
     PcPath commitPc    [WAY_NUM];

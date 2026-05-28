@@ -117,7 +117,6 @@ module RegReadStage(
                 default: begin
                     self.nextToSysStage[i].valid = pipeReg[i].valid && !ctrl.rrPipe.flush;
                     self.nextToSysStage[i].subType = pipeReg[i].SubType;
-                    self.nextToSysStage[i].pc = pipeReg[i].pc;
                     self.nextToSysStage[i].dataA = dataA;
                     self.nextToSysStage[i].Rs1 = pipeReg[i].srcA;
                     self.nextToSysStage[i].srcAIsRs1 = pipeReg[i].opTypeA == OP_TYPE_REG;

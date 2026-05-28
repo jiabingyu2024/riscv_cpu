@@ -42,6 +42,7 @@ module WriteBackStage(
         ctrl.wbStageEmpty = 1'b1;
         recovery.writeBackRecoveryReq = '0;
         for (int i = 0; i < WAY_NUM * 5; i++) begin
+            self.RobDoneReq[i] = '0;
             rob.RobDoneReq[i] = '0;
             bypass.wbForward[i] = '0;
             regFile.regFileWriteReq[i] = '0;
@@ -85,6 +86,13 @@ module WriteBackStage(
         logic fire;
 
         fire = valid && !ctrl.wbPipe.flush && !ctrl.wbPipe.stall;
+
+        self.RobDoneReq[port].valid = fire;
+        self.RobDoneReq[port].robIndex = robIndex;
+        self.RobDoneReq[port].isSerial = isSerial;
+        self.RobDoneReq[port].exception = exception;
+        self.RobDoneReq[port].trueTargetPc = trueTargetPc;
+        self.RobDoneReq[port].taken = taken;
 
         rob.RobDoneReq[port].valid = fire;
         rob.RobDoneReq[port].robIndex = robIndex;
