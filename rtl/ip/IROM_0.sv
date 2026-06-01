@@ -3,8 +3,8 @@
 /**
  * @module IROM
  * @description 32-bit instruction ROM, depth 4096 words (16 KiB).
- *              Registers word address on the rising clock edge and reads by
- *              that registered address.
+ *              Dual read port. Each port registers its word address on the
+ *              rising clock edge and reads by that registered address.
  *              Initialization uses `$readmemh` with a plain hex `.mem` file.
  */
 module IROM_0 #(
@@ -15,12 +15,17 @@ module IROM_0 #(
     input  logic [ADDR_WIDTH-1:0] addra,
     input  logic                  clka,
     input  logic                  ena,
-    output logic [DATA_WIDTH-1:0] douta
+    output logic [DATA_WIDTH-1:0] douta,
+    input  logic [ADDR_WIDTH-1:0] addrb,
+    input  logic                  clkb,
+    input  logic                  enb,
+    output logic [DATA_WIDTH-1:0] doutb
 );
     localparam int unsigned DEPTH = (1 << ADDR_WIDTH);
 
     logic [DATA_WIDTH-1:0] mem [0:DEPTH-1];
-    logic [ADDR_WIDTH-1:0] addr_q;
+    logic [ADDR_WIDTH-1:0] addra_q;
+    logic [ADDR_WIDTH-1:0] addrb_q;
 
     initial begin
         if (INIT_FILE != "") begin
@@ -30,10 +35,17 @@ module IROM_0 #(
 
     always_ff @(posedge clka) begin
         if (ena) begin
-            addr_q <= addra;
+            addra_q <= addra;
         end
     end
 
-    assign douta = mem[addr_q];
+    always_ff @(posedge clkb) begin
+        if (enb) begin
+            addrb_q <= addrb;
+        end
+    end
+
+    assign douta = mem[addra_q];
+    assign doutb = mem[addrb_q];
 
 endmodule
