@@ -144,11 +144,9 @@ module DramAccessArbiter(
         dram.wstrb = ex.req ? ex.wstrb : cm.wstrb;
 
         ex.rdata = dram.rdata;
-        ex.rvalid = dram.rvalid;
         ex.ready = dram.ready;
 
         cm.rdata = '0;
-        cm.rvalid = 1'b0;
         cm.ready = dram.ready && !ex.req;
     end
 endmodule

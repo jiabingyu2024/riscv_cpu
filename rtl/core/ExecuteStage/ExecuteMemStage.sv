@@ -58,13 +58,13 @@ module ExecuteMemStage(
             loadRsp <= '0;
         end else begin
             loadRsp <= '0;
-            if (loadPipe1.valid && dram.rvalid) begin
+            if (loadPipe1.valid) begin
                 loadRsp <= loadPipe1;
                 loadRsp.data <= dram.rdata;
             end
             loadPipe1 <= loadPipe0;
             loadPipe0 <= '0;
-            if (dram.req && !dram.we) begin
+            if (dram.req && !dram.we && dram.ready) begin
                 loadPipe0 <= loadLaunch;
             end
         end
