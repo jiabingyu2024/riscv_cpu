@@ -3,7 +3,6 @@
 
 #include "Vtb_src_top.h"
 #include "Vtb_src_top___024root.h"
-#include "Vtb_src_top_PerfIF.h"
 #include "sim_common.hpp"
 
 #include <cstdint>
@@ -82,14 +81,22 @@ Options parse_args(int argc, char** argv) {
     return opt;
 }
 
-sim_common::PerfStats core_perf(Vtb_src_top___024root* rootp) {
-    sim_common::PerfStats stats;
-    auto* perf = rootp->__PVT__tb_src_top__DOT__u_dut__DOT__Core_cpu__DOT__perfIF;
-    stats.cycles = perf->cycle;
-    stats.instret = perf->commitCnt;
-    stats.branches = perf->branchCnt;
-    stats.branch_miss = perf->branchMissCnt;
-    return stats;
+bool core_inst_valid(Vtb_src_top___024root* rootp) {
+    return rootp->tb_src_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__reg_write_e ||
+           rootp->tb_src_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__mem_write_e ||
+           rootp->tb_src_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__update_en_e;
+}
+
+bool core_branch_update(Vtb_src_top___024root* rootp) {
+    return rootp->tb_src_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__update_en_e;
+}
+
+bool core_branch_miss(Vtb_src_top___024root* rootp) {
+    return rootp->tb_src_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__error_e;
+}
+
+uint32_t core_pc_e(Vtb_src_top___024root* rootp) {
+    return rootp->tb_src_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__pc_e;
 }
 
 bool counter_start(Vtb_src_top___024root* rootp) {
@@ -119,10 +126,9 @@ int main(int argc, char** argv) {
     uint64_t sim_time = 0;
     sim_common::PerfStats total_stats;
     sim_common::PerfStats work_stats;
-    sim_common::PerfStats prev_stats;
     uint64_t stable_loops = 0;
     uint64_t counter_stop_cpu_cycle = 0;
-    uint64_t last_instret = 0;
+    uint32_t last_pc = 0;
     bool last_counter_start = false;
     bool counter_started = false;
     bool counter_stopped = false;
@@ -190,22 +196,28 @@ int main(int argc, char** argv) {
 
         if (cpu_rise) {
             bool counter_active = counter_start(top->rootp);
-            sim_common::PerfStats current_stats = core_perf(top->rootp);
-            sim_common::PerfStats delta_stats;
+            uint32_t pc = core_pc_e(top->rootp);
+            bool inst_valid = core_inst_valid(top->rootp);
 
-            delta_stats.cycles = current_stats.cycles - prev_stats.cycles;
-            delta_stats.instret = current_stats.instret - prev_stats.instret;
-            delta_stats.branches = current_stats.branches - prev_stats.branches;
-            delta_stats.branch_miss = current_stats.branch_miss - prev_stats.branch_miss;
-            total_stats = current_stats;
+            ++total_stats.cycles;
+            if (inst_valid) {
+                ++total_stats.instret;
+            }
+            if (core_branch_update(top->rootp)) {
+                ++total_stats.branches;
+                if (core_branch_miss(top->rootp)) ++total_stats.branch_miss;
+            }
 
             if (counter_active) {
-                work_stats.cycles += delta_stats.cycles;
-                work_stats.instret += delta_stats.instret;
-                work_stats.branches += delta_stats.branches;
-                work_stats.branch_miss += delta_stats.branch_miss;
+                ++work_stats.cycles;
+                if (inst_valid) {
+                    ++work_stats.instret;
+                }
+                if (core_branch_update(top->rootp)) {
+                    ++work_stats.branches;
+                    if (core_branch_miss(top->rootp)) ++work_stats.branch_miss;
+                }
             }
-            prev_stats = current_stats;
 
             if (counter_active) {
                 counter_started = true;
@@ -221,11 +233,11 @@ int main(int argc, char** argv) {
                 run_ms_reached = true;
             }
 
-            if (current_stats.instret == last_instret) {
+            if (pc == last_pc) {
                 ++stable_loops;
             } else {
                 stable_loops = 0;
-                last_instret = current_stats.instret;
+                last_pc = pc;
             }
 
             if (run_ms_reached || (counter_stopped && stable_loops >= opt.stable_cpu_cycles)) {

@@ -3,8 +3,6 @@
 
 #include "Vtb_rv32ui_top.h"
 #include "Vtb_rv32ui_top___024root.h"
-#include "Vtb_rv32ui_top_CommitStageIF.h"
-#include "Vtb_rv32ui_top_PerfIF.h"
 #include "sim_common.hpp"
 
 #include <cstdint>
@@ -139,14 +137,24 @@ Options parse_args(int argc, char** argv) {
     return opt;
 }
 
-sim_common::PerfStats core_perf(Vtb_rv32ui_top___024root* rootp) {
-    sim_common::PerfStats stats;
-    auto* perf = rootp->__PVT__tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__perfIF;
-    stats.cycles = perf->cycle;
-    stats.instret = perf->commitCnt;
-    stats.branches = perf->branchCnt;
-    stats.branch_miss = perf->branchMissCnt;
-    return stats;
+bool core_inst_valid(Vtb_rv32ui_top___024root* rootp) {
+    return !rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__flush_e_m &&
+           (rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__reg_write_e ||
+           rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__mem_write_e ||
+           rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__update_en_e);
+}
+
+bool core_branch_update(Vtb_rv32ui_top___024root* rootp) {
+    return !rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__flush_e_m &&
+           rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__update_en_e;
+}
+
+bool core_branch_miss(Vtb_rv32ui_top___024root* rootp) {
+    return rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__error_e;
+}
+
+uint32_t core_pc_e(Vtb_rv32ui_top___024root* rootp) {
+    return rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__pc_e;
 }
 
 bool soc_perip_wen(Vtb_rv32ui_top___024root* rootp) {
@@ -159,19 +167,6 @@ uint32_t soc_perip_addr(Vtb_rv32ui_top___024root* rootp) {
 
 uint32_t soc_perip_wdata(Vtb_rv32ui_top___024root* rootp) {
     return rootp->tb_rv32ui_top__DOT__u_dut__DOT__perip_wdata;
-}
-
-void observe_pc(const Meta& meta, TestStatus& status, uint32_t pc);
-
-void observe_commit_pc(const Meta& meta, TestStatus& status, Vtb_rv32ui_top___024root* rootp) {
-    auto* commit = rootp->__PVT__tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__cmStageIF;
-    for (int lane = 0; lane < 2; ++lane) {
-        if (commit->commitValid[lane]) {
-            uint32_t pc = commit->commitPc[lane];
-            status.last_pc = pc;
-            observe_pc(meta, status, pc);
-        }
-    }
 }
 
 uint32_t soc_seg_wdata(Vtb_rv32ui_top___024root* rootp) {
@@ -416,8 +411,20 @@ int main(int argc, char** argv) {
             observe_seg_write(meta, status, sampled_perip_wen, sampled_perip_addr, sampled_perip_wdata);
             observe_led_write(meta, status, sampled_perip_wen, sampled_perip_addr, sampled_perip_wdata);
             update_src_test_status(meta, status, top);
-            observe_commit_pc(meta, status, top->rootp);
-            stats = core_perf(top->rootp);
+            if (!top->rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__flush_e_m) {
+                uint32_t pc_e = core_pc_e(top->rootp);
+                status.last_pc = pc_e;
+                observe_pc(meta, status, pc_e);
+            }
+
+            if (core_inst_valid(top->rootp)) {
+                ++stats.instret;
+            }
+            if (core_branch_update(top->rootp)) {
+                ++stats.branches;
+                if (core_branch_miss(top->rootp)) ++stats.branch_miss;
+            }
+            ++stats.cycles;
         }
     }
 

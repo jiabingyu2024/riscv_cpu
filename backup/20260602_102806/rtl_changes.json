@@ -1,0 +1,23 @@
+{
+  "timestamp": "2026-06-02T10:17:32+08:00",
+  "trigger": "SoC adapter update after core IROM/DRAM interface timing change",
+  "files_modified": [
+    {
+      "path": "rtl/soc/student_top.sv",
+      "lines_changed": "41-104",
+      "change_type": "port_mismatch_fix"
+    },
+    {
+      "path": "rtl/soc/perip_bridge.sv",
+      "lines_changed": "57-159",
+      "change_type": "timing_alignment"
+    },
+    {
+      "path": "rtl/soc/dram_driver.sv",
+      "lines_changed": "35-61",
+      "change_type": "timing_alignment"
+    }
+  ],
+  "cascade_scope": "compile_and_lint",
+  "notes": "Adapted student_top to the new dual-read IROM core ports by wiring IROM_0 port A/B to irom_addrA/B and irom_dataA/B. Delayed the DRAM read-return select in perip_bridge and the byte-offset alignment in dram_driver by two cycles to match address-register plus output-register DRAM timing, without adding a third SoC-side cycle."
+}

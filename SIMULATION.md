@@ -36,6 +36,21 @@ wrapper 差异：
 
 ## 2. 统一命令
 
+Makefile 同时支持两种写法：
+
+```bash
+make run TEST=rv32ui/addi
+make run rv32ui ISA=addi
+```
+
+当前 bring-up 阶段如果只想确认“生成输入 -> 编译仿真器 -> 启动仿真 -> 写 run.log”这条路径，不关心当前测试是否 PASS，可以加：
+
+```bash
+ALLOW_FAIL=1
+```
+
+不加 `ALLOW_FAIL=1` 时，`PASS/FAIL/TIMEOUT` 会按严格回归方式返回 make 退出码。
+
 列出测试：
 
 ```bash
@@ -46,29 +61,36 @@ make list-src
 构建输入：
 
 ```bash
+make build rv32ui                # 位置参数写法
 make build TEST=rv32ui          # 构建全部 rv32ui
+make build rv32ui ISA=addi      # 构建单条 rv32ui case
 make build TEST=rv32ui/addi     # 构建单条 rv32ui case
-make build TEST=src_test
-make build TEST=src0
-make build TEST=perf            # 构建 src0/src1/src2
+make build src_test
+make build src0
+make build perf                 # 构建 src0/src1/src2
 ```
 
 运行：
 
 ```bash
+make run rv32ui ISA=addi
 make run TEST=rv32ui/addi
+make run rv32ui
 make run TEST=rv32ui
-make run TEST=src_test
-make run TEST=src0
-make run TEST=perf              # 顺序运行 src0/src1/src2
+make run src_test
+make run src0
+make run perf                   # 顺序运行 src0/src1/src2
+make run rv32ui ISA=addi WAVE=1
+make run rv32ui ISA=addi MAX_CYCLES=1000 ALLOW_FAIL=1
 ```
 
 只编译仿真器：
 
 ```bash
+make sim rv32ui
 make sim TEST=rv32ui/addi
-make sim TEST=src_test
-make sim TEST=src0
+make sim src_test
+make sim src0
 ```
 
 清理：
@@ -102,6 +124,7 @@ CNT_MHZ ?= 50
 | `RUN_MS` | `0` | `src0/src1/src2` | 大于 0 时按 counter 毫秒数采样结束 |
 | `FAST_COUNTER` | `0` | `src0/src1/src2` | 调试用 counter 加速，不代表真实性能 |
 | `STRICT_SIM_LIMIT` | `0` | `src0/src1/src2` | `1` 时 `SIM_LIMIT` 返回非零 |
+| `ALLOW_FAIL` | `0` | 全部 run 目标 | `1` 时保留仿真输出但不因 `FAIL/TIMEOUT/SIM_LIMIT` 中断 make |
 
 波形位置：
 
@@ -118,14 +141,17 @@ build/perf/<src>/wave.vcd
 单条测试：
 
 ```bash
+make run rv32ui ISA=addi
 make run TEST=rv32ui/addi
-make run TEST=rv32ui/addi WAVE=1
-make run TEST=rv32ui/addi MAX_CYCLES=50000
+make run rv32ui ISA=addi WAVE=1
+make run rv32ui ISA=addi MAX_CYCLES=50000
+make run rv32ui ISA=addi MAX_CYCLES=1000 ALLOW_FAIL=1
 ```
 
 全部测试：
 
 ```bash
+make run rv32ui
 make run TEST=rv32ui
 ```
 
@@ -162,9 +188,11 @@ PASS rv32ui/addi
 运行：
 
 ```bash
+make run src_test
 make run TEST=src_test
-make run TEST=src_test CPU_MHZ=50 CNT_MHZ=50
-make run TEST=src_test SRC_TEST_MAX_CYCLES=5000000
+make run src_test CPU_MHZ=50 CNT_MHZ=50
+make run src_test SRC_TEST_MAX_CYCLES=5000000
+make run src_test SRC_TEST_MAX_CYCLES=1000 ALLOW_FAIL=1
 ```
 
 生成物：
@@ -212,33 +240,34 @@ PASS src_test/src_test
 运行单项：
 
 ```bash
-make run TEST=src0
-make run TEST=src1
-make run TEST=src2
+make run src0
+make run src1
+make run src2
 ```
 
 运行三项：
 
 ```bash
-make run TEST=perf
+make run perf
 ```
 
 短跑调试：
 
 ```bash
-make run TEST=src0 SRC_MAX_CYCLES=200000
+make run src0 SRC_MAX_CYCLES=200000
+make run src0 SRC_MAX_CYCLES=1000 ALLOW_FAIL=1
 ```
 
 按时间采样：
 
 ```bash
-make run TEST=src0 RUN_MS=30000 SRC_MAX_CYCLES=8000000000
+make run src0 RUN_MS=30000 SRC_MAX_CYCLES=8000000000
 ```
 
 调试用快速 counter：
 
 ```bash
-make run TEST=src0 FAST_COUNTER=1 RUN_MS=30000 SRC_MAX_CYCLES=1000000
+make run src0 FAST_COUNTER=1 RUN_MS=30000 SRC_MAX_CYCLES=1000000
 ```
 
 输出示例：

@@ -213,9 +213,6 @@ package PipelineTypes;
         logic         srcAIsRs1;
         logic         srcBIsRs2;
 
-        PcPath        pc;
-        DataPath      imm;
-
         PhyRegNumPath Rd;
         logic         writeRd;
 

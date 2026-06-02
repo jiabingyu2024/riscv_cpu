@@ -1,23 +1,48 @@
 {
-  "timestamp": "2026-06-02T10:17:32+08:00",
-  "trigger": "SoC adapter update after core IROM/DRAM interface timing change",
-  "files_modified": [
+  "timestamp": "2026-06-02T11:03:00+08:00",
+  "trigger": "Testbench and build-system adapter update after core interface changes",
+  "changes": [
     {
-      "path": "rtl/soc/student_top.sv",
-      "lines_changed": "41-104",
-      "change_type": "port_mismatch_fix"
+      "scope": "tb_build_filelists",
+      "files_modified": [
+        "Makefile",
+        "filelist/rtl_core_soc.f",
+        "filelist/tb_rv32ui.f",
+        "filelist/tb_src_test.f",
+        "filelist/tb_src.f"
+      ],
+      "notes": "Moved the SV compile order out of Makefile into standalone filelists. The Makefile now uses common RTL plus per-testbench filelists for sim-isa, sim-coe-correct, and sim-coe-perf."
     },
     {
-      "path": "rtl/soc/perip_bridge.sv",
-      "lines_changed": "57-159",
-      "change_type": "timing_alignment"
+      "scope": "tb_probe_adapter",
+      "files_modified": [
+        "tb/sim_main.cpp",
+        "tb/sim_src.cpp"
+      ],
+      "notes": "Removed stale probes into the old single-issue pipeline internals and changed performance accounting to read the current core PerfIF counters through Verilator public-flat hierarchy."
     },
     {
-      "path": "rtl/soc/dram_driver.sv",
-      "lines_changed": "35-61",
-      "change_type": "timing_alignment"
+      "scope": "core_compile_fixes",
+      "files_modified": [
+        "rtl/core/myCPU.sv",
+        "rtl/core/PipelineTypes.sv"
+      ],
+      "notes": "Removed the obsolete cpu_defines.svh include from myCPU.sv. Added the pc and imm payload fields required by the current branch read-reg to execute path."
+    },
+    {
+      "scope": "soc_adapter_previous_step",
+      "files_modified": [
+        "rtl/soc/student_top.sv",
+        "rtl/soc/perip_bridge.sv",
+        "rtl/soc/dram_driver.sv"
+      ],
+      "notes": "Adapted student_top to dual-read IROM core ports. Aligned DRAM return select and byte-offset handling to the address-register plus output-register DRAM timing without adding an extra SoC-side cycle."
     }
   ],
-  "cascade_scope": "compile_and_lint",
-  "notes": "Adapted student_top to the new dual-read IROM core ports by wiring IROM_0 port A/B to irom_addrA/B and irom_dataA/B. Delayed the DRAM read-return select in perip_bridge and the byte-offset alignment in dram_driver by two cycles to match address-register plus output-register DRAM timing, without adding a third SoC-side cycle."
+  "verification": [
+    "make sim-isa",
+    "make sim-coe-correct",
+    "make sim-coe-perf"
+  ],
+  "residual_warnings": "Verilator still reports existing nonfatal RTL warnings such as TIMESCALEMOD, WIDTH, and UNOPTFLAT. These were not fully cleaned in this adapter pass."
 }
