@@ -43,6 +43,7 @@ module core(
     SpecRATIF          specRATIF(clk, rst);
     ArchRATIF          archRATIF(clk, rst);
     FreeListIF         freeListIF(clk, rst);
+    ReadyTableIF       readyTableIF(clk, rst);
     RegFileIF          regFileIF(clk, rst);
     BypassIF           bypassIF(clk, rst);
     DramAccessIF       exDramAccess(clk, rst);
@@ -66,10 +67,11 @@ module core(
 
     //RN
     // RenameStage 内完成 组内相关性检查  部分预测错误纠正recovery和 分支限制一条出错后的恢复ctrl
-    RenameStage renameStage (idStageIF, rnStageIF, ctrlIF, specRATIF,freeListIF ,recoveryManagerIF);
+    RenameStage renameStage (idStageIF, rnStageIF, ctrlIF, specRATIF, freeListIF, readyTableIF, recoveryManagerIF);
         SpecRAT specRAT(specRATIF);
         ArchRAT archRAT(archRATIF);
         FreeList freeList(freeListIF);
+        ReadyTable readyTable(readyTableIF);
 
     //DS dispatch
     DispatchStage dispatchStage (rnStageIF, dsStageIF, issueQueueIF, payloadIF, ctrlIF, robIF, storeBufferIF);
@@ -91,7 +93,8 @@ module core(
     ExecuteMemStage executeMemStage (rrStageIF, exStageIF, ctrlIF, exDramAccess, storeBufferIF, bypassIF);
     ExecuteSysStage executeSysStage (rrStageIF, exStageIF, ctrlIF, bypassIF);
 
-    WriteBackStage writeBackStage (exStageIF, wbStageIF, ctrlIF, recoveryManagerIF, bypassIF, regFileIF, robIF);
+    WriteBackStage writeBackStage (exStageIF, wbStageIF, ctrlIF, recoveryManagerIF,
+                                   bypassIF, regFileIF, robIF, readyTableIF, issueQueueIF);
 
     Bypass bypass(bypassIF);
     //CM

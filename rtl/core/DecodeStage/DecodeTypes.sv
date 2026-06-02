@@ -261,8 +261,8 @@ package DecodeTypes;
                 instInfo.valid = (inst[31:25] == F7_BASE);
                 instInfo.SubType.aluSubType = ALU_SUBTYPE_SLL;
             end
-            F3_SLT:  instInfo.SubType.aluSubType = ALU_SUBTYPE_SUB;
-            F3_SLTU: instInfo.SubType.aluSubType = ALU_SUBTYPE_SUB;
+            F3_SLT:  instInfo.SubType.aluSubType = ALU_SUBTYPE_SLT;
+            F3_SLTU: instInfo.SubType.aluSubType = ALU_SUBTYPE_SLTU;
             F3_XOR:  instInfo.SubType.aluSubType = ALU_SUBTYPE_XOR;
             F3_SRX:  begin
                 instInfo.valid = (inst[31:25] == F7_BASE) || (inst[31:25] == F7_SUBSRA);
@@ -324,11 +324,11 @@ package DecodeTypes;
                 end
                 F3_SLT: begin
                     instInfo.valid = (inst[31:25] == F7_BASE);
-                    instInfo.SubType.aluSubType = ALU_SUBTYPE_SUB;
+                    instInfo.SubType.aluSubType = ALU_SUBTYPE_SLT;
                 end
                 F3_SLTU: begin
                     instInfo.valid = (inst[31:25] == F7_BASE);
-                    instInfo.SubType.aluSubType = ALU_SUBTYPE_SUB;
+                    instInfo.SubType.aluSubType = ALU_SUBTYPE_SLTU;
                 end
                 F3_XOR: begin
                     instInfo.valid = (inst[31:25] == F7_BASE);

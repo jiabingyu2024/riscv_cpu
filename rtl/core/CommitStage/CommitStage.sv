@@ -98,6 +98,8 @@ module CommitStage(
         recovery.commitRecoveryReq.specRATChkptIndex = entry.specRATChkptIndex;
         recovery.commitRecoveryReq.freeListChkptIndex = entry.freeListChkptIndex;
         recovery.commitRecoveryReq.chkptRecoverEn = 1'b1;
+        recovery.commitRecoveryReq.recoverFreeEn = entry.DstValid;
+        recovery.commitRecoveryReq.recoverFreePhyRegNum = entry.phyPrevRegNum;
         recovery.commitRecoveryReq.frontendFlush = 1'b1;
         recovery.commitRecoveryReq.backendFlush = 1'b1;
         rob.RobFlush = 1'b1;

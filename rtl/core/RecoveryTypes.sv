@@ -25,6 +25,8 @@ package RecoveryTypes;
         ChkptIndexPath    specRATChkptIndex;
         ChkptIndexPath    freeListChkptIndex;
         logic             chkptRecoverEn;
+        logic             recoverFreeEn;
+        PhyRegNumPath     recoverFreePhyRegNum;
         logic             frontendFlush;
         logic             backendFlush;
     } RecoveryReqPath;

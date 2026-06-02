@@ -10,6 +10,7 @@ module RenameStage (
     CtrlIF.RenameStage           ctrl,
     SpecRATIF.RenameStage        specRAT,
     FreeListIF.RenameStage       freeList,
+    ReadyTableIF.RenameStage     readyTable,
     RecoveryManagerIF.RenameStage recovery
 );
 
@@ -93,18 +94,26 @@ module RenameStage (
         for (int i = 0; i < SPECRAT_WRITE_PORT_NUM; i++) begin
             specRAT.specRATUpdate[i] = '0;
         end
+        for (int i = 0; i < WAY_NUM * 2; i++) begin
+            readyTable.readReq[i] = '0;
+        end
         for (int i = 0; i < WAY_NUM; i++) begin
             freeList.freeListAllocReq[i] = canRename &&
                                            needs_dst_alloc(pipeReg[i]);
+            readyTable.markBusy[i] = '0;
         end
 
         for (int i = 0; i < WAY_NUM; i++) begin
             int base;
+            int readyBase;
             PhyRegNumPath srcA;
             PhyRegNumPath srcB;
             PhyRegNumPath oldDst;
+            logic srcAFromGroup;
+            logic srcBFromGroup;
 
             base = i * 3;
+            readyBase = i * 2;
             specRAT.specRATReadIn[base + 0].ReadEn = pipeReg[i].valid &&
                                                      pipeReg[i].lgcRegInfo.lgcRegNumSrcAValid;
             specRAT.specRATReadIn[base + 0].ReadLgcRegNum = pipeReg[i].lgcRegInfo.lgcRegNumSrcA;
@@ -119,19 +128,30 @@ module RenameStage (
             srcA = specRAT.specRATReadOut[base + 0];
             srcB = specRAT.specRATReadOut[base + 1];
             oldDst = specRAT.specRATReadOut[base + 2];
+            srcAFromGroup = 1'b0;
+            srcBFromGroup = 1'b0;
 
             for (int k = 0; k < i; k++) begin
                 if (needs_dst_alloc(pipeReg[k]) && freeList.freeListAlloc[k].allocValid) begin
                     if (pipeReg[i].lgcRegInfo.lgcRegNumSrcAValid &&
                         pipeReg[i].lgcRegInfo.lgcRegNumSrcA == pipeReg[k].lgcRegInfo.lgcRegNumDst) begin
                         srcA = freeList.freeListAlloc[k].allocPhyRegNum;
+                        srcAFromGroup = 1'b1;
                     end
                     if (pipeReg[i].lgcRegInfo.lgcRegNumSrcBValid &&
                         pipeReg[i].lgcRegInfo.lgcRegNumSrcB == pipeReg[k].lgcRegInfo.lgcRegNumDst) begin
                         srcB = freeList.freeListAlloc[k].allocPhyRegNum;
+                        srcBFromGroup = 1'b1;
                     end
                 end
             end
+
+            readyTable.readReq[readyBase + 0].valid = pipeReg[i].valid &&
+                                                      pipeReg[i].lgcRegInfo.lgcRegNumSrcAValid;
+            readyTable.readReq[readyBase + 0].phyRegNum = srcA;
+            readyTable.readReq[readyBase + 1].valid = pipeReg[i].valid &&
+                                                      pipeReg[i].lgcRegInfo.lgcRegNumSrcBValid;
+            readyTable.readReq[readyBase + 1].phyRegNum = srcB;
 
             nextStage[i] = '0;
             nextStage[i].valid = pipeReg[i].valid && canRename;
@@ -145,6 +165,12 @@ module RenameStage (
             nextStage[i].phyRegInfo.PhyRegNumSrcAValid = pipeReg[i].lgcRegInfo.lgcRegNumSrcAValid;
             nextStage[i].phyRegInfo.PhyRegNumSrcBValid = pipeReg[i].lgcRegInfo.lgcRegNumSrcBValid;
             nextStage[i].phyRegInfo.PhyRegNumDstValid = freeList.freeListAlloc[i].allocValid;
+            nextStage[i].phyRegInfo.PhyRegNumSrcAReady =
+                !pipeReg[i].lgcRegInfo.lgcRegNumSrcAValid ||
+                (!srcAFromGroup && readyTable.readReady[readyBase + 0]);
+            nextStage[i].phyRegInfo.PhyRegNumSrcBReady =
+                !pipeReg[i].lgcRegInfo.lgcRegNumSrcBValid ||
+                (!srcBFromGroup && readyTable.readReady[readyBase + 1]);
             nextStage[i].phyRegInfo.PhyRegNumSrcA = srcA;
             nextStage[i].phyRegInfo.PhyRegNumSrcB = srcB;
             nextStage[i].phyRegInfo.PhyRegNumDst = freeList.freeListAlloc[i].allocPhyRegNum;
@@ -159,6 +185,8 @@ module RenameStage (
                                                 freeList.freeListAlloc[i].allocValid;
             specRAT.specRATUpdate[i].UpdateLgcRegNum = pipeReg[i].lgcRegInfo.lgcRegNumDst;
             specRAT.specRATUpdate[i].UpdatePhyRegNum = freeList.freeListAlloc[i].allocPhyRegNum;
+            readyTable.markBusy[i].valid = specRAT.specRATUpdate[i].UpdateEn;
+            readyTable.markBusy[i].phyRegNum = freeList.freeListAlloc[i].allocPhyRegNum;
 
             ctrl.rnStageEmpty &= !nextStage[i].valid;
         end

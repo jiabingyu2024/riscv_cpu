@@ -21,6 +21,7 @@ module ExecuteBrcStage(
     end
 
     always_comb begin
+        ctrl.brcStageEmpty = 1'b1;
         for (int i = 0; i < BYPASS_READ_PORT_NUM; i++) bypass.brcReadReq[i] = '0;
         for (int i = 0; i < WAY_NUM; i++) begin
             DataPath a;
@@ -57,6 +58,7 @@ module ExecuteBrcStage(
             end else if (self.nextBrcToStage[i].taken) begin
                 self.nextBrcToStage[i].trueTargetPc = pipeReg[i].pc + pipeReg[i].imm;
             end
+            ctrl.brcStageEmpty &= !self.nextBrcToStage[i].valid;
         end
     end
 endmodule

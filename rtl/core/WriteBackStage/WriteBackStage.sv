@@ -11,7 +11,9 @@ module WriteBackStage(
     RecoveryManagerIF.WriteBackStage recovery,
     BypassIF.WriteBackStage bypass,
     RegFileIF.WriteBackStage regFile,
-    ROBIF.WriteBackStage rob
+    ROBIF.WriteBackStage rob,
+    ReadyTableIF.WriteBackStage readyTable,
+    IssueQueueIF.WriteBackStage issueQueue
 );
     ExAluToWbPath aluPipeReg [WAY_NUM];
     ExMemToWbPath memPipeReg [WAY_NUM];
@@ -45,6 +47,8 @@ module WriteBackStage(
             rob.RobDoneReq[i] = '0;
             bypass.wbForward[i] = '0;
             regFile.regFileWriteReq[i] = '0;
+            readyTable.markReady[i] = '0;
+            issueQueue.IssueWakeup[i] = '0;
         end
         for (int i = 0; i < WAY_NUM; i++) begin
             int base;
@@ -102,6 +106,10 @@ module WriteBackStage(
         regFile.regFileWriteReq[port].enaWrite = fire && writeRd;
         regFile.regFileWriteReq[port].regIndex = rd;
         regFile.regFileWriteReq[port].data = data;
+        readyTable.markReady[port].valid = fire && writeRd && rd != '0;
+        readyTable.markReady[port].phyRegNum = rd;
+        issueQueue.IssueWakeup[port].valid = fire && writeRd && rd != '0;
+        issueQueue.IssueWakeup[port].phyRegNum = rd;
 
         ctrl.wbStageEmpty &= !fire;
     endtask

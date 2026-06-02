@@ -22,6 +22,7 @@ interface IssueQueueIF( input logic clk, rst );
     IssueFreeCountPath      IssueFreeCount;
 
     IssueCtrlPath           IssueCtrl;
+    IssueWakeupPath         IssueWakeup[ISSUE_WAKEUP_PORT_NUM];
 
     // IssueCtrlPath           IssueCtrl;
 
@@ -32,6 +33,7 @@ interface IssueQueueIF( input logic clk, rst );
         rst,
         IssuePushReq,
         IssuePopReq,
+        IssueWakeup,
         IssueCtrl,
     output
         IssuePushRes,
@@ -55,6 +57,11 @@ interface IssueQueueIF( input logic clk, rst );
         IssuePopRes,
     output
         IssuePopReq
+    );
+
+    modport WriteBackStage(
+    output
+        IssueWakeup
     );
 
 

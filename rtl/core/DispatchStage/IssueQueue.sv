@@ -16,6 +16,17 @@ module IssueQueue(IssueQueueIF.IssueQueue self);
         end
     endfunction
 
+    function automatic logic wakeup_match(input PhyRegNumPath phyRegNum);
+        wakeup_match = 1'b0;
+        for (int w = 0; w < ISSUE_WAKEUP_PORT_NUM; w++) begin
+            if (self.IssueWakeup[w].valid &&
+                self.IssueWakeup[w].phyRegNum != '0 &&
+                self.IssueWakeup[w].phyRegNum == phyRegNum) begin
+                wakeup_match = 1'b1;
+            end
+        end
+    endfunction
+
     always_comb begin
         logic [ISSUE_QUEUE_DEPTH-1:0] selected;
         logic [ISSUE_QUEUE_DEPTH-1:0] allocMask;
@@ -98,13 +109,37 @@ module IssueQueue(IssueQueueIF.IssueQueue self);
                             entries[i].srcBShift <= {1'b0, entries[i].srcBShift[SHIFT_WIDTH-1:1]};
                         end
                     end
+                    if (!entries[i].srcARdy && wakeup_match(entries[i].srcA)) begin
+                        entries[i].srcARdy <= 1'b1;
+                        entries[i].srcAMatched <= 1'b0;
+                        entries[i].srcAShift <= '0;
+                    end
+                    if (!entries[i].srcBRdy && wakeup_match(entries[i].srcB)) begin
+                        entries[i].srcBRdy <= 1'b1;
+                        entries[i].srcBMatched <= 1'b0;
+                        entries[i].srcBShift <= '0;
+                    end
                 end
             end
 
             for (int i = 0; i < WAY_NUM; i++) begin
                 if (self.IssuePushReq[i].valid && self.IssuePushRes[i].done) begin
-                    entries[self.IssuePushRes[i].payloadIndex] <= self.IssuePushReq[i].entry;
-                    entries[self.IssuePushRes[i].payloadIndex].payloadIndex <= self.IssuePushRes[i].payloadIndex;
+                    IssueEntryPath pushEntry;
+
+                    pushEntry = self.IssuePushReq[i].entry;
+                    pushEntry.payloadIndex = self.IssuePushRes[i].payloadIndex;
+                    if (!pushEntry.srcARdy && wakeup_match(pushEntry.srcA)) begin
+                        pushEntry.srcARdy = 1'b1;
+                        pushEntry.srcAMatched = 1'b0;
+                        pushEntry.srcAShift = '0;
+                    end
+                    if (!pushEntry.srcBRdy && wakeup_match(pushEntry.srcB)) begin
+                        pushEntry.srcBRdy = 1'b1;
+                        pushEntry.srcBMatched = 1'b0;
+                        pushEntry.srcBShift = '0;
+                    end
+
+                    entries[self.IssuePushRes[i].payloadIndex] <= pushEntry;
                     valid[self.IssuePushRes[i].payloadIndex] <= 1'b1;
                 end
             end

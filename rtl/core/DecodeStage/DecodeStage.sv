@@ -19,8 +19,16 @@ module DecodeStage (
     logic      replayValid;
     logic      idStallReqReg;
     logic      multiBranch;
+    logic      multiStore;
+    logic      serialSplit;
     logic      splitPacket;
 
+    function automatic logic is_store_inst(input InstInfoPath instInfo);
+        return instInfo.valid &&
+               instInfo.tubeType == TUBE_TYPE_MEM &&
+               (instInfo.SubType.memSubType inside
+                 {MEM_SUBTYPE_SB, MEM_SUBTYPE_SH, MEM_SUBTYPE_SW});
+    endfunction
 
     always_ff @(posedge self.clk) begin
         if (self.rst) begin
@@ -44,9 +52,11 @@ module DecodeStage (
                 idStallReqReg <= 1'b1;
             end
         end else if (splitPacket && !replayValid) begin
-            replaySlot <= decodedStage[1];
-            replaySlot.valid <= decodedStage[1].valid && !ctrl.idPipe.flush;
-            replayValid <= 1'b1;
+            if (!ctrl.rnPipe.stall) begin
+                replaySlot <= decodedStage[1];
+                replaySlot.valid <= decodedStage[1].valid && !ctrl.idPipe.flush;
+                replayValid <= 1'b1;
+            end
             idStallReqReg <= 1'b1;
         end 
         else if (!ctrl.idPipe.stall) begin
@@ -57,11 +67,16 @@ module DecodeStage (
     end
 
     always_comb begin
+        int validCount;
         int branchCount;
+        int storeCount;
+        int serialCount;
 
-        ctrl.idStallReq = idStallReqReg;
         ctrl.idStageEmpty = 1'b1;
+        validCount = 0;
         branchCount = 0;
+        storeCount = 0;
+        serialCount = 0;
 
         for (int i = 0; i < WAY_NUM; i++) begin
             decodedStage[i] = '0;
@@ -71,14 +86,26 @@ module DecodeStage (
             decodedStage[i].valid = pipeReg[i].valid && !ctrl.idPipe.flush;
             DecodeInst(pipeReg[i].inst, decodedStage[i].instInfo, decodedStage[i].lgcRegInfo, decodedStage[i].csrAddr);
             ImmGen(pipeReg[i].inst, decodedStage[i].imm);
+            if (decodedStage[i].valid) begin
+                validCount++;
+            end
             if (decodedStage[i].valid && decodedStage[i].instInfo.valid &&
                 decodedStage[i].instInfo.tubeType == TUBE_TYPE_BRC) begin
                 branchCount++;
             end
+            if (decodedStage[i].valid && is_store_inst(decodedStage[i].instInfo)) begin
+                storeCount++;
+            end
+            if (decodedStage[i].valid && decodedStage[i].instInfo.isSerial) begin
+                serialCount++;
+            end
         end
 
         multiBranch = (branchCount > 1) && !ctrl.idPipe.flush;
-        splitPacket = multiBranch;
+        multiStore = (storeCount > 1) && !ctrl.idPipe.flush;
+        serialSplit = (serialCount != 0) && (validCount > 1) && !ctrl.idPipe.flush;
+        splitPacket = multiBranch || multiStore || serialSplit;
+        ctrl.idStallReq = idStallReqReg || replayValid || splitPacket;
 
         for (int i = 0; i < WAY_NUM; i++) begin
             nextStage[i] = '0;

@@ -18,7 +18,8 @@ package IssueTypes;
 
     localparam ISSUE_QUEUE_DEPTH = 16;
     localparam ISSUE_QUEUE_WIDTH = $clog2(ISSUE_QUEUE_DEPTH);
-    typedef logic [ISSUE_QUEUE_WIDTH-1:0] IssueFreeCountPath;
+    localparam ISSUE_WAKEUP_PORT_NUM = WAY_NUM * 5;
+    typedef logic [ISSUE_QUEUE_WIDTH:0] IssueFreeCountPath;
     typedef logic [ISSUE_QUEUE_WIDTH-1:0] IssueIndexPath;
 
     typedef struct packed {
@@ -77,6 +78,11 @@ package IssueTypes;
         logic            done;
         IssueEntryPath       entry;
     } IssuePopResPath;
+
+    typedef struct packed {
+        logic         valid;
+        PhyRegNumPath phyRegNum;
+    } IssueWakeupPath;
 
     typedef struct packed {
         PcPath pc;

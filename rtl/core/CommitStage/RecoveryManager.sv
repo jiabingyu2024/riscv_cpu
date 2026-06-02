@@ -47,8 +47,16 @@ module RecoveryManager(
                     end
                 end
                 RM_EMIT: begin
-                    recoveryReg <= '0;
-                    state <= RM_IDLE;
+                    if (self.commitRecoveryReq.valid) begin
+                        recoveryReg <= self.commitRecoveryReq;
+                        state <= RM_EMIT;
+                    end else if (self.writeBackRecoveryReq.valid) begin
+                        recoveryReg <= self.writeBackRecoveryReq;
+                        state <= RM_EMIT;
+                    end else begin
+                        recoveryReg <= '0;
+                        state <= RM_IDLE;
+                    end
                 end
             endcase
         end
@@ -70,9 +78,14 @@ module RecoveryManager(
         specRAT.specRATChkptRecover.ChkptRecoverEn = self.recoveryInfo.valid &&
                                                      self.recoveryInfo.chkptRecoverEn;
         specRAT.specRATChkptRecover.ChkptRecoverIndex = self.recoveryInfo.specRATChkptIndex;
+        specRAT.specRATChkptRecover.RecoverFreeEn = 1'b0;
+        specRAT.specRATChkptRecover.RecoverFreePhyRegNum = '0;
 
         freeList.freeListChkptRecover.ChkptRecoverEn = self.recoveryInfo.valid &&
                                                        self.recoveryInfo.chkptRecoverEn;
         freeList.freeListChkptRecover.ChkptRecoverIndex = self.recoveryInfo.freeListChkptIndex;
+        freeList.freeListChkptRecover.RecoverFreeEn = self.recoveryInfo.valid &&
+                                                      self.recoveryInfo.recoverFreeEn;
+        freeList.freeListChkptRecover.RecoverFreePhyRegNum = self.recoveryInfo.recoverFreePhyRegNum;
     end
 endmodule

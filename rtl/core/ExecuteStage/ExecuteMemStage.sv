@@ -12,10 +12,16 @@ module ExecuteMemStage(
     BypassIF.ExecuteMemStage bypass
 );
     RrToExMemPath pipeReg [WAY_NUM];
-    ExMemToWbPath loadPipe0;
-    ExMemToWbPath loadPipe1;
-    ExMemToWbPath loadRsp;
-    ExMemToWbPath loadLaunch;
+
+    typedef struct packed {
+        logic         valid;
+        ExMemToWbPath wb;
+        MemSubType    memSubType;
+    } LoadPipeEntry;
+
+    LoadPipeEntry loadPipe0;
+    LoadPipeEntry loadPipe1;
+    LoadPipeEntry loadLaunch;
 
     function automatic logic is_store(input MemSubType st);
         return st inside {MEM_SUBTYPE_SB, MEM_SUBTYPE_SH, MEM_SUBTYPE_SW};
@@ -37,6 +43,16 @@ module ExecuteMemStage(
         endcase
     endfunction
 
+    function automatic DataPath extend_load_data(input MemSubType st, input DataPath data);
+        unique case (st)
+            MEM_SUBTYPE_LB:  extend_load_data = {{24{data[7]}}, data[7:0]};
+            MEM_SUBTYPE_LH:  extend_load_data = {{16{data[15]}}, data[15:0]};
+            MEM_SUBTYPE_LBU: extend_load_data = {24'b0, data[7:0]};
+            MEM_SUBTYPE_LHU: extend_load_data = {16'b0, data[15:0]};
+            default:         extend_load_data = data;
+        endcase
+    endfunction
+
     always_ff @(posedge self.clk or posedge self.rst) begin
         if (self.rst) begin
             for (int i = 0; i < WAY_NUM; i++) begin
@@ -51,17 +67,10 @@ module ExecuteMemStage(
         if (self.rst) begin
             loadPipe0 <= '0;
             loadPipe1 <= '0;
-            loadRsp <= '0;
         end else if (ctrl.exPipe.flush) begin
             loadPipe0 <= '0;
             loadPipe1 <= '0;
-            loadRsp <= '0;
         end else begin
-            loadRsp <= '0;
-            if (loadPipe1.valid) begin
-                loadRsp <= loadPipe1;
-                loadRsp.data <= dram.rdata;
-            end
             loadPipe1 <= loadPipe0;
             loadPipe0 <= '0;
             if (dram.req && !dram.we && dram.ready) begin
@@ -72,6 +81,9 @@ module ExecuteMemStage(
 
     always_comb begin
         logic loadSelected;
+        logic memHasWork;
+        logic rspConflict;
+        logic loadRequestBlocked;
 
         dram.req = 1'b0;
         dram.we = 1'b0;
@@ -82,14 +94,22 @@ module ExecuteMemStage(
         storeBuffer.StoreBufferPushReq = '0;
         loadLaunch = '0;
         loadSelected = 1'b0;
+        memHasWork = 1'b0;
+        rspConflict = 1'b0;
+        loadRequestBlocked = 1'b0;
 
         for (int i = 0; i < BYPASS_READ_PORT_NUM; i++) bypass.memReadReq[i] = '0;
         for (int i = 0; i < WAY_NUM; i++) begin
             self.nextMemToStage[i] = '0;
+            memHasWork |= pipeReg[i].valid && !ctrl.exPipe.flush;
         end
 
-        if (loadRsp.valid) begin
-            self.nextMemToStage[0] = loadRsp;
+        rspConflict = loadPipe1.valid && memHasWork && !ctrl.exPipe.flush;
+        ctrl.memStageEmpty = !loadPipe0.valid && !loadPipe1.valid;
+
+        if (loadPipe1.valid) begin
+            self.nextMemToStage[0] = loadPipe1.wb;
+            self.nextMemToStage[0].data = extend_load_data(loadPipe1.memSubType, dram.rdata);
         end
 
         for (int i = 0; i < WAY_NUM; i++) begin
@@ -108,7 +128,7 @@ module ExecuteMemStage(
 
             effAddr = base + pipeReg[i].imm;
 
-            if (pipeReg[i].valid && !ctrl.exPipe.flush && !ctrl.exPipe.stall) begin
+            if (pipeReg[i].valid && !ctrl.exPipe.flush && !rspConflict) begin
                 if (is_store(pipeReg[i].subType.memSubType)) begin
                     storeBuffer.StoreBufferPushReq.valid = pipeReg[i].storeBufferIndexValid;
                     storeBuffer.StoreBufferPushReq.index = pipeReg[i].storeBufferIndex;
@@ -127,24 +147,32 @@ module ExecuteMemStage(
                     storeBuffer.StoreBufferMatchIn.addr = effAddr;
 
                     loadLaunch.valid = 1'b1;
-                    loadLaunch.Rd = pipeReg[i].Rd;
-                    loadLaunch.writeRd = pipeReg[i].writeRd;
-                    loadLaunch.robIndex = pipeReg[i].robIndex;
+                    loadLaunch.memSubType = pipeReg[i].subType.memSubType;
+                    loadLaunch.wb.valid = 1'b1;
+                    loadLaunch.wb.Rd = pipeReg[i].Rd;
+                    loadLaunch.wb.writeRd = pipeReg[i].writeRd;
+                    loadLaunch.wb.robIndex = pipeReg[i].robIndex;
 
                     if (storeBuffer.StoreBufferMatchOut.hit) begin
-                        self.nextMemToStage[0].valid = 1'b1;
-                        self.nextMemToStage[0].Rd = loadLaunch.Rd;
-                        self.nextMemToStage[0].writeRd = loadLaunch.writeRd;
-                        self.nextMemToStage[0].robIndex = loadLaunch.robIndex;
-                        self.nextMemToStage[0].data = storeBuffer.StoreBufferMatchOut.data;
+                        self.nextMemToStage[loadPipe1.valid ? 1 : 0].valid = 1'b1;
+                        self.nextMemToStage[loadPipe1.valid ? 1 : 0].Rd = loadLaunch.wb.Rd;
+                        self.nextMemToStage[loadPipe1.valid ? 1 : 0].writeRd = loadLaunch.wb.writeRd;
+                        self.nextMemToStage[loadPipe1.valid ? 1 : 0].robIndex = loadLaunch.wb.robIndex;
+                        self.nextMemToStage[loadPipe1.valid ? 1 : 0].data =
+                            extend_load_data(pipeReg[i].subType.memSubType,
+                                             storeBuffer.StoreBufferMatchOut.data);
                     end else begin
                         dram.req = 1'b1;
                         dram.we = 1'b0;
                         dram.addr = effAddr;
+                        loadRequestBlocked = !dram.ready;
                     end
                     loadSelected = 1'b1;
                 end
             end
+            ctrl.memStageEmpty &= !(pipeReg[i].valid && !ctrl.exPipe.flush);
         end
+
+        ctrl.exStallReq = rspConflict || loadRequestBlocked;
     end
 endmodule

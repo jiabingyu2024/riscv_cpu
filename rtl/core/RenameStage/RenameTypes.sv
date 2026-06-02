@@ -43,6 +43,8 @@ package RenameTypes;
     typedef struct packed {
         logic          ChkptRecoverEn;
         ChkptIndexPath ChkptRecoverIndex;
+        logic          RecoverFreeEn;
+        PhyRegNumPath  RecoverFreePhyRegNum;
     }ChkptRecoveryPath;
     typedef struct packed {
         logic          ChkptFreeEn;

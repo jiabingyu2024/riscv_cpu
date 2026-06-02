@@ -128,6 +128,7 @@ module ExecuteSysStage(
     end
 
     always_comb begin
+        ctrl.sysStageEmpty = 1'b1;
         for (int i = 0; i < BYPASS_READ_PORT_NUM; i++) bypass.sysReadReq[i] = '0;
         for (int i = 0; i < WAY_NUM; i++) begin
             DataPath operand;
@@ -153,6 +154,7 @@ module ExecuteSysStage(
             end else if (is_mret(pipeReg[i])) begin
                 self.nextSysToStage[i].trueTargetPc = mepc;
             end
+            ctrl.sysStageEmpty &= !self.nextSysToStage[i].valid;
         end
     end
 endmodule

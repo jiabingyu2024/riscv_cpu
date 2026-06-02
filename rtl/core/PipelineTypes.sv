@@ -75,6 +75,8 @@ package PipelineTypes;
         logic         PhyRegNumSrcAValid;
         logic         PhyRegNumSrcBValid;
         logic         PhyRegNumDstValid;
+        logic         PhyRegNumSrcAReady;
+        logic         PhyRegNumSrcBReady;
         PhyRegNumPath PhyRegNumSrcA;
         PhyRegNumPath PhyRegNumSrcB;
         PhyRegNumPath PhyRegNumDst;

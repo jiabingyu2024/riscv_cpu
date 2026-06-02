@@ -135,6 +135,7 @@ module ExecuteMulStage(
     end
 
     always_comb begin
+        ctrl.mulStageEmpty = 1'b1;
         for (int i = 0; i < BYPASS_READ_PORT_NUM; i++) bypass.mulReadReq[i] = '0;
 
         for (int i = 0; i < WAY_NUM; i++) begin
@@ -178,6 +179,15 @@ module ExecuteMulStage(
             divLaunch[i].divisor = signedOp ? abs32(b) : b;
             divLaunch[i].quotient = '0;
             divLaunch[i].remainder = '0;
+
+            ctrl.mulStageEmpty &= !(pipeReg[i].valid && !ctrl.exPipe.flush);
+            for (int s = 0; s < MUL_LATENCY; s++) begin
+                ctrl.mulStageEmpty &= !mulPipe[i][s].valid;
+            end
+            for (int s = 0; s < DIV_LATENCY; s++) begin
+                ctrl.mulStageEmpty &= !divPipe[i][s].valid;
+            end
+            ctrl.mulStageEmpty &= !self.nextMulToStage[i].valid;
         end
     end
 

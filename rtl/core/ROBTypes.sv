@@ -13,7 +13,7 @@ package ROBTypes;
     import BasicTypes::*;
     import StoreBufferTypes::*;
 
-    typedef logic [ROB_DEPTH_WIDTH-1:0] RobFreeCountPath;
+    typedef logic [ROB_DEPTH_WIDTH:0] RobFreeCountPath;
 
     typedef struct packed {
         logic               valid;

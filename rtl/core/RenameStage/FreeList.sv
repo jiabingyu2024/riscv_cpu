@@ -58,10 +58,9 @@ module FreeList(FreeListIF.FreeList self);
         end else if (self.freeListChkptRecover.ChkptRecoverEn) begin
             logic [PHYREG_NUM-1:0] recoverMask;
             recoverMask = chkptMask[self.freeListChkptRecover.ChkptRecoverIndex];
-            for (i = 0; i < WAY_NUM; i++) begin
-                if (self.freeListFree[i].freeReq && self.freeListFree[i].freePhyRegNum != '0) begin
-                    recoverMask[self.freeListFree[i].freePhyRegNum] = 1'b1;
-                end
+            if (self.freeListChkptRecover.RecoverFreeEn &&
+                self.freeListChkptRecover.RecoverFreePhyRegNum != '0) begin
+                recoverMask[self.freeListChkptRecover.RecoverFreePhyRegNum] = 1'b1;
             end
             recoverMask[0] = 1'b0;
             freeMask <= recoverMask;

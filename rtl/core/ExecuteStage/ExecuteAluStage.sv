@@ -19,6 +19,8 @@ module ExecuteAluStage(
             ALU_SUBTYPE_XOR: alu = a ^ b;
             ALU_SUBTYPE_OR:  alu = a | b;
             ALU_SUBTYPE_AND: alu = a & b;
+            ALU_SUBTYPE_SLT: alu = DataPath'($signed(a) < $signed(b));
+            ALU_SUBTYPE_SLTU: alu = DataPath'(a < b);
             default:         alu = a + b;
         endcase
     endfunction
@@ -34,8 +36,7 @@ module ExecuteAluStage(
     end
 
     always_comb begin
-        ctrl.exStallReq = 1'b0;
-        ctrl.exStageEmpty = 1'b1;
+        ctrl.aluStageEmpty = 1'b1;
         for (int i = 0; i < BYPASS_READ_PORT_NUM; i++) begin
             bypass.aluReadReq[i] = '0;
         end
@@ -54,7 +55,7 @@ module ExecuteAluStage(
             self.nextAluToStage[i].writeRd = pipeReg[i].writeRd;
             self.nextAluToStage[i].data = alu(pipeReg[i].subType, a, b);
             self.nextAluToStage[i].robIndex = pipeReg[i].robIndex;
-            ctrl.exStageEmpty &= !self.nextAluToStage[i].valid;
+            ctrl.aluStageEmpty &= !self.nextAluToStage[i].valid;
         end
     end
 endmodule

@@ -93,64 +93,66 @@ package BasicTypes;
         TUBE_TYPE_SYS = 3'b100
     } TubeTypePath;
     
-    typedef enum logic [2:0]
+    typedef enum logic [3:0]
     {
-        ALU_SUBTYPE_ADD = 3'b000,
-        ALU_SUBTYPE_SUB = 3'b001,
-        ALU_SUBTYPE_SLL = 3'b010,
-        ALU_SUBTYPE_SRL = 3'b011,
-        ALU_SUBTYPE_SRA = 3'b100,
-        ALU_SUBTYPE_XOR = 3'b101,
-        ALU_SUBTYPE_OR  = 3'b110,
-        ALU_SUBTYPE_AND = 3'b111
+        ALU_SUBTYPE_ADD  = 4'b0000,
+        ALU_SUBTYPE_SUB  = 4'b0001,
+        ALU_SUBTYPE_SLL  = 4'b0010,
+        ALU_SUBTYPE_SRL  = 4'b0011,
+        ALU_SUBTYPE_SRA  = 4'b0100,
+        ALU_SUBTYPE_XOR  = 4'b0101,
+        ALU_SUBTYPE_OR   = 4'b0110,
+        ALU_SUBTYPE_AND  = 4'b0111,
+        ALU_SUBTYPE_SLT  = 4'b1000,
+        ALU_SUBTYPE_SLTU = 4'b1001
     } AluSubType;
 
-    typedef enum logic [2:0]
+    typedef enum logic [3:0]
     {
-        MEM_SUBTYPE_LB  = 3'b000,
-        MEM_SUBTYPE_LH  = 3'b001,
-        MEM_SUBTYPE_LW  = 3'b010,
-        MEM_SUBTYPE_LBU = 3'b011,
-        MEM_SUBTYPE_LHU = 3'b100,
-        MEM_SUBTYPE_SB  = 3'b101,
-        MEM_SUBTYPE_SH  = 3'b110,
-        MEM_SUBTYPE_SW  = 3'b111
+        MEM_SUBTYPE_LB  = 4'b0000,
+        MEM_SUBTYPE_LH  = 4'b0001,
+        MEM_SUBTYPE_LW  = 4'b0010,
+        MEM_SUBTYPE_LBU = 4'b0011,
+        MEM_SUBTYPE_LHU = 4'b0100,
+        MEM_SUBTYPE_SB  = 4'b0101,
+        MEM_SUBTYPE_SH  = 4'b0110,
+        MEM_SUBTYPE_SW  = 4'b0111
     } MemSubType;
 
-    typedef enum logic [2:0]
+    typedef enum logic [3:0]
     {
-        BRC_SUBTYPE_BEQ  = 3'b000,
-        BRC_SUBTYPE_BNE  = 3'b001,
-        BRC_SUBTYPE_BLT  = 3'b010,
-        BRC_SUBTYPE_BGE  = 3'b011,
-        BRC_SUBTYPE_BLTU = 3'b100,
-        BRC_SUBTYPE_BGEU = 3'b101,
-        BRC_SUBTYPE_JAL  = 3'b110,
-        BRC_SUBTYPE_JALR = 3'b111
+        BRC_SUBTYPE_BEQ  = 4'b0000,
+        BRC_SUBTYPE_BNE  = 4'b0001,
+        BRC_SUBTYPE_BLT  = 4'b0010,
+        BRC_SUBTYPE_BGE  = 4'b0011,
+        BRC_SUBTYPE_BLTU = 4'b0100,
+        BRC_SUBTYPE_BGEU = 4'b0101,
+        BRC_SUBTYPE_JAL  = 4'b0110,
+        BRC_SUBTYPE_JALR = 4'b0111
     } BrcSubType;
 
-    typedef enum logic [2:0]
+    typedef enum logic [3:0]
     {
-        MUL_SUBTYPE_MUL   = 3'b000,
-        MUL_SUBTYPE_MULH  = 3'b001,
-        MUL_SUBTYPE_MULHSU= 3'b010,
-        MUL_SUBTYPE_MULHU = 3'b011,
-        MUL_SUBTYPE_DIV   = 3'b100,
-        MUL_SUBTYPE_DIVU  = 3'b101,
-        MUL_SUBTYPE_REM   = 3'b110,
-        MUL_SUBTYPE_REMU  = 3'b111
+        MUL_SUBTYPE_MUL   = 4'b0000,
+        MUL_SUBTYPE_MULH  = 4'b0001,
+        MUL_SUBTYPE_MULHSU= 4'b0010,
+        MUL_SUBTYPE_MULHU = 4'b0011,
+        MUL_SUBTYPE_DIV   = 4'b0100,
+        MUL_SUBTYPE_DIVU  = 4'b0101,
+        MUL_SUBTYPE_REM   = 4'b0110,
+        MUL_SUBTYPE_REMU  = 4'b0111
     } MulSubType;
 
-    typedef enum logic [2:0]
+    typedef enum logic [3:0]
     {
-        SYS_SUBTYPE_ECALL = 3'b000,
-        SYS_SUBTYPE_EBREAK = 3'b001,
-        SYS_SUBTYPE_CSRRW  = 3'b010,
-        SYS_SUBTYPE_CSRRS  = 3'b011,
-        SYS_SUBTYPE_CSRRC  = 3'b100,
-        SYS_SUBTYPE_CSRRWI = 3'b101,
-        SYS_SUBTYPE_CSRRSI = 3'b110,
-        SYS_SUBTYPE_CSRRCI = 3'b111
+        SYS_SUBTYPE_ECALL = 4'b0000,
+        SYS_SUBTYPE_EBREAK = 4'b0001,
+        SYS_SUBTYPE_CSRRW  = 4'b0010,
+        SYS_SUBTYPE_CSRRS  = 4'b0011,
+        SYS_SUBTYPE_CSRRC  = 4'b0100,
+        SYS_SUBTYPE_CSRRWI = 4'b0101,
+        SYS_SUBTYPE_CSRRSI = 4'b0110,
+        SYS_SUBTYPE_CSRRCI = 4'b0111
     } SysSubType;
 
     typedef union packed {

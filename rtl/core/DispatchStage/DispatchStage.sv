@@ -110,8 +110,12 @@ module DispatchStage(
             issueQueue.IssuePushReq[i].entry.tubeType = pipeReg[i].instInfo.tubeType;
             issueQueue.IssuePushReq[i].entry.srcA = pipeReg[i].phyRegInfo.PhyRegNumSrcA;
             issueQueue.IssuePushReq[i].entry.srcB = pipeReg[i].phyRegInfo.PhyRegNumSrcB;
-            issueQueue.IssuePushReq[i].entry.srcARdy = !pipeReg[i].phyRegInfo.PhyRegNumSrcAValid;
-            issueQueue.IssuePushReq[i].entry.srcBRdy = !pipeReg[i].phyRegInfo.PhyRegNumSrcBValid;
+            issueQueue.IssuePushReq[i].entry.srcARdy =
+                !pipeReg[i].phyRegInfo.PhyRegNumSrcAValid ||
+                pipeReg[i].phyRegInfo.PhyRegNumSrcAReady;
+            issueQueue.IssuePushReq[i].entry.srcBRdy =
+                !pipeReg[i].phyRegInfo.PhyRegNumSrcBValid ||
+                pipeReg[i].phyRegInfo.PhyRegNumSrcBReady;
             issueQueue.IssuePushReq[i].entry.srcBIsImm = pipeReg[i].instInfo.opTypeB == OP_TYPE_IMM ||
                                                          pipeReg[i].instInfo.opTypeB == OP_TYPE_NONE;
             issueQueue.IssuePushReq[i].entry.dst = pipeReg[i].phyRegInfo.PhyRegNumDst;

@@ -46,6 +46,11 @@
       logic isStageEmpty;
       logic rrStageEmpty;
       logic exStageEmpty;
+      logic aluStageEmpty;
+      logic memStageEmpty;
+      logic mulStageEmpty;
+      logic brcStageEmpty;
+      logic sysStageEmpty;
       logic wbStageEmpty;
 
       modport CtrlUnit(
@@ -70,7 +75,11 @@
           input  dsStageEmpty,
           input  isStageEmpty,
           input  rrStageEmpty,
-          input  exStageEmpty,
+          input  aluStageEmpty,
+          input  memStageEmpty,
+          input  mulStageEmpty,
+          input  brcStageEmpty,
+          input  sysStageEmpty,
           input  wbStageEmpty,
 
           output pfPipe,
@@ -81,7 +90,8 @@
           output isPipe,
           output rrPipe,
           output exPipe,
-          output wbPipe
+          output wbPipe,
+          output exStageEmpty
       );
 
       modport PreFetchStage(
@@ -134,7 +144,11 @@
       modport ExecuteStage(
           input  exPipe,
           output exStallReq,
-          output exStageEmpty
+          output aluStageEmpty,
+          output memStageEmpty,
+          output mulStageEmpty,
+          output brcStageEmpty,
+          output sysStageEmpty
       );
 
       modport WriteBackStage(

@@ -9,6 +9,12 @@ module Ctrl(
     logic backendBlock;
 
     always_comb begin
+        ctrl.exStageEmpty = ctrl.aluStageEmpty &&
+                            ctrl.memStageEmpty &&
+                            ctrl.mulStageEmpty &&
+                            ctrl.brcStageEmpty &&
+                            ctrl.sysStageEmpty;
+
         frontendBlock = ctrl.serialBlock | ctrl.robFull | ctrl.issueQueueFull |
                         ctrl.freeListEmpty | ctrl.idStallReq | ctrl.rnStallReq |
                         ctrl.dsStallReq;
