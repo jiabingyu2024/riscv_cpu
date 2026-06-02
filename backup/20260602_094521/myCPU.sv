@@ -42,13 +42,13 @@ module myCPU (
     end
 
     always_comb begin
-        perip_addr = (dromAccess.readEn || dromAccess.writeEn) ? dromAccess.accessAddr : '0;
-        perip_wen = dromAccess.writeEn;
-        perip_mask = dromAccess.writeEn ? dromAccess.writeMask : '0;
-        perip_wdata = dromAccess.writeData;
+        perip_addr = dromAccess.req ? dromAccess.addr : '0;
+        perip_wen = dromAccess.req && dromAccess.we;
+        perip_mask = perip_wen ? dromAccess.wstrb : '0;
+        perip_wdata = dromAccess.wdata;
 
-        dromAccess.readData = perip_rdata;
-        dromAccess.accessReady = 1'b1;
+        dromAccess.rdata = perip_rdata;
+        dromAccess.ready = 1'b1;
     end
 
     core u_core (

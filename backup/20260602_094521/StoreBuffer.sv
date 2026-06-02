@@ -3,7 +3,7 @@ import StoreBufferTypes::*;
 
 module StoreBuffer(
     StoreBufferIF.StoreBuffer self,
-    DramAccessIF.StoreBuffer dram
+    DramAccessIF.core dram
 );
     StoreBufferPushReqPath entries [STORE_BUFFER_DEPTH];
     logic valid [STORE_BUFFER_DEPTH];
@@ -18,10 +18,11 @@ module StoreBuffer(
         self.allocIndex = tail;
         self.StoreBufferCommit = '0;
         self.StoreBufferCommitReady = 1'b0;
-        dram.storeWriteEn = 1'b0;
-        dram.storeWriteAddr = '0;
-        dram.storeWriteData = '0;
-        dram.storeWriteMask = '0;
+        dram.req = 1'b0;
+        dram.we = 1'b0;
+        dram.addr = '0;
+        dram.wdata = '0;
+        dram.wstrb = '0;
         if (count != '0 && valid[head] && entries[head].valid) begin
             self.StoreBufferCommit.valid = 1'b1;
             self.StoreBufferCommit.index = head;
@@ -33,11 +34,12 @@ module StoreBuffer(
         if (self.StoreBufferCommitReq.valid &&
             self.StoreBufferCommit.valid &&
             self.StoreBufferCommitReq.index == head) begin
-            dram.storeWriteEn = 1'b1;
-            dram.storeWriteAddr = self.StoreBufferCommit.addr;
-            dram.storeWriteData = self.StoreBufferCommit.data;
-            dram.storeWriteMask = self.StoreBufferCommit.wstrb;
-            self.StoreBufferCommitReady = dram.storeWriteReady;
+            dram.req = 1'b1;
+            dram.we = 1'b1;
+            dram.addr = self.StoreBufferCommit.addr;
+            dram.wdata = self.StoreBufferCommit.data;
+            dram.wstrb = self.StoreBufferCommit.wstrb;
+            self.StoreBufferCommitReady = dram.ready;
         end
 
         self.StoreBufferMatchOut.hit = 1'b0;

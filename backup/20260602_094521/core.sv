@@ -15,7 +15,7 @@ module core(
     IromAccessIF.core iromAccess,
 
     // dram interface
-    DramAccessIF dromAccess,
+    DramAccessIF.core dromAccess,
 
     //debug interface
     DebugIF.core debug,
@@ -46,6 +46,8 @@ module core(
     ReadyTableIF       readyTableIF(clk, rst);
     RegFileIF          regFileIF(clk, rst);
     BypassIF           bypassIF(clk, rst);
+    DramAccessIF       exDramAccess(clk, rst);
+    DramAccessIF       cmDramAccess(clk, rst);
     //PF
     /*
     更新 PC 的选择逻辑
@@ -76,7 +78,7 @@ module core(
         ROB rob(robIF);
         IssueQueue issueQueue(issueQueueIF);
         Payload payload(payloadIF);
-        StoreBuffer storeBuffer(storeBufferIF, dromAccess);
+        StoreBuffer storeBuffer(storeBufferIF, cmDramAccess);
     //IS issue 
     IssueStage issueStage (dsStageIF, isStageIF, ctrlIF, issueQueueIF, payloadIF);
 
@@ -88,7 +90,7 @@ module core(
     ExecuteAluStage executeAluStage (rrStageIF, exStageIF, ctrlIF, bypassIF);
     ExecuteBrcStage executeBrcStage (rrStageIF, exStageIF, ctrlIF, bypassIF);
     ExecuteMulStage executeMulStage (rrStageIF, exStageIF, ctrlIF, bypassIF);
-    ExecuteMemStage executeMemStage (rrStageIF, exStageIF, ctrlIF, dromAccess, storeBufferIF, bypassIF);
+    ExecuteMemStage executeMemStage (rrStageIF, exStageIF, ctrlIF, exDramAccess, storeBufferIF, bypassIF);
     ExecuteSysStage executeSysStage (rrStageIF, exStageIF, ctrlIF, bypassIF);
 
     WriteBackStage writeBackStage (exStageIF, wbStageIF, ctrlIF, recoveryManagerIF,
@@ -98,6 +100,8 @@ module core(
     //CM
 
     CommitStage cmStage (cmStageIF, recoveryManagerIF, ctrlIF, archRATIF, specRATIF, freeListIF, storeBufferIF, robIF);
+
+    DramAccessArbiter dramAccessArbiter(exDramAccess, cmDramAccess, dromAccess);
 
     RecoveryManager recoveryManager(recoveryManagerIF,ctrlIF,specRATIF,freeListIF);
 
@@ -128,4 +132,24 @@ module core(
         end
     end
 
+endmodule
+
+module DramAccessArbiter(
+    DramAccessIF ex,
+    DramAccessIF cm,
+    DramAccessIF.core dram
+);
+    always_comb begin
+        dram.req = ex.req | cm.req;
+        dram.we = ex.req ? ex.we : cm.we;
+        dram.addr = ex.req ? ex.addr : cm.addr;
+        dram.wdata = ex.req ? ex.wdata : cm.wdata;
+        dram.wstrb = ex.req ? ex.wstrb : cm.wstrb;
+
+        ex.rdata = dram.rdata;
+        ex.ready = dram.ready;
+
+        cm.rdata = '0;
+        cm.ready = dram.ready && !ex.req;
+    end
 endmodule

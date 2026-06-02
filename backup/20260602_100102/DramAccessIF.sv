@@ -9,17 +9,6 @@
 import BasicTypes::*;
 
 interface DramAccessIF(input logic clk, rst);
-    logic    exReadEn;
-    AddrPath exReadAddr;
-    DataPath exReadData;
-    logic    exReadReady;
-
-    logic    storeWriteEn;
-    AddrPath storeWriteAddr;
-    DataPath storeWriteData;
-    logic [3:0] storeWriteMask;
-    logic    storeWriteReady;
-
     logic    readEn;
     logic    writeEn;
     AddrPath accessAddr;
@@ -28,47 +17,28 @@ interface DramAccessIF(input logic clk, rst);
     DataPath readData;
     logic    accessReady;
 
-    always_comb begin
-        readEn = exReadEn;
-        writeEn = !exReadEn && storeWriteEn;
-        accessAddr = exReadEn ? exReadAddr : storeWriteAddr;
-        writeData = storeWriteData;
-        writeMask = storeWriteMask;
-
-        exReadData = readData;
-        exReadReady = accessReady;
-        storeWriteReady = accessReady && !exReadEn;
-    end
-
     modport core(
         input
+            readData,
+            accessReady,
+        output
             readEn,
             writeEn,
             accessAddr,
             writeData,
-            writeMask,
-        output
-            readData,
-            accessReady
+            writeMask
     );
 
     modport ExecuteMemStage(
         input
-            exReadData,
-            exReadReady,
+            readData,
+            accessReady,
         output
-            exReadEn,
-            exReadAddr
-    );
-
-    modport StoreBuffer(
-        input
-            storeWriteReady,
-        output
-            storeWriteEn,
-            storeWriteAddr,
-            storeWriteData,
-            storeWriteMask
+            readEn,
+            writeEn,
+            accessAddr,
+            writeData,
+            writeMask
     );
 
     modport DRAM(

@@ -7,7 +7,7 @@ module ExecuteMemStage(
     ReadRegStageIF.ExecuteMemStage prev,
     ExecuteStageIF.ExecuteMemStage self,
     CtrlIF.ExecuteStage ctrl,
-    DramAccessIF.ExecuteMemStage dram,
+    DramAccessIF.core dram,
     StoreBufferIF.ExecuteMemStage storeBuffer,
     BypassIF.ExecuteMemStage bypass
 );
@@ -73,7 +73,7 @@ module ExecuteMemStage(
         end else begin
             loadMetaPipe1 <= loadMetaPipe0;
             loadMetaPipe0 <= '0;
-            if (dram.exReadEn && dram.exReadReady) begin
+            if (dram.readEn && dram.accessReady) begin
                 loadMetaPipe0 <= loadIssueMeta;
             end
         end
@@ -85,8 +85,11 @@ module ExecuteMemStage(
         logic loadReturnBlocked;
         logic loadAccessBlocked;
 
-        dram.exReadEn = 1'b0;
-        dram.exReadAddr = '0;
+        dram.readEn = 1'b0;
+        dram.writeEn = 1'b0;
+        dram.accessAddr = '0;
+        dram.writeData = '0;
+        dram.writeMask = '0;
         storeBuffer.StoreBufferMatchIn = '0;
         storeBuffer.StoreBufferPushReq = '0;
         loadIssueMeta = '0;
@@ -107,7 +110,7 @@ module ExecuteMemStage(
         if (loadMetaPipe1.valid) begin
             self.nextMemToStage[0] = loadMetaPipe1.wb;
             self.nextMemToStage[0].data =
-                extend_load_data(loadMetaPipe1.memSubType, dram.exReadData);
+                extend_load_data(loadMetaPipe1.memSubType, dram.readData);
         end
 
         for (int i = 0; i < WAY_NUM; i++) begin
@@ -160,9 +163,9 @@ module ExecuteMemStage(
                             extend_load_data(pipeReg[i].subType.memSubType,
                                              storeBuffer.StoreBufferMatchOut.data);
                     end else begin
-                        dram.exReadEn = 1'b1;
-                        dram.exReadAddr = effAddr;
-                        loadAccessBlocked = !dram.exReadReady;
+                        dram.readEn = 1'b1;
+                        dram.accessAddr = effAddr;
+                        loadAccessBlocked = !dram.accessReady;
                     end
                     currentLoadSelected = 1'b1;
                 end
