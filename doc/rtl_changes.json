@@ -1,140 +1,23 @@
 {
-  "timestamp": "2026-05-28T00:00:00+08:00",
-  "trigger": "superscalar core bug fix pass plus RenameStage checkpoint interface refactor",
+  "timestamp": "2026-06-02T10:17:32+08:00",
+  "trigger": "SoC adapter update after core IROM/DRAM interface timing change",
   "files_modified": [
     {
-      "path": "rtl/core/PreFetchStage/PreFetchStage.sv",
-      "change_type": "logic_fix"
+      "path": "rtl/soc/student_top.sv",
+      "lines_changed": "41-104",
+      "change_type": "port_mismatch_fix"
     },
     {
-      "path": "rtl/core/DecodeStage/DecodeStage.sv",
-      "change_type": "logic_fix"
+      "path": "rtl/soc/perip_bridge.sv",
+      "lines_changed": "57-159",
+      "change_type": "timing_alignment"
     },
     {
-      "path": "rtl/core/RenameStage/RenameStage.sv",
-      "change_type": "logic_fix"
-    },
-    {
-      "path": "rtl/core/RenameStage/SpecRAT.sv",
-      "change_type": "logic_fix"
-    },
-    {
-      "path": "rtl/core/RenameStage/FreeList.sv",
-      "change_type": "logic_fix"
-    },
-    {
-      "path": "rtl/core/RenameStage/ArchRAT.sv",
-      "change_type": "logic_fix"
-    },
-    {
-      "path": "rtl/core/RenameStage/SpecRATIF.sv",
-      "change_type": "interface_refactor"
-    },
-    {
-      "path": "rtl/core/RenameStage/FreeListIF.sv",
-      "change_type": "interface_refactor"
-    },
-    {
-      "path": "rtl/core/DispatchStage/DispatchStage.sv",
-      "change_type": "logic_fix"
-    },
-    {
-      "path": "rtl/core/DispatchStage/ROB.sv",
-      "change_type": "logic_fix"
-    },
-    {
-      "path": "rtl/core/DispatchStage/StoreBuffer.sv",
-      "change_type": "logic_fix"
-    },
-    {
-      "path": "rtl/core/DispatchStage/StoreBufferIF.sv",
-      "change_type": "interface_refactor"
-    },
-    {
-      "path": "rtl/core/StoreBufferTypes.sv",
-      "change_type": "type_update"
-    },
-    {
-      "path": "rtl/core/CommitStage/CommitStage.sv",
-      "change_type": "logic_fix"
-    },
-    {
-      "path": "rtl/core/CommitStage/RecoveryManager.sv",
-      "change_type": "logic_fix"
-    },
-    {
-      "path": "rtl/core/CommitStage/RecoveryManagerIF.sv",
-      "change_type": "comment_update"
-    },
-    {
-      "path": "rtl/core/DramAccessIF.sv",
-      "change_type": "comment_update"
-    },
-    {
-      "path": "rtl/core/ROBTypes.sv",
-      "change_type": "type_update"
-    },
-    {
-      "path": "rtl/core/ExecuteStage/ExecuteMemStage.sv",
-      "change_type": "logic_fix"
-    },
-    {
-      "path": "rtl/core/ExecuteStage/ExecuteAluStage.sv",
-      "change_type": "logic_fix"
-    },
-    {
-      "path": "rtl/core/ExecuteStage/ExecuteBrcStage.sv",
-      "change_type": "logic_fix"
-    },
-    {
-      "path": "rtl/core/ExecuteStage/ExecuteSysStage.sv",
-      "change_type": "logic_fix"
-    },
-    {
-      "path": "rtl/core/PipelineTypes.sv",
-      "change_type": "type_update"
-    },
-    {
-      "path": "rtl/core/DecodeStage/DecodeTypes.sv",
-      "change_type": "logic_fix"
-    },
-    {
-      "path": "rtl/core/WriteBackStage/WriteBackStage.sv",
-      "change_type": "logic_fix"
-    },
-    {
-      "path": "rtl/core/WriteBackStage/WriteBackStageIF.sv",
-      "change_type": "interface_cleanup"
-    },
-    {
-      "path": "rtl/core/WriteBackStage/Bypass.sv",
-      "change_type": "logic_fix"
-    },
-    {
-      "path": "rtl/core/ReadRegStage/ReadRegStage.sv",
-      "change_type": "logic_fix"
-    },
-    {
-      "path": "rtl/core/ReadRegStage/RegFile.sv",
-      "change_type": "logic_fix"
-    },
-    {
-      "path": "rtl/core/DispatchStage/IssueQueue.sv",
-      "change_type": "logic_fix"
-    },
-    {
-      "path": "rtl/core/DispatchStage/IssueTypes.sv",
-      "change_type": "type_update"
-    },
-    {
-      "path": "rtl/core/ExecuteStage/ExecuteMulStage.sv",
-      "change_type": "logic_fix"
-    },
-    {
-      "path": "rtl/core/core.sv",
-      "change_type": "integration_fix"
+      "path": "rtl/soc/dram_driver.sv",
+      "lines_changed": "35-61",
+      "change_type": "timing_alignment"
     }
   ],
   "cascade_scope": "compile_and_lint",
-  "notes": "Fixed packet splitting for multi-branch cases, real SpecRAT/FreeList checkpoint allocation and recovery, rename resource gating, ROB branch target miss detection, payload index alignment, store buffer commit writes to DRAM through an internal arbiter, two-cycle load response tracking, refactored RenameStage so FreeList owns the shared checkpoint index while SpecRAT consumes that index and saves a branch-boundary snapshot, changed IssueQueue wakeup delay to a 36-bit one-hot shift mask, replaced combinational DIV/REM with a 36-stage iterative pipeline in ExecuteMulStage, added real DispatchStage, ReadRegStage, ExecuteStage, and WriteBackStage pipe registers so backend stage boundaries are stable, hardened x0 handling across RenameStage, SpecRAT, ArchRAT, FreeList, RegFile, and Bypass, added minimal M-mode CSR/trap support for mstatus, mepc, mtvec, mcause, ecall, mret, and Zicsr CSR ops, made commit-time branch predictor updates use an explicit ROB-stored actual taken bit instead of reconstructing it from miss status, changed CommitStage so a committed branch is a commit barrier like store while factoring repeated commit side effects into local tasks, moved committed-store DRAM driving from CommitStage into StoreBuffer through a commit request/ready handshake, and changed RecoveryManager from combinational recovery forwarding to a one-cycle registered IDLE/EMIT FSM to shorten miss-to-Ctrl timing."
+  "notes": "Adapted student_top to the new dual-read IROM core ports by wiring IROM_0 port A/B to irom_addrA/B and irom_dataA/B. Delayed the DRAM read-return select in perip_bridge and the byte-offset alignment in dram_driver by two cycles to match address-register plus output-register DRAM timing, without adding a third SoC-side cycle."
 }

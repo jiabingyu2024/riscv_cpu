@@ -39,14 +39,10 @@ module student_top#(
 );
 
     // IROM
-    logic [31:0] irom_addrA;
-    logic [31:0] irom_addrB;
-    logic [11:0] inst_addrA;
-    logic [11:0] inst_addrB;
-    logic [31:0] instructionA;
-    logic [31:0] instructionB;
-    logic irom_enaA;
-    logic irom_enaB;
+    logic [31:0] pc;
+    logic [11:0] inst_addr;
+    logic [31:0] instruction;
+    logic irom_ena;
 
     // perip
     logic [31:0] perip_addr, perip_wdata, perip_rdata;
@@ -54,8 +50,7 @@ module student_top#(
     logic [3:0] perip_mask;
 
     // 16KB = 2^12 * 32bit
-    assign inst_addrA = irom_addrA[13:2];
-    assign inst_addrB = irom_addrB[13:2];
+    assign inst_addr = pc[13:2];
 
     logic [P_SW_CNT-1:0]  virtual_sw_cpu_d1;
     logic [P_SW_CNT-1:0]  virtual_sw_cpu_d2;
@@ -86,12 +81,9 @@ module student_top#(
         .cpu_clk            (w_cpu_clk),
 
         // Interface to IROM
-        .irom_addrA         (irom_addrA),
-        .irom_dataA         (instructionA),
-        .irom_enaA          (irom_enaA),
-        .irom_addrB         (irom_addrB),
-        .irom_dataB         (instructionB),
-        .irom_enaB          (irom_enaB),
+        .irom_addr          (pc),             
+        .irom_data          (instruction),   
+        .irom_ena           (irom_ena),
 
         // Interface to DRAM & periphera
         .perip_addr         (perip_addr),     
@@ -102,14 +94,10 @@ module student_top#(
     );
 
     IROM_0 Mem_IROM (
-        .addra      (inst_addrA),
+        .addra      (inst_addr),
         .clka       (w_cpu_clk),
-        .ena        (irom_enaA),
-        .douta      (instructionA),
-        .addrb      (inst_addrB),
-        .clkb       (w_cpu_clk),
-        .enb        (irom_enaB),
-        .doutb      (instructionB)
+        .ena        (irom_ena),
+        .douta      (instruction)
     );
     
     perip_bridge #(
