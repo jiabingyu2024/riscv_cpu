@@ -22,7 +22,17 @@ module Payload(PayloadIF.Payload self);
                 entries[i] <= '0;
                 valid[i] <= 1'b0;
             end
+        end else if (self.flush) begin
+            for (i = 0; i < ISSUE_QUEUE_DEPTH; i++) begin
+                entries[i] <= '0;
+                valid[i] <= 1'b0;
+            end
         end else begin
+            for (i = 0; i < WAY_NUM; i++) begin
+                if (self.PayloadPopReq[i].valid) begin
+                    valid[self.PayloadPopReq[i].payloadIndex] <= 1'b0;
+                end
+            end
             for (i = 0; i < WAY_NUM; i++) begin
                 if (self.PayloadPushReq[i].valid) begin
                     entries[self.PayloadPushReq[i].payloadIndex] <= self.PayloadPushReq[i].entry;

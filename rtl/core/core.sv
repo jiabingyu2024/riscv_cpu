@@ -46,6 +46,9 @@ module core(
     ReadyTableIF       readyTableIF(clk, rst);
     RegFileIF          regFileIF(clk, rst);
     BypassIF           bypassIF(clk, rst);
+
+    assign readyTableIF.recoverReadyAll = recoveryManagerIF.recoveryInfo.valid &&
+                                          recoveryManagerIF.recoveryInfo.backendFlush;
     //PF
     /*
     更新 PC 的选择逻辑

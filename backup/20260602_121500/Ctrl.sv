@@ -15,11 +15,11 @@ module Ctrl(
                             ctrl.brcStageEmpty &&
                             ctrl.sysStageEmpty;
 
-        backendBlock = ctrl.isStallReq | ctrl.rrStallReq |
-                       ctrl.exStallReq | ctrl.wbStallReq;
-        frontendBlock = ctrl.serialBlock | backendBlock | ctrl.robFull | ctrl.issueQueueFull |
+        frontendBlock = ctrl.serialBlock | ctrl.robFull | ctrl.issueQueueFull |
                         ctrl.freeListEmpty | ctrl.idStallReq | ctrl.rnStallReq |
                         ctrl.dsStallReq;
+        backendBlock = ctrl.dsStallReq | ctrl.isStallReq | ctrl.rrStallReq |
+                       ctrl.exStallReq | ctrl.wbStallReq;
 
         ctrl.pfPipe = '{stall: frontendBlock, flush: 1'b0};
         ctrl.ifPipe = '{stall: frontendBlock, flush: 1'b0};
@@ -29,8 +29,8 @@ module Ctrl(
                         flush: 1'b0};
         ctrl.dsPipe = '{stall: ctrl.dsStallReq | ctrl.robFull | ctrl.issueQueueFull,
                         flush: 1'b0};
-        ctrl.isPipe = '{stall: ctrl.isStallReq | ctrl.rrStallReq | ctrl.exStallReq, flush: 1'b0};
-        ctrl.rrPipe = '{stall: ctrl.rrStallReq | ctrl.exStallReq, flush: 1'b0};
+        ctrl.isPipe = '{stall: ctrl.isStallReq, flush: 1'b0};
+        ctrl.rrPipe = '{stall: ctrl.rrStallReq, flush: 1'b0};
         ctrl.exPipe = '{stall: ctrl.exStallReq, flush: 1'b0};
         ctrl.wbPipe = '{stall: ctrl.wbStallReq, flush: 1'b0};
 

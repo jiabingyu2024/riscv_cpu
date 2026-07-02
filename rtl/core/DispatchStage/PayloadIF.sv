@@ -17,6 +17,7 @@ interface PayloadIF( input logic clk, rst );
 
     PayloadPushReqPath       PayloadPushReq[WAY_NUM];
     PayloadPushResPath       PayloadPushRes[WAY_NUM];
+    logic                    flush;
 
     modport Payload(
         input
@@ -24,6 +25,7 @@ interface PayloadIF( input logic clk, rst );
             rst,
             PayloadPopReq,
             PayloadPushReq,
+            flush,
         output
             PayloadPopRes,
             PayloadPushRes
@@ -33,7 +35,8 @@ interface PayloadIF( input logic clk, rst );
         input
             PayloadPushRes,
         output
-            PayloadPushReq
+            PayloadPushReq,
+            flush
     );
 
     modport IssueStage(

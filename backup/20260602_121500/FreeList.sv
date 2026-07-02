@@ -62,11 +62,6 @@ module FreeList(FreeListIF.FreeList self);
                 self.freeListChkptRecover.RecoverFreePhyRegNum != '0) begin
                 recoverMask[self.freeListChkptRecover.RecoverFreePhyRegNum] = 1'b1;
             end
-            for (i = 0; i < WAY_NUM; i++) begin
-                if (self.freeListFree[i].freeReq && self.freeListFree[i].freePhyRegNum != '0) begin
-                    recoverMask[self.freeListFree[i].freePhyRegNum] = 1'b1;
-                end
-            end
             recoverMask[0] = 1'b0;
             freeMask <= recoverMask;
             for (i = 0; i < CHECKPOINT_NUM; i++) begin
@@ -96,17 +91,6 @@ module FreeList(FreeListIF.FreeList self);
             chkptNextMask[0] = 1'b0;
 
             freeMask <= nextMask;
-
-            for (i = 0; i < CHECKPOINT_NUM; i++) begin
-                if (chkptValid[i]) begin
-                    for (j = 0; j < WAY_NUM; j++) begin
-                        if (self.freeListFree[j].freeReq && self.freeListFree[j].freePhyRegNum != '0) begin
-                            chkptMask[i][self.freeListFree[j].freePhyRegNum] <= 1'b1;
-                        end
-                    end
-                    chkptMask[i][0] <= 1'b0;
-                end
-            end
 
             if (self.freeListChkptCreateEn && self.freeListChkptCreate.ChkptIndexValid) begin
                 chkptValid[self.freeListChkptCreate.ChkptCreateIndex] <= 1'b1;

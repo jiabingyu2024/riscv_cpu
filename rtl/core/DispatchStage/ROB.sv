@@ -52,7 +52,8 @@ module ROB(ROBIF.ROB self);
             popCnt = 0;
 
             for (i = 0; i < WAY_NUM * 5; i++) begin
-                if (self.RobDoneReq[i].valid) begin
+                if (self.RobDoneReq[i].valid &&
+                    entries[self.RobDoneReq[i].robIndex].valid) begin
                     entries[self.RobDoneReq[i].robIndex].done <= 1'b1;
                     entries[self.RobDoneReq[i].robIndex].exception <= self.RobDoneReq[i].exception;
                     entries[self.RobDoneReq[i].robIndex].isSerial <= self.RobDoneReq[i].isSerial;

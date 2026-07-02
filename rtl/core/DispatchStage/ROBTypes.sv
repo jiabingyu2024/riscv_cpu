@@ -31,6 +31,7 @@ package ROBTypes;
         logic               isMiss;
         PcPath              predPc;
         PcPath              truePc;
+        logic               chkptValid;
         ChkptIndexPath      specRATChkptIndex;
         ChkptIndexPath      freeListChkptIndex;
 

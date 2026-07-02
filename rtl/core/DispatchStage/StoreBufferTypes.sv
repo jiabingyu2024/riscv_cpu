@@ -32,10 +32,12 @@ package StoreBufferTypes;
     typedef struct packed {
         logic    valid;
         AddrPath addr;
+        logic [3:0] rstrb;
     } StoreBufferMatchInPath;
 
     typedef struct packed {
         logic    hit;
+        logic    block;
         DataPath data;
     } StoreBufferMatchOutPath;
 

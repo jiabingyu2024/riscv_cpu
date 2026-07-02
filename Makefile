@@ -11,6 +11,7 @@ FAST_COUNTER ?= 0
 RUN_MS ?= 0
 STRICT_SIM_LIMIT ?= 0
 ALLOW_FAIL ?= 0
+DEBUG_COMMIT ?= 0
 
 TEST_GOALS := rv32ui src_test src0 src1 src2 perf
 TEST_GOAL := $(firstword $(filter $(TEST_GOALS),$(MAKECMDGOALS)))
@@ -142,7 +143,7 @@ run-isa-one:
 	isa="$${test_name#rv32ui/}"; \
 	CASE_DIR="$(BUILD_DIR)/rv32ui/$$isa"; \
 	if [[ ! -f "$$CASE_DIR/irom.hex" ]]; then echo "missing $$CASE_DIR/irom.hex; run make build TEST=$(TEST) first"; exit 2; fi; \
-	ARGS="+irom=$$CASE_DIR/irom.hex +meta=$$CASE_DIR/meta.json +max-cycles=$(MAX_CYCLES) +cpu-mhz=$(CPU_MHZ) +cnt-mhz=$(CNT_MHZ) +wave=$(WAVE) +wave-file=$$CASE_DIR/wave.vcd"; \
+	ARGS="+irom=$$CASE_DIR/irom.hex +meta=$$CASE_DIR/meta.json +max-cycles=$(MAX_CYCLES) +cpu-mhz=$(CPU_MHZ) +cnt-mhz=$(CNT_MHZ) +debug-commit=$(DEBUG_COMMIT) +wave=$(WAVE) +wave-file=$$CASE_DIR/wave.vcd"; \
 	mkdir -p "$$CASE_DIR"; \
 	status=0; \
 	$(ISA_SIM_BIN) $$ARGS | tee "$$CASE_DIR/run.log" || status=$$?; \
@@ -156,7 +157,7 @@ run-isa-all:
 		case_dir=$$(dirname "$$meta"); \
 		case_name=$$(basename "$$case_dir"); \
 		echo "==> rv32ui/$$case_name"; \
-		if ! $(ISA_SIM_BIN) +irom=$$case_dir/irom.hex +meta=$$meta +max-cycles=$(MAX_CYCLES) +cpu-mhz=$(CPU_MHZ) +cnt-mhz=$(CNT_MHZ) +wave=0 | tee "$$case_dir/run.log"; then \
+		if ! $(ISA_SIM_BIN) +irom=$$case_dir/irom.hex +meta=$$meta +max-cycles=$(MAX_CYCLES) +cpu-mhz=$(CPU_MHZ) +cnt-mhz=$(CNT_MHZ) +debug-commit=$(DEBUG_COMMIT) +wave=0 | tee "$$case_dir/run.log"; then \
 			status=1; \
 		fi; \
 	done; \
@@ -167,7 +168,7 @@ run-coe-correct:
 	@set -e -o pipefail; \
 	CASE_DIR="$(BUILD_DIR)/src_test"; \
 	if [[ ! -f "$$CASE_DIR/irom.hex" ]]; then echo "missing $$CASE_DIR/irom.hex; run make build TEST=src_test first"; exit 2; fi; \
-	ARGS="+irom=$$CASE_DIR/irom.hex +dram=$$CASE_DIR/dram.hex +meta=$$CASE_DIR/meta.json +max-cycles=$(SRC_TEST_MAX_CYCLES) +cpu-mhz=$(CPU_MHZ) +cnt-mhz=$(CNT_MHZ) +wave=$(WAVE) +wave-file=$$CASE_DIR/wave.vcd"; \
+	ARGS="+irom=$$CASE_DIR/irom.hex +dram=$$CASE_DIR/dram.hex +meta=$$CASE_DIR/meta.json +max-cycles=$(SRC_TEST_MAX_CYCLES) +cpu-mhz=$(CPU_MHZ) +cnt-mhz=$(CNT_MHZ) +debug-commit=$(DEBUG_COMMIT) +wave=$(WAVE) +wave-file=$$CASE_DIR/wave.vcd"; \
 	mkdir -p "$$CASE_DIR"; \
 	status=0; \
 	$(COE_CORRECT_SIM_BIN) $$ARGS | tee "$$CASE_DIR/run.log" || status=$$?; \

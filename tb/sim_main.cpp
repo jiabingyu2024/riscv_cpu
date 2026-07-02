@@ -3,7 +3,9 @@
 
 #include "Vtb_rv32ui_top.h"
 #include "Vtb_rv32ui_top___024root.h"
+#include "Vtb_rv32ui_top_BypassIF.h"
 #include "Vtb_rv32ui_top_CommitStageIF.h"
+#include "Vtb_rv32ui_top_CtrlIF.h"
 #include "Vtb_rv32ui_top_PerfIF.h"
 #include "sim_common.hpp"
 
@@ -27,6 +29,7 @@ struct Options {
     uint64_t max_cycles = 100000;
     uint32_t cpu_mhz = 200;
     uint32_t cnt_mhz = 50;
+    uint32_t debug_commit = 0;
     bool wave = false;
 };
 
@@ -119,6 +122,8 @@ Options parse_args(int argc, char** argv) {
             opt.cpu_mhz = sim_common::parse_u32(arg.substr(9), opt.cpu_mhz);
         } else if (sim_common::starts_with(arg, "+cnt-mhz=")) {
             opt.cnt_mhz = sim_common::parse_u32(arg.substr(9), opt.cnt_mhz);
+        } else if (sim_common::starts_with(arg, "+debug-commit=")) {
+            opt.debug_commit = sim_common::parse_u32(arg.substr(14), opt.debug_commit);
         } else if (sim_common::starts_with(arg, "+wave=")) {
             opt.wave = sim_common::parse_u32(arg.substr(6)) != 0;
         } else if (sim_common::starts_with(arg, "+wave-file=")) {
@@ -165,6 +170,7 @@ void observe_pc(const Meta& meta, TestStatus& status, uint32_t pc);
 
 void observe_commit_pc(const Meta& meta, TestStatus& status, Vtb_rv32ui_top___024root* rootp) {
     auto* commit = rootp->__PVT__tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__cmStageIF;
+    auto* ctrl = rootp->__PVT__tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__ctrlIF;
     for (int lane = 0; lane < 2; ++lane) {
         if (commit->commitValid[lane]) {
             uint32_t pc = commit->commitPc[lane];
@@ -172,6 +178,161 @@ void observe_commit_pc(const Meta& meta, TestStatus& status, Vtb_rv32ui_top___02
             observe_pc(meta, status, pc);
         }
     }
+}
+
+void print_commit_debug(const Options& opt, uint64_t cycle, Vtb_rv32ui_top___024root* rootp) {
+    if (opt.debug_commit == 0 || cycle > opt.debug_commit) return;
+
+    auto* commit = rootp->__PVT__tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__cmStageIF;
+    auto* ctrl = rootp->__PVT__tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__ctrlIF;
+    auto* bypass = rootp->__PVT__tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__bypassIF;
+    bool any_commit = false;
+    for (int lane = 0; lane < 2; ++lane) {
+        any_commit |= commit->commitValid[lane];
+    }
+    bool late_loop_window = false;
+    bool branch_debug_window = (cycle >= 130 && cycle <= 160) ||
+                               (cycle >= 270 && cycle <= 300) ||
+                               late_loop_window;
+    if (!any_commit && cycle != opt.debug_commit && !branch_debug_window) return;
+
+    std::cerr << "DBG cycle=" << cycle
+              << " pcReg=0x" << std::hex << std::setw(8) << std::setfill('0')
+              << rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__pc__DOT__pcReg
+              << " mtvec=0x" << std::setw(8)
+              << rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__executeSysStage__DOT__mtvec
+              << " mepc=0x" << std::setw(8)
+              << rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__executeSysStage__DOT__mepc
+              << " mcause=0x" << std::setw(8)
+              << rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__executeSysStage__DOT__mcause
+              << std::dec << std::setfill(' ');
+    std::cerr << " robCount=" << static_cast<unsigned>(
+                     rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__rob__DOT__count)
+              << " rnStall=" << static_cast<unsigned>(ctrl->rnStallReq)
+              << " rnEmpty=" << static_cast<unsigned>(ctrl->rnStageEmpty)
+              << " serial=" << static_cast<unsigned>(ctrl->serialBlock)
+              << " empty(ds/is/rr/ex/wb)="
+              << static_cast<unsigned>(ctrl->dsStageEmpty)
+              << static_cast<unsigned>(ctrl->isStageEmpty)
+              << static_cast<unsigned>(ctrl->rrStageEmpty)
+              << static_cast<unsigned>(ctrl->exStageEmpty)
+              << static_cast<unsigned>(ctrl->wbStageEmpty);
+    if (ctrl->rnStallReq || cycle == opt.debug_commit) {
+        auto free_mask = rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__freeList__DOT__freeMask;
+        std::cerr << " rn[local=" << static_cast<unsigned>(
+                         rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__renameStage__DOT__unnamedblk3__DOT__localStall)
+                  << " res=" << static_cast<unsigned>(
+                         rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__renameStage__DOT__unnamedblk3__DOT__resourceStall)
+                  << " chk=" << static_cast<unsigned>(
+                         rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__renameStage__DOT__unnamedblk3__DOT__chkptStall)
+                  << " br=" << static_cast<unsigned>(
+                         rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__renameStage__DOT__unnamedblk3__DOT__branchPresent)
+                  << "/" << rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__renameStage__DOT__unnamedblk3__DOT__branchCount
+                  << " can=" << static_cast<unsigned>(
+                         rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__renameStage__DOT__unnamedblk3__DOT__canRename)
+                  << " free=" << __builtin_popcountll(free_mask)
+                  << " chkpt=";
+        for (int c = 0; c < 8; ++c) {
+            std::cerr << static_cast<unsigned>(
+                rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__freeList__DOT__chkptValid[c]);
+        }
+        std::cerr << "]";
+    }
+    if (late_loop_window || cycle == opt.debug_commit) {
+        auto dump_lgc = [&](int lgc, const char* name) {
+            uint32_t spr = rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__specRAT__DOT__rat[lgc];
+            uint32_t apr = rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__archRAT__DOT__rat[lgc];
+            std::cerr << " " << name << "[s" << spr
+                      << "=0x" << std::hex << std::setw(8) << std::setfill('0')
+                      << rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__regFile__DOT__regs[spr]
+                      << " a" << std::dec << apr
+                      << "=0x" << std::hex << std::setw(8) << std::setfill('0')
+                      << rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__regFile__DOT__regs[apr]
+                      << std::dec << std::setfill(' ') << "]";
+        };
+        dump_lgc(1, "ra");
+        dump_lgc(4, "tp");
+        dump_lgc(5, "t0");
+        dump_lgc(6, "t1");
+        dump_lgc(14, "a4");
+    }
+    if (cycle == opt.debug_commit) {
+        auto rob_head = rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__rob__DOT__head;
+        auto rob_tail = rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__rob__DOT__tail;
+        std::cerr << " rob[head=" << static_cast<unsigned>(rob_head)
+                  << " tail=" << static_cast<unsigned>(rob_tail) << "]";
+        for (int r = 0; r < 16; ++r) {
+            auto& entry = rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__rob__DOT__entries[r];
+            uint32_t pc = (entry[3] >> 2) | (entry[4] << 30);
+            uint32_t valid = (entry[4] >> 3) & 1;
+            uint32_t done = (entry[4] >> 2) & 1;
+            if (valid) {
+                std::cerr << " e" << r << "[pc=0x" << std::hex << std::setw(8)
+                          << std::setfill('0') << pc << std::dec << std::setfill(' ')
+                          << " d=" << done << "]";
+            }
+        }
+        std::cerr << " iq";
+        for (int q = 0; q < 16; ++q) {
+            if (rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__issueQueue__DOT__valid[q]) {
+                auto& payload = rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__payload__DOT__entries[q];
+                uint32_t payload_pc = (payload[2] >> 26) | ((payload[3] & 0x03ff'ffffU) << 6);
+                auto& iqe = rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__issueQueue__DOT__entries[q];
+                std::cerr << " q" << q << "[pc=0x" << std::hex << std::setw(8)
+                          << std::setfill('0') << payload_pc
+                          << " raw4=0x" << std::setw(8) << iqe[4]
+                          << " raw3=0x" << std::setw(8) << iqe[3]
+                          << " raw2=0x" << std::setw(8) << iqe[2]
+                          << " raw1=0x" << std::setw(8) << iqe[1]
+                          << " raw0=0x" << std::setw(8) << iqe[0]
+                          << std::dec << std::setfill(' ') << "]";
+            }
+        }
+    }
+    if (branch_debug_window) {
+        std::cerr << " brcA=0x" << std::hex << std::setw(8) << std::setfill('0')
+                  << rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__executeBrcStage__DOT__unnamedblk3__DOT__unnamedblk4__DOT__a
+                  << " brcB=0x" << std::setw(8)
+                  << rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__executeBrcStage__DOT__unnamedblk3__DOT__unnamedblk4__DOT__b
+                  << " rf19=0x" << std::setw(8)
+                  << rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__regFile__DOT__regs[19]
+                  << std::dec << std::setfill(' ');
+        for (int p = 0; p < 4; ++p) {
+            uint32_t req = bypass->brcReadReq[p];
+            uint64_t res = bypass->brcReadRes[p];
+            std::cerr << " br" << p
+                      << "[v=" << ((req >> 6) & 1)
+                      << " pr=" << (req & 0x3f)
+                      << " rf=0x" << std::hex << std::setw(8) << std::setfill('0')
+                      << rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__regFile__DOT__regs[req & 0x3f]
+                      << std::dec << std::setfill(' ')
+                      << " hit=" << ((res >> 32) & 1)
+                      << " data=0x" << std::hex << std::setw(8) << std::setfill('0')
+                      << static_cast<uint32_t>(res)
+                      << std::dec << std::setfill(' ') << "]";
+        }
+        for (int p = 0; p < 10; ++p) {
+            uint64_t fwd = bypass->wbForward[p];
+            if ((fwd >> 43) & 1) {
+                std::cerr << " fwd" << p
+                          << "[wr=" << ((fwd >> 42) & 1)
+                          << " rd=" << ((fwd >> 36) & 0x3f)
+                          << " data=0x" << std::hex << std::setw(8) << std::setfill('0')
+                          << static_cast<uint32_t>((fwd >> 4) & 0xffff'ffffULL)
+                          << std::dec << std::setfill(' ') << "]";
+            }
+        }
+    }
+    for (int lane = 0; lane < 2; ++lane) {
+        if (commit->commitValid[lane]) {
+            std::cerr << " c" << lane << "=0x" << std::hex << std::setw(8) << std::setfill('0')
+                      << commit->commitPc[lane] << std::dec << std::setfill(' ');
+        }
+    }
+    if (commit->commitException) {
+        std::cerr << " commitException";
+    }
+    std::cerr << "\n";
 }
 
 uint32_t soc_seg_wdata(Vtb_rv32ui_top___024root* rootp) {
@@ -418,6 +579,7 @@ int main(int argc, char** argv) {
             update_src_test_status(meta, status, top);
             observe_commit_pc(meta, status, top->rootp);
             stats = core_perf(top->rootp);
+            print_commit_debug(opt, stats.cycles, top->rootp);
         }
     }
 

@@ -29,10 +29,6 @@ module RenameStage (
             for (int i = 0; i < WAY_NUM; i++) begin
                 pipeReg[i] <= '0;
             end
-        end else if (ctrl.rnPipe.flush) begin
-            for (int i = 0; i < WAY_NUM; i++) begin
-                pipeReg[i] <= '0;
-            end
         end else if (!ctrl.rnPipe.stall) begin
             pipeReg <= prev.nextStage;
         end
@@ -40,9 +36,9 @@ module RenameStage (
 
     always_comb begin
         int writeNeed;
-        int chkptCount;
-        logic chkptPresent;
-        WayNumPath chkptWay;
+        int branchCount;
+        logic branchPresent;
+        WayNumPath branchWay;
         logic serialPresent;
         logic backendDrained;
         logic resourceStall;
@@ -51,9 +47,9 @@ module RenameStage (
         logic canRename;
 
         writeNeed = 0;
-        chkptCount = 0;
-        chkptPresent = 1'b0;
-        chkptWay = '0;
+        branchCount = 0;
+        branchPresent = 1'b0;
+        branchWay = '0;
         serialPresent = 1'b0;
         backendDrained = ctrl.dsStageEmpty && ctrl.isStageEmpty && ctrl.rrStageEmpty &&
                          ctrl.exStageEmpty && ctrl.wbStageEmpty;
@@ -63,12 +59,11 @@ module RenameStage (
                 writeNeed++;
             end
             if (pipeReg[i].valid && pipeReg[i].instInfo.valid &&
-                (pipeReg[i].instInfo.tubeType == TUBE_TYPE_BRC ||
-                 pipeReg[i].instInfo.isSerial)) begin
-                chkptCount++;
-                if (!chkptPresent) begin
-                    chkptPresent = 1'b1;
-                    chkptWay = WayNumPath'(i);
+                pipeReg[i].instInfo.tubeType == TUBE_TYPE_BRC) begin
+                branchCount++;
+                if (!branchPresent) begin
+                    branchPresent = 1'b1;
+                    branchWay = WayNumPath'(i);
                 end
             end
             if (pipeReg[i].valid && pipeReg[i].instInfo.isSerial) begin
@@ -77,16 +72,16 @@ module RenameStage (
         end
 
         resourceStall = (freeList.freeListCount < FreeListCountPath'(writeNeed));
-        chkptStall = chkptPresent && !freeList.freeListChkptCreate.ChkptIndexValid;
+        chkptStall = branchPresent && !freeList.freeListChkptCreate.ChkptIndexValid;
         localStall = resourceStall || chkptStall || (serialPresent && !backendDrained) ||
-                     (chkptCount > 1);
+                     (branchCount > 1);
         canRename = !ctrl.rnPipe.flush && !ctrl.rnPipe.stall && !localStall;
 
-        specRAT.specRATChkptCreateEn = chkptPresent && canRename;
+        specRAT.specRATChkptCreateEn = branchPresent && canRename;
         specRAT.specRATChkptCreateIndex = freeList.freeListChkptCreate.ChkptCreateIndex;
-        specRAT.specRATChkptBranchWay = chkptWay;
-        freeList.freeListChkptCreateEn = chkptPresent && canRename;
-        freeList.freeListChkptBranchWay = chkptWay;
+        specRAT.specRATChkptBranchWay = branchWay;
+        freeList.freeListChkptCreateEn = branchPresent && canRename;
+        freeList.freeListChkptBranchWay = branchWay;
 
         ctrl.rnStageEmpty = 1'b1;
         ctrl.rnStallReq = localStall;
@@ -138,10 +133,6 @@ module RenameStage (
 
             for (int k = 0; k < i; k++) begin
                 if (needs_dst_alloc(pipeReg[k]) && freeList.freeListAlloc[k].allocValid) begin
-                    if (needs_dst_alloc(pipeReg[i]) &&
-                        pipeReg[i].lgcRegInfo.lgcRegNumDst == pipeReg[k].lgcRegInfo.lgcRegNumDst) begin
-                        oldDst = freeList.freeListAlloc[k].allocPhyRegNum;
-                    end
                     if (pipeReg[i].lgcRegInfo.lgcRegNumSrcAValid &&
                         pipeReg[i].lgcRegInfo.lgcRegNumSrcA == pipeReg[k].lgcRegInfo.lgcRegNumDst) begin
                         srcA = freeList.freeListAlloc[k].allocPhyRegNum;
@@ -185,7 +176,7 @@ module RenameStage (
             nextStage[i].phyRegInfo.PhyRegNumDst = freeList.freeListAlloc[i].allocPhyRegNum;
             nextStage[i].phyPrevDst = oldDst;
 
-            nextStage[i].chkptValid = chkptPresent && canRename && (WayNumPath'(i) == chkptWay);
+            nextStage[i].chkptValid = branchPresent && (WayNumPath'(i) == branchWay);
             nextStage[i].specRATChkptIndex = freeList.freeListChkptCreate.ChkptCreateIndex;
             nextStage[i].freeListChkptIndex = freeList.freeListChkptCreate.ChkptCreateIndex;
 

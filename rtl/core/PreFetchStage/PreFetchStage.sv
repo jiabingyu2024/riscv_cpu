@@ -47,7 +47,7 @@ module PreFetchStage(
             self.nextStage[i].pc = self.pcOut + PcPath'(i * 4);
             self.nextStage[i].predInfo.pcPred = self.bpuResult[i].taken ?
                                                 self.bpuResult[i].target :
-                                                (self.pcOut + PC_STEP);
+                                                (self.pcOut + PcPath'(i * 4) + 32'd4);
             self.nextStage[i].predInfo.isPred = self.bpuResult[i].taken;
             if (self.bpuResult[i].taken) begin
                 predTakenSeen = 1'b1;

@@ -66,12 +66,12 @@ module CommitStage(
         recovery.commitBranchTarget = entry.truePc;
     endtask
 
-    task automatic free_branch_checkpoint(
+    task automatic free_checkpoint(
         input RobEntryPath entry
     );
-        specRAT.specRATChkptFree.ChkptFreeEn = 1'b1;
+        specRAT.specRATChkptFree.ChkptFreeEn = entry.chkptValid;
         specRAT.specRATChkptFree.ChkptFreeIndex = entry.specRATChkptIndex;
-        freeList.freeListChkptFree.ChkptFreeEn = 1'b1;
+        freeList.freeListChkptFree.ChkptFreeEn = entry.chkptValid;
         freeList.freeListChkptFree.ChkptFreeIndex = entry.freeListChkptIndex;
     endtask
 
@@ -82,6 +82,11 @@ module CommitStage(
         recovery.commitRecoveryReq.valid = 1'b1;
         recovery.commitRecoveryReq.cause = REC_EXCEPTION;
         recovery.commitRecoveryReq.recoverPc = entry.truePc;
+        recovery.commitRecoveryReq.specRATChkptIndex = entry.specRATChkptIndex;
+        recovery.commitRecoveryReq.freeListChkptIndex = entry.freeListChkptIndex;
+        recovery.commitRecoveryReq.chkptRecoverEn = entry.chkptValid;
+        recovery.commitRecoveryReq.recoverFreeEn = entry.DstValid;
+        recovery.commitRecoveryReq.recoverFreePhyRegNum = entry.phyRegNum;
         recovery.commitRecoveryReq.frontendFlush = 1'b1;
         recovery.commitRecoveryReq.backendFlush = 1'b1;
         rob.RobFlush = 1'b1;
@@ -97,7 +102,7 @@ module CommitStage(
         recovery.commitRecoveryReq.recoverPc = entry.truePc;
         recovery.commitRecoveryReq.specRATChkptIndex = entry.specRATChkptIndex;
         recovery.commitRecoveryReq.freeListChkptIndex = entry.freeListChkptIndex;
-        recovery.commitRecoveryReq.chkptRecoverEn = 1'b1;
+        recovery.commitRecoveryReq.chkptRecoverEn = entry.chkptValid;
         recovery.commitRecoveryReq.recoverFreeEn = entry.DstValid;
         recovery.commitRecoveryReq.recoverFreePhyRegNum = entry.phyPrevRegNum;
         recovery.commitRecoveryReq.frontendFlush = 1'b1;
@@ -136,7 +141,7 @@ module CommitStage(
                             request_branch_recovery(entry);
                         end else begin
                             rob.RobPopReq[i].req = 1'b1;
-                            free_branch_checkpoint(entry);
+                            free_checkpoint(entry);
                         end
                         stopCommit = 1'b1;
                     end else if (entry.isStore) begin
@@ -147,11 +152,13 @@ module CommitStage(
                         end
                         if (storeBuffer.StoreBufferCommitReady) begin
                             commit_pop(i);
+                            free_checkpoint(entry);
                         end
                         stopCommit = 1'b1;
                     end else begin
                         commit_pop(i);
                         commit_dst(i, entry);
+                        free_checkpoint(entry);
                     end
                 end
             end

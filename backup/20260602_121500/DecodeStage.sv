@@ -44,9 +44,7 @@ module DecodeStage (
             idStallReqReg <= 1'b0;
         end else if (replayValid) begin
             if (!ctrl.rnPipe.stall) begin
-                for (int i = 0; i < WAY_NUM; i++) begin
-                    pipeReg[i] <= '0;
-                end
+                pipeReg <= prev.nextStage;
                 replaySlot <= '0;
                 replayValid <= 1'b0;
                 idStallReqReg <= 1'b0;
@@ -55,9 +53,6 @@ module DecodeStage (
             end
         end else if (splitPacket && !replayValid) begin
             if (!ctrl.rnPipe.stall) begin
-                for (int i = 0; i < WAY_NUM; i++) begin
-                    pipeReg[i] <= '0;
-                end
                 replaySlot <= decodedStage[1];
                 replaySlot.valid <= decodedStage[1].valid && !ctrl.idPipe.flush;
                 replayValid <= 1'b1;

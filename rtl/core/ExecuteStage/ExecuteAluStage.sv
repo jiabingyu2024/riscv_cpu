@@ -12,6 +12,7 @@ module ExecuteAluStage(
 
     function automatic DataPath alu(input SubTypePath st, input DataPath a, input DataPath b);
         unique case (st.aluSubType)
+            ALU_SUBTYPE_ADD: alu = a + b;
             ALU_SUBTYPE_SUB: alu = a - b;
             ALU_SUBTYPE_SLL: alu = a << b[4:0];
             ALU_SUBTYPE_SRL: alu = a >> b[4:0];
@@ -21,7 +22,7 @@ module ExecuteAluStage(
             ALU_SUBTYPE_AND: alu = a & b;
             ALU_SUBTYPE_SLT: alu = DataPath'($signed(a) < $signed(b));
             ALU_SUBTYPE_SLTU: alu = DataPath'(a < b);
-            default:         alu = a + b;
+            default:         alu = '0;
         endcase
     endfunction
 

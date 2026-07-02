@@ -28,10 +28,6 @@ module DispatchStage(
             for (int i = 0; i < WAY_NUM; i++) begin
                 pipeReg[i] <= '0;
             end
-        end else if (ctrl.dsPipe.flush) begin
-            for (int i = 0; i < WAY_NUM; i++) begin
-                pipeReg[i] <= '0;
-            end
         end else if (!ctrl.dsPipe.stall) begin
             pipeReg <= prev.nextStage;
         end
@@ -51,7 +47,6 @@ module DispatchStage(
 
         storeBuffer.allocReq = 1'b0;
         issueQueue.IssueCtrl.flush = ctrl.dsPipe.flush;
-        payload.flush = ctrl.dsPipe.flush;
 
         validCount = 0;
         storeCount = 0;
@@ -91,6 +86,8 @@ module DispatchStage(
             resourceReady &= !pipeReg[i].valid ||
                              (rob.RobPushRes[i].valid && issueQueue.IssuePushRes[i].done);
 
+            rob.RobPushReq[i].req = dispatchFire[i];
+            rob.RobPushReq[i].entry.valid = dispatchFire[i];
             rob.RobPushReq[i].entry.done = 1'b0;
             rob.RobPushReq[i].entry.pc = pipeReg[i].pc;
             rob.RobPushReq[i].entry.DstValid = pipeReg[i].phyRegInfo.PhyRegNumDstValid;
@@ -102,7 +99,6 @@ module DispatchStage(
             rob.RobPushReq[i].entry.takenActual = 1'b0;
             rob.RobPushReq[i].entry.predPc = pipeReg[i].predInfo.pcPred;
             rob.RobPushReq[i].entry.truePc = pipeReg[i].predInfo.pcPred;
-            rob.RobPushReq[i].entry.chkptValid = pipeReg[i].chkptValid;
             rob.RobPushReq[i].entry.specRATChkptIndex = pipeReg[i].specRATChkptIndex;
             rob.RobPushReq[i].entry.freeListChkptIndex = pipeReg[i].freeListChkptIndex;
             rob.RobPushReq[i].entry.isStore = isStore;
@@ -110,6 +106,7 @@ module DispatchStage(
             rob.RobPushReq[i].entry.isSerial = pipeReg[i].instInfo.isSerial;
             rob.RobPushReq[i].entry.exception = 1'b0;
 
+            issueQueue.IssuePushReq[i].valid = dispatchFire[i];
             issueQueue.IssuePushReq[i].entry.tubeType = pipeReg[i].instInfo.tubeType;
             issueQueue.IssuePushReq[i].entry.srcA = pipeReg[i].phyRegInfo.PhyRegNumSrcA;
             issueQueue.IssuePushReq[i].entry.srcB = pipeReg[i].phyRegInfo.PhyRegNumSrcB;
@@ -128,6 +125,7 @@ module DispatchStage(
             issueQueue.IssuePushReq[i].entry.robIndex = rob.RobPushRes[i].robIndex;
             issueQueue.IssuePushReq[i].entry.robIndexPosition = rob.RobPushRes[i].position;
 
+            payload.PayloadPushReq[i].valid = dispatchFire[i];
             payload.PayloadPushReq[i].payloadIndex = issueQueue.IssuePushRes[i].payloadIndex;
             payload.PayloadPushReq[i].entry.pc = pipeReg[i].pc;
             payload.PayloadPushReq[i].entry.predInfo = pipeReg[i].predInfo;

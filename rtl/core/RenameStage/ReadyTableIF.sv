@@ -26,6 +26,7 @@ interface ReadyTableIF(input logic clk, rst);
 
     ReadyMarkReqPath markBusy [WAY_NUM];
     ReadyMarkReqPath markReady [BYPASS_WB_PORT_NUM];
+    logic            recoverReadyAll;
 
     modport ReadyTable(
         input
@@ -34,6 +35,7 @@ interface ReadyTableIF(input logic clk, rst);
             readReq,
             markBusy,
             markReady,
+            recoverReadyAll,
         output
             readReady
     );

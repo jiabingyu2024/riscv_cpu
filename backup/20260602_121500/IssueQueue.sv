@@ -57,7 +57,6 @@ module IssueQueue(IssueQueueIF.IssueQueue self);
             for (int j = 0; j < ISSUE_QUEUE_DEPTH; j++) begin
                 if (valid[j] && !selected[j] && !entries[j].issued &&
                     entries[j].srcARdy && (entries[j].srcBRdy || entries[j].srcBIsImm) &&
-                    !has_same_cycle_raw(entries[j], selected) &&
                     !(memSelected && entries[j].tubeType == TUBE_TYPE_MEM)) begin
                     if (!self.IssuePopRes[i].done ||
                         older_than(entries[j], self.IssuePopRes[i].entry)) begin
@@ -80,21 +79,6 @@ module IssueQueue(IssueQueueIF.IssueQueue self);
         self.IssueFreeCount = IssueFreeCountPath'(freeCnt);
     end
 
-    function automatic logic has_same_cycle_raw(
-        input IssueEntryPath candidate,
-        input logic [ISSUE_QUEUE_DEPTH-1:0] selectedMask
-    );
-        has_same_cycle_raw = 1'b0;
-        for (int s = 0; s < ISSUE_QUEUE_DEPTH; s++) begin
-            if (selectedMask[s] && entries[s].writeDst && entries[s].dst != '0) begin
-                if ((candidate.srcA == entries[s].dst) ||
-                    (!candidate.srcBIsImm && candidate.srcB == entries[s].dst)) begin
-                    has_same_cycle_raw = 1'b1;
-                end
-            end
-        end
-    endfunction
-
     always_ff @(posedge self.clk or posedge self.rst) begin
         if (self.rst) begin
             for (int i = 0; i < ISSUE_QUEUE_DEPTH; i++) begin
@@ -110,12 +94,18 @@ module IssueQueue(IssueQueueIF.IssueQueue self);
             for (int i = 0; i < ISSUE_QUEUE_DEPTH; i++) begin
                 if (valid[i]) begin
                     if (entries[i].srcAMatched && !entries[i].srcARdy) begin
-                        if (entries[i].srcAShift != '0) begin
+                        if (entries[i].srcAShift == '0 || entries[i].srcAShift[0]) begin
+                            entries[i].srcARdy <= 1'b1;
+                            entries[i].srcAShift <= '0;
+                        end else begin
                             entries[i].srcAShift <= {1'b0, entries[i].srcAShift[SHIFT_WIDTH-1:1]};
                         end
                     end
                     if (entries[i].srcBMatched && !entries[i].srcBRdy) begin
-                        if (entries[i].srcBShift != '0) begin
+                        if (entries[i].srcBShift == '0 || entries[i].srcBShift[0]) begin
+                            entries[i].srcBRdy <= 1'b1;
+                            entries[i].srcBShift <= '0;
+                        end else begin
                             entries[i].srcBShift <= {1'b0, entries[i].srcBShift[SHIFT_WIDTH-1:1]};
                         end
                     end

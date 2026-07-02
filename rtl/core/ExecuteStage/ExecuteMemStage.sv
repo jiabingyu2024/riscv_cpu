@@ -17,6 +17,7 @@ module ExecuteMemStage(
         logic         valid;
         ExMemToWbPath wb;
         MemSubType    memSubType;
+        AddrPath      addr;
     } LoadMetaPath;
 
     LoadMetaPath loadMetaPipe0;
@@ -40,6 +41,26 @@ module ExecuteMemStage(
             MEM_SUBTYPE_SB: align_store_data = data << (addr[1:0] * 8);
             MEM_SUBTYPE_SH: align_store_data = data << (addr[1] * 16);
             default:        align_store_data = data;
+        endcase
+    endfunction
+
+    function automatic logic [3:0] load_rstrb(input MemSubType st, input AddrPath addr);
+        unique case (st)
+            MEM_SUBTYPE_LB,
+            MEM_SUBTYPE_LBU: load_rstrb = 4'b0001 << addr[1:0];
+            MEM_SUBTYPE_LH,
+            MEM_SUBTYPE_LHU: load_rstrb = addr[1] ? 4'b1100 : 4'b0011;
+            default:         load_rstrb = 4'b1111;
+        endcase
+    endfunction
+
+    function automatic DataPath align_load_data(input MemSubType st, input AddrPath addr, input DataPath data);
+        unique case (st)
+            MEM_SUBTYPE_LB,
+            MEM_SUBTYPE_LBU: align_load_data = data >> (addr[1:0] * 8);
+            MEM_SUBTYPE_LH,
+            MEM_SUBTYPE_LHU: align_load_data = data >> (addr[1] * 16);
+            default:         align_load_data = data;
         endcase
     endfunction
 
@@ -107,7 +128,10 @@ module ExecuteMemStage(
         if (loadMetaPipe1.valid) begin
             self.nextMemToStage[0] = loadMetaPipe1.wb;
             self.nextMemToStage[0].data =
-                extend_load_data(loadMetaPipe1.memSubType, dram.exReadData);
+                extend_load_data(loadMetaPipe1.memSubType,
+                                 align_load_data(loadMetaPipe1.memSubType,
+                                                 loadMetaPipe1.addr,
+                                                 dram.exReadData));
         end
 
         for (int i = 0; i < WAY_NUM; i++) begin
@@ -143,9 +167,12 @@ module ExecuteMemStage(
                 end else if (!currentLoadSelected) begin
                     storeBuffer.StoreBufferMatchIn.valid = 1'b1;
                     storeBuffer.StoreBufferMatchIn.addr = effAddr;
+                    storeBuffer.StoreBufferMatchIn.rstrb =
+                        load_rstrb(pipeReg[i].subType.memSubType, effAddr);
 
                     loadIssueMeta.valid = 1'b1;
                     loadIssueMeta.memSubType = pipeReg[i].subType.memSubType;
+                    loadIssueMeta.addr = effAddr;
                     loadIssueMeta.wb.valid = 1'b1;
                     loadIssueMeta.wb.Rd = pipeReg[i].Rd;
                     loadIssueMeta.wb.writeRd = pipeReg[i].writeRd;
@@ -158,7 +185,11 @@ module ExecuteMemStage(
                         self.nextMemToStage[loadMetaPipe1.valid ? 1 : 0].robIndex = loadIssueMeta.wb.robIndex;
                         self.nextMemToStage[loadMetaPipe1.valid ? 1 : 0].data =
                             extend_load_data(pipeReg[i].subType.memSubType,
-                                             storeBuffer.StoreBufferMatchOut.data);
+                                             align_load_data(pipeReg[i].subType.memSubType,
+                                                             effAddr,
+                                                             storeBuffer.StoreBufferMatchOut.data));
+                    end else if (storeBuffer.StoreBufferMatchOut.block) begin
+                        loadAccessBlocked = 1'b1;
                     end else begin
                         dram.exReadEn = 1'b1;
                         dram.exReadAddr = effAddr;

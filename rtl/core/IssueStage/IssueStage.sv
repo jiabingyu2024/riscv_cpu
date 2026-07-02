@@ -14,7 +14,7 @@ module IssueStage(
         ctrl.isStallReq = 1'b0;
 
         for (int i = 0; i < WAY_NUM; i++) begin
-            issueQueue.IssuePopReq[i].valid = !ctrl.isPipe.stall;
+            issueQueue.IssuePopReq[i].valid = !ctrl.isPipe.stall && !ctrl.isPipe.flush;
             payload.PayloadPopReq[i].valid = issueQueue.IssuePopRes[i].done;
             payload.PayloadPopReq[i].payloadIndex = issueQueue.IssuePopRes[i].entry.payloadIndex;
 

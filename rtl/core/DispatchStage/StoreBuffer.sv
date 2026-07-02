@@ -40,13 +40,34 @@ module StoreBuffer(
             self.StoreBufferCommitReady = dram.storeWriteReady;
         end
 
-        self.StoreBufferMatchOut.hit = 1'b0;
-        self.StoreBufferMatchOut.data = '0;
+        self.StoreBufferMatchOut = '0;
         if (self.StoreBufferMatchIn.valid) begin
+            logic [3:0] matchedMask;
+            StoreBufferIndexPath idx;
+
+            matchedMask = '0;
             for (i = 0; i < STORE_BUFFER_DEPTH; i++) begin
-                if (valid[i] && entries[i].valid && entries[i].addr == self.StoreBufferMatchIn.addr) begin
-                    self.StoreBufferMatchOut.hit = 1'b1;
-                    self.StoreBufferMatchOut.data = entries[i].data;
+                idx = head + StoreBufferIndexPath'(i);
+                if (i < count && valid[idx] && entries[idx].valid &&
+                    entries[idx].addr[ADDR_WIDTH-1:2] == self.StoreBufferMatchIn.addr[ADDR_WIDTH-1:2]) begin
+                    for (int b = 0; b < 4; b++) begin
+                        if (entries[idx].wstrb[b] && self.StoreBufferMatchIn.rstrb[b]) begin
+                            self.StoreBufferMatchOut.data[b*8 +: 8] = entries[idx].data[b*8 +: 8];
+                            matchedMask[b] = 1'b1;
+                        end
+                    end
+                end
+            end
+            if ((matchedMask & self.StoreBufferMatchIn.rstrb) == self.StoreBufferMatchIn.rstrb) begin
+                self.StoreBufferMatchOut.hit = 1'b1;
+            end else begin
+                for (i = 0; i < STORE_BUFFER_DEPTH; i++) begin
+                    idx = head + StoreBufferIndexPath'(i);
+                    if (i < count && valid[idx] && entries[idx].valid &&
+                        entries[idx].addr[ADDR_WIDTH-1:2] == self.StoreBufferMatchIn.addr[ADDR_WIDTH-1:2] &&
+                        ((entries[idx].wstrb & self.StoreBufferMatchIn.rstrb) != '0)) begin
+                        self.StoreBufferMatchOut.block = 1'b1;
+                    end
                 end
             end
         end

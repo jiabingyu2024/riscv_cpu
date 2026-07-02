@@ -22,6 +22,9 @@ module ReadyTable(ReadyTableIF.ReadyTable self);
                 readyMask[i] <= (i < LOGICREG_NUM);
             end
             readyMask[0] <= 1'b1;
+        end else if (self.recoverReadyAll) begin
+            readyMask <= '1;
+            readyMask[0] <= 1'b1;
         end else begin
             for (int i = 0; i < WAY_NUM; i++) begin
                 if (self.markBusy[i].valid && self.markBusy[i].phyRegNum != '0) begin
