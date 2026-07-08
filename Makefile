@@ -12,6 +12,9 @@ FAST_COUNTER ?= 0
 RUN_MS ?= 0
 STRICT_SIM_LIMIT ?= 0
 CORE_VARIANT ?= old
+VIVADO ?= vivado
+M_UNIT_FREQ_MHZ ?= 200
+M_UNIT_PART ?=
 ISA_SUITES := rv32ui rv32um
 
 BUILD_DIR := build
@@ -22,6 +25,7 @@ SRC_TEST_SIM_DIR := $(BUILD_DIR)/verilator_src_test
 SRC_TEST_SIM_BIN := $(SRC_TEST_SIM_DIR)/Vtb_rv32ui_top
 SRC_SIM_DIR := $(BUILD_DIR)/verilator_src
 SRC_SIM_BIN := $(SRC_SIM_DIR)/Vtb_src_top
+M_UNIT_SYNTH_DIR := $(BUILD_DIR)/m_unit_freq
 
 RTL_INC := rtl/include
 SOC_SRCS := \
@@ -114,7 +118,7 @@ SRC_TEST_RTL_SRCS := \
 	$(CORE_SRCS) \
 	$(SOC_SRCS)
 
-.PHONY: build sim sim-src sim-src-test run run-one run-all run-src run-correctness clean list list-src
+.PHONY: build sim sim-src sim-src-test synth-m-unit run run-one run-all run-src run-correctness clean list list-src
 
 build:
 	python3 $(SCRIPT) --suite $(SUITE) $(if $(ISA),--isa $(ISA),)
@@ -148,6 +152,14 @@ sim-src-test:
 		--cc $(SRC_TEST_RTL_SRCS) \
 		--exe $$(pwd)/tb/sim_main.cpp \
 		--build
+
+synth-m-unit:
+	@if [[ -z "$(M_UNIT_PART)" ]]; then \
+		echo "M_UNIT_PART is required. Example: make synth-m-unit M_UNIT_PART=xc7a35tcsg324-1"; \
+		exit 2; \
+	fi
+	$(VIVADO) -mode batch -source scripts/synth_m_unit_freq.tcl \
+		-tclargs "$(M_UNIT_PART)" "$(M_UNIT_FREQ_MHZ)" "$(M_UNIT_SYNTH_DIR)"
 
 run: build
 	@set -e; \
