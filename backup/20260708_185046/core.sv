@@ -50,14 +50,6 @@ module core(
     logic [2:0]       func3_d;
     logic [3:0]       mem_mask_d;
     logic             load_unsigned_d;
-    logic             is_csr_d;
-    logic [2:0]       csr_op_d;
-    logic [11:0]      csr_addr_d;
-    logic             is_ecall_d;
-    logic             is_ebreak_d;
-    logic             is_mret_d;
-    logic             is_m_op_d;
-    logic [2:0]       m_op_d;
     logic             is_branch_d;
     logic [`DATA_BUS] imm_d;
     logic [`DATA_BUS] rs1_data_d;
@@ -83,14 +75,6 @@ module core(
     logic [2:0]       func3_e;
     logic [3:0]       mem_mask_e;
     logic             load_unsigned_e;
-    logic             is_csr_e;
-    logic [2:0]       csr_op_e;
-    logic [11:0]      csr_addr_e;
-    logic             is_ecall_e;
-    logic             is_ebreak_e;
-    logic             is_mret_e;
-    logic             is_m_op_e;
-    logic [2:0]       m_op_e;
     logic             is_branch_e;
     logic [`PC_BUS]   pc_e;
     logic [`PC_BUS]   pc_target_e;
@@ -103,14 +87,6 @@ module core(
 
     logic [`DATA_BUS] alu_res_e;
     logic [`DATA_BUS] a2_data_e;
-    logic             csr_write_e;
-    logic [11:0]      csr_write_addr_e;
-    logic [`DATA_BUS] csr_wdata_e;
-    logic             csr_trap_e;
-    logic             csr_mret_e;
-    logic [`DATA_BUS] csr_cause_e;
-    logic [`PC_BUS]   csr_epc_e;
-    logic [`DATA_BUS] csr_rdata_e;
     logic             update_taken_e;
     logic             update_en_e;
     logic [`PC_BUS]   update_pc_e;
@@ -160,116 +136,10 @@ module core(
     logic             flush_d_e;
     logic             flush_e_m;
     logic             flush_m_w;
-    logic             ex_stall_e;
-
-    logic [`DATA_BUS] csr_mstatus_q;
-    logic [`DATA_BUS] csr_medeleg_q;
-    logic [`DATA_BUS] csr_mideleg_q;
-    logic [`DATA_BUS] csr_mie_q;
-    logic [`DATA_BUS] csr_mtvec_q;
-    logic [`DATA_BUS] csr_mcounteren_q;
-    logic [`DATA_BUS] csr_mscratch_q;
-    logic [`DATA_BUS] csr_mepc_q;
-    logic [`DATA_BUS] csr_mcause_q;
-    logic [`DATA_BUS] csr_mtval_q;
-    logic [`DATA_BUS] csr_mip_q;
-    logic [`DATA_BUS] csr_pmpcfg0_q;
-    logic [`DATA_BUS] csr_pmpaddr0_q;
-    logic [63:0]      csr_cycle_q;
-    logic [63:0]      csr_instret_q;
-    logic [1:0]       priv_mode_q;
-    logic             csr_commit_e;
 
     assign irom_addr = pc_p;
     assign irom_ena  = !stall_p_f;
     assign pc_target_d = pc_d + imm_d;
-    assign csr_commit_e = !flush_e_m;
-
-    always_comb begin
-        unique case (csr_addr_e)
-            `CSR_MSTATUS:    csr_rdata_e = csr_mstatus_q;
-            `CSR_MISA:       csr_rdata_e = `MISA_RV32_IM;
-            `CSR_MEDELEG:    csr_rdata_e = csr_medeleg_q;
-            `CSR_MIDELEG:    csr_rdata_e = csr_mideleg_q;
-            `CSR_MIE:        csr_rdata_e = csr_mie_q;
-            `CSR_MTVEC:      csr_rdata_e = csr_mtvec_q;
-            `CSR_MCOUNTEREN: csr_rdata_e = csr_mcounteren_q;
-            `CSR_MSCRATCH:   csr_rdata_e = csr_mscratch_q;
-            `CSR_MEPC:       csr_rdata_e = csr_mepc_q;
-            `CSR_MCAUSE:     csr_rdata_e = csr_mcause_q;
-            `CSR_MTVAL:      csr_rdata_e = csr_mtval_q;
-            `CSR_MIP:        csr_rdata_e = csr_mip_q;
-            `CSR_PMPCFG0:    csr_rdata_e = csr_pmpcfg0_q;
-            `CSR_PMPADDR0:   csr_rdata_e = csr_pmpaddr0_q;
-            `CSR_CYCLE,
-            `CSR_TIME:       csr_rdata_e = csr_cycle_q[31:0];
-            `CSR_INSTRET:    csr_rdata_e = csr_instret_q[31:0];
-            `CSR_CYCLEH,
-            `CSR_TIMEH:      csr_rdata_e = csr_cycle_q[63:32];
-            `CSR_INSTRETH:   csr_rdata_e = csr_instret_q[63:32];
-            `CSR_MHARTID:    csr_rdata_e = 32'd0;
-            default:         csr_rdata_e = 32'd0;
-        endcase
-    end
-
-    always_ff @(posedge clk or negedge rst_n) begin
-        if (!rst_n) begin
-            csr_mstatus_q    <= 32'h0000_1800;
-            csr_medeleg_q    <= '0;
-            csr_mideleg_q    <= '0;
-            csr_mie_q        <= '0;
-            csr_mtvec_q      <= '0;
-            csr_mcounteren_q <= '0;
-            csr_mscratch_q   <= '0;
-            csr_mepc_q       <= '0;
-            csr_mcause_q     <= '0;
-            csr_mtval_q      <= '0;
-            csr_mip_q        <= '0;
-            csr_pmpcfg0_q    <= '0;
-            csr_pmpaddr0_q   <= '0;
-            csr_cycle_q      <= '0;
-            csr_instret_q    <= '0;
-            priv_mode_q      <= `PRIV_M;
-        end else begin
-            csr_cycle_q   <= csr_cycle_q + 64'd1;
-            csr_instret_q <= csr_instret_q + 64'd1;
-
-            if (csr_commit_e) begin
-                if (csr_trap_e) begin
-                    csr_mepc_q             <= csr_epc_e;
-                    csr_mcause_q           <= csr_cause_e;
-                    csr_mtval_q            <= '0;
-                    csr_mstatus_q[12:11]   <= priv_mode_q;
-                    csr_mstatus_q[7]       <= csr_mstatus_q[3];
-                    csr_mstatus_q[3]       <= 1'b0;
-                    priv_mode_q            <= `PRIV_M;
-                end else if (csr_mret_e) begin
-                    priv_mode_q            <= csr_mstatus_q[12:11];
-                    csr_mstatus_q[3]       <= csr_mstatus_q[7];
-                    csr_mstatus_q[7]       <= 1'b1;
-                    csr_mstatus_q[12:11]   <= `PRIV_U;
-                end else if (csr_write_e) begin
-                    unique case (csr_write_addr_e)
-                        `CSR_MSTATUS:    csr_mstatus_q    <= csr_wdata_e;
-                        `CSR_MEDELEG:    csr_medeleg_q    <= csr_wdata_e;
-                        `CSR_MIDELEG:    csr_mideleg_q    <= csr_wdata_e;
-                        `CSR_MIE:        csr_mie_q        <= csr_wdata_e;
-                        `CSR_MTVEC:      csr_mtvec_q      <= csr_wdata_e;
-                        `CSR_MCOUNTEREN: csr_mcounteren_q <= csr_wdata_e;
-                        `CSR_MSCRATCH:   csr_mscratch_q   <= csr_wdata_e;
-                        `CSR_MEPC:       csr_mepc_q       <= csr_wdata_e;
-                        `CSR_MCAUSE:     csr_mcause_q     <= csr_wdata_e;
-                        `CSR_MTVAL:      csr_mtval_q      <= csr_wdata_e;
-                        `CSR_MIP:        csr_mip_q        <= csr_wdata_e;
-                        `CSR_PMPCFG0:    csr_pmpcfg0_q    <= csr_wdata_e;
-                        `CSR_PMPADDR0:   csr_pmpaddr0_q   <= csr_wdata_e;
-                        default: begin
-                        end
-                    endcase
-                end
-            end
-        end
-    end
 
     stage_pc u_stage_pc (
         .i_clk       (clk),
@@ -327,7 +197,6 @@ module core(
         .i_predict_target(predict_target_f),
         .i_error         (branch_error_m),
         .i_right_pc      (branch_right_pc_m),
-        .i_ex_stall      (ex_stall_e),
         .o_stall_p_f     (stall_p_f),
         .o_stall_f_d     (stall_f_d),
         .o_stall_d_e     (stall_d_e),
@@ -374,14 +243,6 @@ module core(
         .o_func3         (func3_d),
         .o_mem_mask      (mem_mask_d),
         .o_load_unsigned (load_unsigned_d),
-        .o_is_csr        (is_csr_d),
-        .o_csr_op        (csr_op_d),
-        .o_csr_addr      (csr_addr_d),
-        .o_is_ecall      (is_ecall_d),
-        .o_is_ebreak     (is_ebreak_d),
-        .o_is_mret       (is_mret_d),
-        .o_is_m_op       (is_m_op_d),
-        .o_m_op          (m_op_d),
         .o_is_branch     (is_branch_d),
         .o_imm           (imm_d),
         .o_rs1_data      (rs1_data_d),
@@ -425,14 +286,6 @@ module core(
         .i_func3         (func3_d),
         .i_mem_mask      (mem_mask_d),
         .i_load_unsigned (load_unsigned_d),
-        .i_is_csr        (is_csr_d),
-        .i_csr_op        (csr_op_d),
-        .i_csr_addr      (csr_addr_d),
-        .i_is_ecall      (is_ecall_d),
-        .i_is_ebreak     (is_ebreak_d),
-        .i_is_mret       (is_mret_d),
-        .i_is_m_op       (is_m_op_d),
-        .i_m_op          (m_op_d),
         .i_is_branch     (is_branch_d),
         .i_pc_d_e        (pc_d),
         .i_pc_target     (pc_target_d),
@@ -455,14 +308,6 @@ module core(
         .o_func3         (func3_e),
         .o_mem_mask      (mem_mask_e),
         .o_load_unsigned (load_unsigned_e),
-        .o_is_csr        (is_csr_e),
-        .o_csr_op        (csr_op_e),
-        .o_csr_addr      (csr_addr_e),
-        .o_is_ecall      (is_ecall_e),
-        .o_is_ebreak     (is_ebreak_e),
-        .o_is_mret       (is_mret_e),
-        .o_is_m_op       (is_m_op_e),
-        .o_m_op          (m_op_e),
         .o_is_branch     (is_branch_e),
         .o_pc_d_e        (pc_e),
         .o_pc_target     (pc_target_e),
@@ -472,9 +317,6 @@ module core(
     );
 
     stage_ex u_stage_ex (
-        .i_clk           (clk),
-        .i_rst_n         (rst_n),
-        .i_flush         (flush_e_m),
         .i_rs1_data      (rs1_data_e),
         .i_rs2_data      (rs2_data_e),
         .i_imm           (imm_e),
@@ -487,34 +329,13 @@ module core(
         .i_pc_predict    (pc_predict_e),
         .i_rs1_fwd_sel   (rs1_fwd_sel_e),
         .i_rs2_fwd_sel   (rs2_fwd_sel_e),
-        .i_rs1_addr      (rs1_addr_e),
         .i_alu_ctrl      (alu_ctrl_e),
         .i_func3         (func3_e),
         .i_is_branch     (is_branch_e),
         .i_is_rs2_imm    (is_rs2_imm_e),
         .i_inst_spec     (inst_spec_e),
-        .i_is_csr        (is_csr_e),
-        .i_csr_op        (csr_op_e),
-        .i_csr_addr      (csr_addr_e),
-        .i_csr_rdata     (csr_rdata_e),
-        .i_csr_mtvec     (csr_mtvec_q),
-        .i_csr_mepc      (csr_mepc_q),
-        .i_priv_mode     (priv_mode_q),
-        .i_is_ecall      (is_ecall_e),
-        .i_is_ebreak     (is_ebreak_e),
-        .i_is_mret       (is_mret_e),
-        .i_is_m_op       (is_m_op_e),
-        .i_m_op          (m_op_e),
         .o_alu_res       (alu_res_e),
         .o_a2_data       (a2_data_e),
-        .o_ex_stall      (ex_stall_e),
-        .o_csr_write     (csr_write_e),
-        .o_csr_addr      (csr_write_addr_e),
-        .o_csr_wdata     (csr_wdata_e),
-        .o_csr_trap      (csr_trap_e),
-        .o_csr_mret      (csr_mret_e),
-        .o_csr_cause     (csr_cause_e),
-        .o_csr_epc       (csr_epc_e),
         .o_update_taken  (update_taken_e),
         .o_update_en     (update_en_e),
         .o_update_pc     (update_pc_e),

@@ -26,14 +26,7 @@ module control_unit(
 
     output logic                            o_is_branch,
     output logic  [3:0]                     o_mem_mask,
-    output logic                            o_load_unsigned,
-    output logic                            o_is_csr,
-    output logic  [2:0]                     o_csr_op,
-    output logic                            o_is_ecall,
-    output logic                            o_is_ebreak,
-    output logic                            o_is_mret,
-    output logic                            o_is_m_op,
-    output logic  [2:0]                     o_m_op
+    output logic                            o_load_unsigned
     // output logic                            o_is_jtype,
     // output logic                            o_is_lui,
     
@@ -59,33 +52,21 @@ module control_unit(
         o_is_branch     = 1'b0;
         o_mem_mask      = `MASK_WORD;
         o_load_unsigned = 1'b0;
-        o_is_csr        = 1'b0;
-        o_csr_op        = `CSR_OP_NONE;
-        o_is_ecall      = 1'b0;
-        o_is_ebreak     = 1'b0;
-        o_is_mret       = 1'b0;
-        o_is_m_op       = 1'b0;
-        o_m_op          = `M_OP_NONE;
 
         unique case (opcode)
             `OP_R_TYPE: begin
                 o_reg_write = 1'b1;
-                if (func7 == `FUNC7_MULDIV) begin
-                    o_is_m_op = 1'b1;
-                    o_m_op    = func3;
-                end else begin
-                    unique case (func3)
-                        `FUNC3_ADD_SUB: o_alu_ctrl = (func7 == `FUNC7_SUB) ? `ALU_SUB : `ALU_ADD;
-                        `FUNC3_SLT:     o_alu_ctrl = `ALU_LT;
-                        `FUNC3_SLTU:    o_alu_ctrl = `ALU_LTU;
-                        `FUNC3_AND:     o_alu_ctrl = `ALU_AND;
-                        `FUNC3_OR:      o_alu_ctrl = `ALU_OR;
-                        `FUNC3_XOR:     o_alu_ctrl = `ALU_XOR;
-                        `FUNC3_SLL:     o_alu_ctrl = `ALU_SL;
-                        `FUNC3_SRL_SRA: o_alu_ctrl = (func7 == `FUNC7_SRA) ? `ALU_SRA : `ALU_SRL;
-                        default:        o_alu_ctrl = `ALU_ADD;
-                    endcase
-                end
+                unique case (func3)
+                    `FUNC3_ADD_SUB: o_alu_ctrl = (func7 == `FUNC7_SUB) ? `ALU_SUB : `ALU_ADD;
+                    `FUNC3_SLT:     o_alu_ctrl = `ALU_LT;
+                    `FUNC3_SLTU:    o_alu_ctrl = `ALU_LTU;
+                    `FUNC3_AND:     o_alu_ctrl = `ALU_AND;
+                    `FUNC3_OR:      o_alu_ctrl = `ALU_OR;
+                    `FUNC3_XOR:     o_alu_ctrl = `ALU_XOR;
+                    `FUNC3_SLL:     o_alu_ctrl = `ALU_SL;
+                    `FUNC3_SRL_SRA: o_alu_ctrl = (func7 == `FUNC7_SRA) ? `ALU_SRA : `ALU_SRL;
+                    default:        o_alu_ctrl = `ALU_ADD;
+                endcase
             end
 
             `OP_I_TYPE: begin
@@ -156,25 +137,6 @@ module control_unit(
                 o_is_rs2_imm = 1'b1;
                 o_inst_spec  = `EX_AUIPC;
                 o_alu_ctrl   = `ALU_ADD;
-            end
-
-            `OP_FENCE: begin
-            end
-
-            `OP_SYSTEM: begin
-                if (func3 == 3'b000) begin
-                    unique case (i_instr[31:20])
-                        12'h000: o_is_ecall  = 1'b1;
-                        12'h001: o_is_ebreak = 1'b1;
-                        12'h302: o_is_mret   = 1'b1;
-                        default: begin
-                        end
-                    endcase
-                end else begin
-                    o_is_csr    = 1'b1;
-                    o_csr_op    = func3;
-                    o_reg_write = (i_instr[11:7] != 5'd0);
-                end
             end
 
             default: begin

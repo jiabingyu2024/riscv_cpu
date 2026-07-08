@@ -170,7 +170,7 @@ def parse_dump_terminals(path):
     return {"pass": pass_pc, "fail": fail_pc}
 
 
-def build_rv32_case(elf_path, out_dir, suite):
+def build_rv32ui_case(elf_path, out_dir):
     elf = parse_elf32(elf_path)
     terminals = parse_dump_terminals(elf_path.with_suffix(elf_path.suffix + ".dump"))
     byte_mem = {}
@@ -187,8 +187,8 @@ def build_rv32_case(elf_path, out_dir, suite):
 
     write_words(out_dir / "irom.hex", words)
     meta = {
-        "suite": suite,
-        "case": elf_path.name.removeprefix(f"{suite}-p-"),
+        "suite": "rv32ui",
+        "case": elf_path.name.removeprefix("rv32ui-p-"),
         "elf": str(elf_path.relative_to(ROOT)),
         "base_pc": f"0x{base:08x}",
         "entry": f"0x{elf['entry']:08x}",
@@ -211,23 +211,23 @@ def build_rv32_case(elf_path, out_dir, suite):
     return meta
 
 
-def build_rv32_elf_suite(suite, isa):
-    src_dir = TESTS_DIR / suite
+def build_rv32ui(isa):
+    src_dir = TESTS_DIR / "rv32ui"
     if not src_dir.is_dir():
         raise RuntimeError(f"missing {src_dir}")
-    cases = sorted(path for path in src_dir.glob(f"{suite}-p-*") if path.is_file() and path.suffix == "")
+    cases = sorted(path for path in src_dir.glob("rv32ui-p-*") if path.is_file() and not path.name.endswith(".dump"))
     if isa:
-        target = f"{suite}-p-{isa}"
+        target = f"rv32ui-p-{isa}"
         cases = [path for path in cases if path.name == target]
         if not cases:
-            raise RuntimeError(f"no {suite} case named {target}")
+            raise RuntimeError(f"no rv32ui case named {target}")
 
     metas = []
     for elf_path in cases:
-        case = elf_path.name.removeprefix(f"{suite}-p-")
-        metas.append(build_rv32_case(elf_path, BUILD_DIR / suite / case, suite))
-    summary = {"suite": suite, "cases": [meta["case"] for meta in metas]}
-    out_dir = BUILD_DIR / suite
+        case = elf_path.name.removeprefix("rv32ui-p-")
+        metas.append(build_rv32ui_case(elf_path, BUILD_DIR / "rv32ui" / case))
+    summary = {"suite": "rv32ui", "cases": [meta["case"] for meta in metas]}
+    out_dir = BUILD_DIR / "rv32ui"
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="ascii")
     return metas
@@ -273,16 +273,16 @@ def build_coe_suite(suite, kind):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Build simulation inputs from RISC-V ELF or COE tests.")
-    parser.add_argument("--suite", required=True, choices=["rv32ui", "rv32um", "rv32mi", "src_test", "src0", "src1", "src2"])
-    parser.add_argument("--isa", default="", help="ELF case name without <suite>-p- prefix")
+    parser = argparse.ArgumentParser(description="Build simulation inputs from rv32ui ELF or COE tests.")
+    parser.add_argument("--suite", required=True, choices=["rv32ui", "src_test", "src0", "src1", "src2"])
+    parser.add_argument("--isa", default="", help="rv32ui case name without rv32ui-p- prefix")
     args = parser.parse_args()
 
-    if args.suite in ("rv32ui", "rv32um", "rv32mi"):
-        metas = build_rv32_elf_suite(args.suite, args.isa)
+    if args.suite == "rv32ui":
+        metas = build_rv32ui(args.isa)
     else:
         if args.isa:
-            raise RuntimeError("--isa is only valid for ELF suites")
+            raise RuntimeError("--isa is only valid for rv32ui")
         kind = "correctness" if args.suite == "src_test" else "perf"
         metas = build_coe_suite(args.suite, kind)
 

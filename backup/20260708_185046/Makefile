@@ -26,8 +26,6 @@ RTL_INC := rtl/include
 SOC_SRCS := \
 	rtl/ip/IROM_0.sv \
 	rtl/ip/DRAM_0.sv \
-	rtl/ip/MUL_0.sv \
-	rtl/ip/DIV_0.sv \
 	rtl/soc/student_top.sv \
 	rtl/soc/perip_bridge.sv \
 	rtl/soc/dram_driver.sv \
@@ -148,10 +146,10 @@ sim-src-test:
 
 run: build
 	@set -e; \
-	if [[ ("$(SUITE)" == "rv32ui" || "$(SUITE)" == "rv32um" || "$(SUITE)" == "rv32mi") && -z "$(ISA)" ]]; then \
+	if [[ "$(SUITE)" == "rv32ui" && -z "$(ISA)" ]]; then \
 		$(MAKE) sim; \
 		$(MAKE) run-all SUITE=$(SUITE) WAVE=$(WAVE) MAX_CYCLES=$(MAX_CYCLES); \
-	elif [[ "$(SUITE)" == "rv32ui" || "$(SUITE)" == "rv32um" || "$(SUITE)" == "rv32mi" ]]; then \
+	elif [[ "$(SUITE)" == "rv32ui" ]]; then \
 		$(MAKE) sim; \
 		$(MAKE) run-one SUITE=$(SUITE) ISA=$(ISA) WAVE=$(WAVE) MAX_CYCLES=$(MAX_CYCLES); \
 	elif [[ "$(SUITE)" == "src_test" ]]; then \
@@ -164,9 +162,9 @@ run: build
 
 run-one:
 	@set -e -o pipefail; \
-	if [[ "$(SUITE)" == "rv32ui" || "$(SUITE)" == "rv32um" || "$(SUITE)" == "rv32mi" ]]; then \
+	if [[ "$(SUITE)" == "rv32ui" ]]; then \
 		if [[ -z "$(ISA)" ]]; then echo "ISA is required for run-one with SUITE=rv32ui"; exit 2; fi; \
-		CASE_DIR="$(BUILD_DIR)/$(SUITE)/$(ISA)"; \
+		CASE_DIR="$(BUILD_DIR)/rv32ui/$(ISA)"; \
 	else \
 		CASE_DIR="$(BUILD_DIR)/$(SUITE)"; \
 	fi; \
@@ -197,10 +195,10 @@ run-correctness:
 run-all:
 	@set -e -o pipefail; \
 	status=0; \
-	for meta in $(BUILD_DIR)/$(SUITE)/*/meta.json; do \
+	for meta in $(BUILD_DIR)/rv32ui/*/meta.json; do \
 		case_dir=$$(dirname "$$meta"); \
 		case_name=$$(basename "$$case_dir"); \
-		echo "==> $(SUITE)/$$case_name"; \
+		echo "==> rv32ui/$$case_name"; \
 		if ! $(SIM_BIN) +irom=$$case_dir/irom.hex +meta=$$meta +max-cycles=$(MAX_CYCLES) +cpu-mhz=$(CPU_MHZ) +cnt-mhz=$(CNT_MHZ) +wave=0 | tee "$$case_dir/run.log"; then \
 			status=1; \
 		fi; \
@@ -208,7 +206,7 @@ run-all:
 	exit $$status
 
 list:
-	@find tests/$(SUITE) -maxdepth 1 -type f -name '$(SUITE)-p-*' ! -name '*.dump' -printf '%f\n' | sed 's/^$(SUITE)-p-//' | sort
+	@find tests/rv32ui -maxdepth 1 -type f -name 'rv32ui-p-*' ! -name '*.dump' -printf '%f\n' | sed 's/^rv32ui-p-//' | sort
 
 list-src:
 	@find tests -maxdepth 1 -type d -name 'src*' -printf '%f\n' | sort

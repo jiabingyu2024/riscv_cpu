@@ -35,14 +35,6 @@ module stage_id(
     output logic  [2:0]                     o_func3,
     output logic  [3:0]                     o_mem_mask,
     output logic                            o_load_unsigned,
-    output logic                            o_is_csr,
-    output logic  [2:0]                     o_csr_op,
-    output logic  [11:0]                    o_csr_addr,
-    output logic                            o_is_ecall,
-    output logic                            o_is_ebreak,
-    output logic                            o_is_mret,
-    output logic                            o_is_m_op,
-    output logic  [2:0]                     o_m_op,
 
     output logic                            o_is_branch,
     // output logic                            o_is_jtype,
@@ -63,7 +55,6 @@ module stage_id(
     assign o_rs1_addr = i_inst_f_d[19:15];
     assign o_rs2_addr = i_inst_f_d[24:20];
     assign o_rd_addr  = i_inst_f_d[11:7];
-    assign o_csr_addr = i_inst_f_d[31:20];
     assign o_rs1_data = rs1_data;
     assign o_rs2_data = rs2_data;
 
@@ -79,14 +70,7 @@ module stage_id(
         .o_func3         (o_func3),
         .o_is_branch     (o_is_branch),
         .o_mem_mask      (o_mem_mask),
-        .o_load_unsigned (o_load_unsigned),
-        .o_is_csr        (o_is_csr),
-        .o_csr_op        (o_csr_op),
-        .o_is_ecall      (o_is_ecall),
-        .o_is_ebreak     (o_is_ebreak),
-        .o_is_mret       (o_is_mret),
-        .o_is_m_op       (o_is_m_op),
-        .o_m_op          (o_m_op)
+        .o_load_unsigned (o_load_unsigned)
     );
 
     imm_unit u_imm_unit (

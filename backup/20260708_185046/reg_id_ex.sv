@@ -37,14 +37,6 @@ module reg_id_ex(
     input logic [2:0]               i_func3,
     input logic [3:0]               i_mem_mask,
     input logic                     i_load_unsigned,
-    input logic                     i_is_csr,
-    input logic [2:0]               i_csr_op,
-    input logic [11:0]              i_csr_addr,
-    input logic                     i_is_ecall,
-    input logic                     i_is_ebreak,
-    input logic                     i_is_mret,
-    input logic                     i_is_m_op,
-    input logic [2:0]               i_m_op,
 
     input logic                     i_is_branch,
     // input logic                     i_is_jtype,
@@ -77,14 +69,6 @@ module reg_id_ex(
     output logic [2:0]              o_func3,
     output logic [3:0]              o_mem_mask,
     output logic                    o_load_unsigned,
-    output logic                    o_is_csr,
-    output logic [2:0]              o_csr_op,
-    output logic [11:0]             o_csr_addr,
-    output logic                    o_is_ecall,
-    output logic                    o_is_ebreak,
-    output logic                    o_is_mret,
-    output logic                    o_is_m_op,
-    output logic [2:0]              o_m_op,
 
     output logic                    o_is_branch,
     // output logic                    o_is_jtype,
@@ -114,14 +98,6 @@ module reg_id_ex(
             o_func3          <= 3'b000;
             o_mem_mask       <= `MASK_WORD;
             o_load_unsigned  <= 1'b0;
-            o_is_csr         <= 1'b0;
-            o_csr_op         <= `CSR_OP_NONE;
-            o_csr_addr       <= '0;
-            o_is_ecall       <= 1'b0;
-            o_is_ebreak      <= 1'b0;
-            o_is_mret        <= 1'b0;
-            o_is_m_op        <= 1'b0;
-            o_m_op           <= `M_OP_NONE;
             o_is_branch      <= 1'b0;
             o_pc_d_e         <= '0;
             o_pc_target      <= '0;
@@ -145,14 +121,6 @@ module reg_id_ex(
             o_func3          <= 3'b000;
             o_mem_mask       <= `MASK_WORD;
             o_load_unsigned  <= 1'b0;
-            o_is_csr         <= 1'b0;
-            o_csr_op         <= `CSR_OP_NONE;
-            o_csr_addr       <= '0;
-            o_is_ecall       <= 1'b0;
-            o_is_ebreak      <= 1'b0;
-            o_is_mret        <= 1'b0;
-            o_is_m_op        <= 1'b0;
-            o_m_op           <= `M_OP_NONE;
             o_is_branch      <= 1'b0;
             o_pc_d_e         <= '0;
             o_pc_target      <= '0;
@@ -176,14 +144,6 @@ module reg_id_ex(
             o_func3          <= i_func3;
             o_mem_mask       <= i_mem_mask;
             o_load_unsigned  <= i_load_unsigned;
-            o_is_csr         <= i_is_csr;
-            o_csr_op         <= i_csr_op;
-            o_csr_addr       <= i_csr_addr;
-            o_is_ecall       <= i_is_ecall;
-            o_is_ebreak      <= i_is_ebreak;
-            o_is_mret        <= i_is_mret;
-            o_is_m_op        <= i_is_m_op;
-            o_m_op           <= i_m_op;
             o_is_branch      <= i_is_branch;
             o_pc_d_e         <= i_pc_d_e;
             o_pc_target      <= i_pc_target;

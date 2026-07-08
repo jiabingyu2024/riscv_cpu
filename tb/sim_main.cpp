@@ -213,6 +213,7 @@ void print_branch_line(std::ostream& out, const PerfStats& stats) {
 
 bool core_inst_valid(Vtb_rv32ui_top___024root* rootp) {
     return !rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__flush_e_m &&
+           !rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__ex_stall_e &&
            (rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__reg_write_e ||
            rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__mem_write_e ||
            rootp->tb_rv32ui_top__DOT__u_dut__DOT__Core_cpu__DOT__u_core__DOT__update_en_e);

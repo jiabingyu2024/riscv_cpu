@@ -1,0 +1,76 @@
+{
+  "timestamp": "2026-07-08T19:35:26+08:00",
+  "trigger": "Implement ecall, ebreak, fence, mret, Zicsr, and RV32UM support for the current old core pipeline.",
+  "files_modified": [
+    {
+      "path": "rtl/include/cpu_defines.svh",
+      "change_type": "interface_encoding",
+      "notes": "Added SYSTEM/FENCE opcode definitions, CSR IDs, privilege encodings, and RV32M operation encodings."
+    },
+    {
+      "path": "rtl/core/id/control_unit.sv",
+      "change_type": "decode_logic",
+      "notes": "Decoded fence, CSR instructions, ecall, ebreak, mret, and RV32M R-type operations."
+    },
+    {
+      "path": "rtl/core/id/stage_id.sv",
+      "change_type": "interface_change",
+      "notes": "Exported CSR and RV32M control fields from decode."
+    },
+    {
+      "path": "rtl/core/pipeline_regs/reg_id_ex.sv",
+      "change_type": "pipeline_control",
+      "notes": "Pipelined CSR, trap, mret, and RV32M control fields with flush-safe defaults."
+    },
+    {
+      "path": "rtl/core/ex/stage_ex.sv",
+      "change_type": "execute_logic",
+      "notes": "Implemented CSR read/modify/write result generation, trap/mret redirect generation, and RV32M execution through MUL_0/DIV_0 IP instances with an EX multi-cycle FSM."
+    },
+    {
+      "path": "rtl/core/core.sv",
+      "change_type": "state_and_integration",
+      "notes": "Added machine CSR state, privilege tracking, trap entry/mret updates, CSR read mux, EX-stage CSR commit gating, and EX stall integration."
+    },
+    {
+      "path": "rtl/core/control/hazard_unit.sv",
+      "change_type": "pipeline_control",
+      "notes": "Added EX multi-cycle stall handling to freeze PC, front-end pipeline registers, ID/EX, and EX/M until the M-extension IP result is ready."
+    },
+    {
+      "path": "scripts/build_tests.py",
+      "change_type": "test_build_support",
+      "notes": "Generalized ELF test generation for rv32um and rv32mi while filtering generated .hex files."
+    },
+    {
+      "path": "Makefile",
+      "change_type": "test_entry_support",
+      "notes": "Allowed rv32um and rv32mi suites to use the existing ELF test run paths and added MUL_0/DIV_0 to the simulation RTL source list."
+    },
+    {
+      "path": "tb/sim_main.cpp",
+      "change_type": "test_metric_fix",
+      "notes": "Excluded EX stall cycles from retired-instruction counting."
+    },
+    {
+      "path": "tb/sim_src.cpp",
+      "change_type": "test_metric_fix",
+      "notes": "Excluded EX stall cycles from retired-instruction counting."
+    }
+  ],
+  "cascade_scope": "full_reverify",
+  "verification": [
+    "make sim",
+    "make run SUITE=rv32ui MAX_CYCLES=500000",
+    "make run SUITE=rv32um MAX_CYCLES=500000",
+    "make run SUITE=rv32mi ISA=csr MAX_CYCLES=400000",
+    "make run SUITE=rv32mi ISA=scall MAX_CYCLES=400000",
+    "make run SUITE=rv32mi ISA=sbreak MAX_CYCLES=400000",
+    "make run SUITE=rv32mi ISA=zicntr MAX_CYCLES=400000",
+    "make run SUITE=src_test MAX_CYCLES=615000000",
+    "make run SUITE=src0 FAST_COUNTER=1 RUN_MS=1 STRICT_SIM_LIMIT=1 SRC_MAX_CYCLES=2000000",
+    "make run SUITE=src1 FAST_COUNTER=1 RUN_MS=1 STRICT_SIM_LIMIT=1 SRC_MAX_CYCLES=2000000",
+    "make run SUITE=src2 FAST_COUNTER=1 RUN_MS=1 STRICT_SIM_LIMIT=1 SRC_MAX_CYCLES=2000000"
+  ],
+  "notes": "RV32M now instantiates MUL_0 and DIV_0. The old pipeline uses a new EX multi-cycle stall protocol: MUL waits for the configured multiplier latency, and DIV holds AXIS input valid until tready then waits for m_axis_dout_tvalid."
+}

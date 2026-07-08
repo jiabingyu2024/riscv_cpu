@@ -30,8 +30,6 @@
 `define OP_JALR      7'B1100111
 `define OP_LUI       7'B0110111
 `define OP_AUIPC     7'B0010111
-`define OP_FENCE     7'B0001111
-`define OP_SYSTEM    7'B1110011
 
 `define FUNC3_ADD_SUB  3'B000       // func3 for R-type
 `define FUNC3_SLT      3'B010
@@ -61,7 +59,6 @@
 
 `define FUNC7_ADD      7'B0000000   // func7 for R-type
 `define FUNC7_SUB      7'B0100000
-`define FUNC7_MULDIV   7'B0000001
 `define FUNC7_SRL      7'B0000000
 `define FUNC7_SRA      7'B0100000
 
@@ -88,51 +85,6 @@
 `define EX_LUI          4'B0010
 `define EX_JAL          4'B0100
 `define EX_JALR         4'B1000
-
-`define CSR_OP_NONE     3'B000
-`define CSR_OP_RW       3'B001
-`define CSR_OP_RS       3'B010
-`define CSR_OP_RC       3'B011
-`define CSR_OP_RWI      3'B101
-`define CSR_OP_RSI      3'B110
-`define CSR_OP_RCI      3'B111
-
-`define M_OP_NONE       3'B000
-`define M_OP_MUL        3'B000
-`define M_OP_MULH       3'B001
-`define M_OP_MULHSU     3'B010
-`define M_OP_MULHU      3'B011
-`define M_OP_DIV        3'B100
-`define M_OP_DIVU       3'B101
-`define M_OP_REM        3'B110
-`define M_OP_REMU       3'B111
-
-`define PRIV_U          2'B00
-`define PRIV_M          2'B11
-
-`define CSR_MSTATUS     12'h300
-`define CSR_MISA        12'h301
-`define CSR_MEDELEG     12'h302
-`define CSR_MIDELEG     12'h303
-`define CSR_MIE         12'h304
-`define CSR_MTVEC       12'h305
-`define CSR_MCOUNTEREN  12'h306
-`define CSR_MSCRATCH    12'h340
-`define CSR_MEPC        12'h341
-`define CSR_MCAUSE      12'h342
-`define CSR_MTVAL       12'h343
-`define CSR_MIP         12'h344
-`define CSR_PMPCFG0     12'h3A0
-`define CSR_PMPADDR0    12'h3B0
-`define CSR_CYCLE       12'hC00
-`define CSR_TIME        12'hC01
-`define CSR_INSTRET     12'hC02
-`define CSR_CYCLEH      12'hC80
-`define CSR_TIMEH       12'hC81
-`define CSR_INSTRETH    12'hC82
-`define CSR_MHARTID     12'hF14
-
-`define MISA_RV32_IM    32'h4000_1100
 
 `define WB_SRC_ALU      1'b0
 `define WB_SRC_MEM      1'b1
